@@ -100,15 +100,19 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 ## Desarrollo
 
 ```bash
-npm install        # solo ESLint (dev)
+npm install        # herramientas de desarrollo y pruebas
+npx playwright install chromium # una vez por equipo, instala el navegador del smoke
 npm run lint       # eslint .
 npm test           # node --test, sin dependencias
+npm run test:e2e   # smoke Playwright en escritorio y ventana estrecha, con datos sintéticos
 npm run docs:check # verifica que el mapa cubra todos los módulos
 npm run check      # lint + test + documentación + release
 npm run pack       # genera rayen-extension-<versión>.zip
 ```
 
 La estructura completa y la responsabilidad de cada archivo viven en [`ARCHITECTURE.md`](ARCHITECTURE.md); el CI exige que su mapa incluya cada módulo de `src/` exactamente una vez.
+
+El smoke de navegador levanta `dev/`, que usa la aplicación real con almacenamiento Chrome simulado y datos inventados. También comprueba que ninguna solicitud abandone `localhost`; no sustituye una prueba de la extensión cargada ni una sesión autenticada de Eloisa.
 
 Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); la interfaz vive en `app.html` y su sistema visual en `styles/app.css`. Los colores salen de tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
 

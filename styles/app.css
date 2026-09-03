@@ -156,6 +156,7 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .multi-trigger.has-value{border-color:var(--brand-line);background:var(--brand-soft);color:var(--brand-2);font-weight:600}
 .multi-menu{position:absolute;left:0;top:calc(100% + 5px);z-index:35;width:min(380px,80vw);max-height:310px;overflow:auto;background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:6px}
 .multi-menu[hidden]{display:none}
+@media(max-width:620px){.multi-menu{left:auto;right:0;width:min(380px,calc(100vw - 2 * var(--gutter)))}}
 .multi-option{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:8px!important;padding:7px 8px;border-radius:var(--r-sm);color:var(--ink-2)!important;cursor:pointer}
 .multi-option:hover{background:var(--surface-2)}
 .multi-option input{margin-top:3px;accent-color:var(--brand);flex:0 0 auto}

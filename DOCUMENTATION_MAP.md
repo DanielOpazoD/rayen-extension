@@ -15,7 +15,7 @@ Ruta corta para continuar el proyecto sin depender del contexto de una conversac
 2. Ubica el flujo y el módulo dueño en `ARCHITECTURE.md`; evita añadir lógica al orquestador si ya existe un dueño específico.
 3. Haz un cambio pequeño, con pruebas enfocadas y un commit comprensible.
 4. Si agregas, renombras o eliminas un módulo de `src/`, actualiza el bloque `module-map` de la arquitectura.
-5. Ejecuta `npm run check` antes de publicar y `npm run pack` cuando cambie una versión entregable.
+5. Ejecuta `npm run check` y `npm run test:e2e` antes de publicar; usa `npm run pack` cuando cambie una versión entregable.
 6. Registra en el PR qué nivel de evidencia alcanzaste y qué quedó sin validar.
 
 ## Niveles de evidencia
