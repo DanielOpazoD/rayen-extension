@@ -27,6 +27,14 @@ export async function saveNote(record, text) {
   await storageSet(CONFIG.notesKey, notes);
 }
 
+/**
+ * Restores a previous note verbatim. Used by the undo offer, so a deletion is
+ * never final until the toast is gone.
+ */
+export async function restoreNote(record, text) {
+  await saveNote(record, text);
+}
+
 /** Attaches a `note` property to each record from the stored notes. */
 export async function attachNotes(records) {
   const notes = await allNotes();

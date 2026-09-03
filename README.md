@@ -44,6 +44,15 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
 - Los estados vacíos traen el botón para cargar, en vez de solo decirlo.
 
+## Nada se pierde: deshacer y respuesta visual
+
+- **Deshacer** en los avisos: borrar una nota o limpiar los filtros deja un aviso con «Deshacer» durante 6 s. La barra inferior muestra cuánto queda, y **pasar el cursor lo pausa** — si lo estás leyendo, el reloj espera. Por eso el editor de notas no pregunta «¿estás seguro?».
+- **Vuelves a la fila donde estabas**: al cerrar el panel, la fila del paciente se centra y pulsa un segundo. Lo mismo tras guardar una nota.
+- **Confirmación donde hiciste clic**: el RUN se convierte en «✓ copiado» un instante, en vez de solo avisar abajo.
+- **Esqueletos** con la forma de la tabla y de las tarjetas mientras carga, en lugar de la palabra «Cargando…». También en el panel mientras baja la ficha.
+- El **título de la pestaña** muestra el avance (`38% · Ficha clínica — Rayen`), así puedes irte a otra pestaña y volver.
+- Todo respeta `prefers-reduced-motion`: sin animaciones, el estado final se ve igual.
+
 ## Pendientes: las reglas
 
 Las interconsultas del hospital son **internas** (origen y destino son el nodo 5576): el especialista está en el mismo edificio. Por eso una contrarreferencia que falta es una brecha de registro, no de logística. En el trimestre analizado, **131 de 174** solicitudes atendidas no tenían contrarreferencia en Rayen.

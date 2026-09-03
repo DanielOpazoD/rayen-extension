@@ -147,6 +147,10 @@ let pending = [], rendered = 0, lastCtx = null;
  * @param {number}   total  size of the unfiltered dataset
  * @param {{ sicsById: Map, sicsByRun: Map }} ctx
  */
+export function rowSelector(id) {
+  return `#tbody tr[data-id="${CSS.escape(String(id))}"]`;
+}
+
 export function renderTable(data, total, ctx = { sicsById: new Map(), sicsByRun: new Map() }) {
   const tbody = document.getElementById('tbody');
   pending = data; rendered = 0; lastCtx = ctx;

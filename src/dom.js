@@ -122,6 +122,43 @@ export function activateOnKey(container) {
   });
 }
 
+/**
+ * Brings a row back into view and pulses it. Closing a panel or jumping from a
+ * chart used to drop you somewhere in a thousand rows with no idea where you
+ * had been; the pulse answers "here" without moving anything.
+ */
+export function revealRow(selector, { scroll = true } = {}) {
+  const el = document.querySelector(selector);
+  if (!el) return false;
+  if (scroll) el.scrollIntoView({ block: 'center', behavior: prefersReduced() ? 'auto' : 'smooth' });
+  el.classList.remove('flash-row');
+  void el.offsetWidth;          // restart the animation if it is already running
+  el.classList.add('flash-row');
+  setTimeout(() => el.classList.remove('flash-row'), 1600);
+  return true;
+}
+
+export function prefersReduced() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}
+
+/**
+ * Placeholder rows shaped like the real ones. A skeleton says "this is a table
+ * and it is on its way"; the word "Cargando…" says neither.
+ */
+export function skeletonRows(rows = 8, cols = 10) {
+  const cell = i => `<td><span class="sk" style="width:${[70, 90, 40, 30, 55, 80, 85, 50, 75, 60][i % 10]}%"></span></td>`;
+  return Array.from({ length: rows }, () =>
+    `<tr class="sk-row">${Array.from({ length: cols }, (_, i) => cell(i)).join('')}</tr>`).join('');
+}
+
+/** Skeleton blocks for card-shaped content (Hoy, patient panel). */
+export function skeletonCards(n = 3) {
+  return Array.from({ length: n }, () =>
+    `<div class="sk-card"><span class="sk" style="width:22%"></span><span class="sk" style="width:64%"></span>` +
+    `<span class="sk" style="width:45%"></span></div>`).join('');
+}
+
 /** Refills a <select> keeping its first (placeholder) option and, if possible, the current value. */
 export function fillSelect(el, values, keep = true) {
   const cur = el.value;

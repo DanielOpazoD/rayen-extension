@@ -1,8 +1,8 @@
 import { loadData, getRawSamples }        from './src/api.js';
 import { getToken }                       from './src/auth.js';
-import { attachNotes, saveNote }          from './src/notes.js';
+import { attachNotes, saveNote, restoreNote }          from './src/notes.js';
 import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } from './src/export.js';
-import { toast, copyToClipboard } from './src/toast.js';
+import { toast, copyToClipboard, flashOk } from './src/toast.js';
 import { initPalette } from './src/palette.js';
 import { PERIODS, date8ToIso, isoToDate8 } from './src/period.js';
 import { clearAllCaches, clearEverything, loadPrefs, savePrefs } from './src/cache.js';
@@ -10,7 +10,7 @@ import { AuthError, cancelRun } from './src/http.js';
 import { renderCharts }                   from './src/charts.js';
 import { initPanel, openPanel }           from './src/patient-panel.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer.js';
-import { renderTable, sortRecords, appendChunk, hasMoreRows, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
+import { renderTable, sortRecords, appendChunk, hasMoreRows, rowSelector, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
 import { renderToday } from './src/today.js';
 import { initLock }    from './src/lock.js';
 import { computePendientes } from './src/pendientes.js';
@@ -20,7 +20,7 @@ import { loadSICs, contactsFromSICs }     from './src/sic.js';
 import { renderSICTab, filterSICs, sortSICs, setSICSort, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
 import { certificadoPath, sicPdfPath, openPDF } from './src/pdf.js';
 import { localDateStr } from './src/parser.js';
-import { esc, $, initTooltips, initTablist, activateOnKey } from './src/dom.js';
+import { esc, $, initTooltips, initTablist, activateOnKey, revealRow, skeletonRows, skeletonCards } from './src/dom.js';
 import { CONFIG } from './src/config.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -60,7 +60,15 @@ function initChips(containerId, hiddenId, onChange) {
     box.querySelectorAll('.chip').forEach(c => { const on = c === b; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
     onChange();
   });
-  return { reset() { hidden.value = 'todo'; box.querySelectorAll('.chip').forEach(c => { const on = c.dataset.per === 'todo'; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); }); } };
+  const set = key => {
+    hidden.value = key;
+    box.querySelectorAll('.chip').forEach(c => {
+      const on = c.dataset.per === key;
+      c.classList.toggle('on', on);
+      c.setAttribute('aria-pressed', String(on));
+    });
+  };
+  return { set, reset: () => set('todo') };
 }
 
 // ── Utils ─────────────────────────────────────────────────────
@@ -104,6 +112,38 @@ $('dayPrev').addEventListener('click', () => shiftDay(-1));
 $('dayNext').addEventListener('click', () => shiftDay(1));
 $('dayToday').addEventListener('click', () => { todayDate = ''; refreshBrief(); });
 $('dayPick').addEventListener('change', () => { todayDate = isoToDate8($('dayPick').value); refreshBrief(); });
+
+/**
+ * Writes a note and, when it removed text, offers to put it back. Undo is what
+ * makes the inline editor safe: nothing here asks "are you sure?".
+ */
+async function writeNote(record, text, { silent = false } = {}) {
+  const before = record.note ?? '';
+  const after  = text.trim();
+  if (before === after) return;
+  try {
+    await saveNote(record, after);
+    const key = record.run ?? record.nombre;
+    allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = after; });
+    render();
+    refreshBrief();
+    revealRow(rowSelector(record.id), { scroll: false });
+    if (silent) return;
+    const undo = before
+      ? { label: 'Deshacer', onClick: async () => {
+            await restoreNote(record, before);
+            allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = before; });
+            render(); refreshBrief();
+            revealRow(rowSelector(record.id), { scroll: false });
+            toast('Nota restaurada');
+          } }
+      : null;
+    toast(after ? 'Nota guardada' : 'Nota eliminada', { tone: after ? 'ok' : 'info', action: undo });
+  } catch (err) {
+    setStatus(`No se pudo guardar la nota: ${err.message}`, 'err');
+    toast('No se pudo guardar la nota', { tone: 'bad' });
+  }
+}
 
 /** Deduped patients in the order the table shows them — for ‹ › and the palette. */
 function patientList() {
@@ -201,7 +241,13 @@ async function handleFetch() {
   btn.disabled = true;
   btn.textContent = 'Cargando...';
   $('btnCancel').style.display = '';
+  $('btnCancel').disabled = false;
   prog.style.display = 'block';
+  if (!allData.length) {
+    ['barEl', 'tblWrap'].forEach(id => { $(id).style.display = ''; });
+    $('tbody').innerHTML = skeletonRows(10, COLUMNS.length);
+    $('todayContent').innerHTML = `<div class="today-h"><span class="sk" style="width:220px;height:20px"></span></div>` + skeletonCards(3);
+  }
   prog.value = 0;
   setStatus('Conectando con Eloisa...');
 
@@ -209,7 +255,9 @@ async function handleFetch() {
   try {
     result = await loadData(loadedMonths, (pct, phase) => {
       prog.value = pct;
-      setStatus(phase === 'ficha' ? `Ficha clínica (diagnósticos)… ${pct}%` : `Agenda… ${pct}%`);
+      const label = phase === 'ficha' ? 'Ficha clínica' : 'Agenda';
+      setStatus(`${label}… ${pct}%`);
+      document.title = `${pct}% · ${label} — Rayen`;   // visible desde otra pestaña
     }, { historial });
   } catch (err) {
     setStatus(`Error al cargar: ${err.message}`, 'err');
@@ -219,6 +267,7 @@ async function handleFetch() {
     $('btnCancel').style.display = 'none';
     btn.disabled = false;
     btn.textContent = 'Actualizar';
+    document.title = 'Rayen Atenciones — Hospital Hanga Roa';
   }
 
   if (!result) {
@@ -595,9 +644,17 @@ $('sicSummary').addEventListener('click', e => {
 
 const perChips = initChips('perChips', 'filtPer', render);
 $('btnClearFilters').addEventListener('click', () => {
+  const before = Object.fromEntries(FILTER_IDS.map(id => [id, $(id).value]));
+  const beforePer = $('filtPer').value;
+  const n = Object.values(before).filter(Boolean).length + (beforePer !== 'todo' ? 1 : 0);
   FILTER_IDS.forEach(id => { $(id).value = ''; });
   perChips.reset();
   render();
+  if (n) toast(`${n} filtro${n > 1 ? 's' : ''} limpiado${n > 1 ? 's' : ''}`, { tone: 'info', action: { label: 'Deshacer', onClick: () => {
+    for (const [id, v] of Object.entries(before)) $(id).value = v;
+    perChips.set(beforePer);
+    render();
+  } } });
 });
 $('btnMoreFilters').addEventListener('click', () => {
   const bar  = document.querySelector('#barEl .bar');
@@ -637,7 +694,12 @@ $('tbody').addEventListener('click', async e => {
   }
 
   const copy = e.target.closest('.copy-run');
-  if (copy) { e.stopPropagation(); copyToClipboard(copy.dataset.run, 'RUN copiado'); return; }
+  if (copy) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(copy.dataset.run).then(() => flashOk(copy, '✓ copiado'))
+      .catch(() => copyToClipboard(copy.dataset.run, 'RUN copiado'));
+    return;
+  }
 
   const patCell = e.target.closest('.pat-link');
   if (patCell) {
@@ -670,16 +732,8 @@ function startNoteEdit(cell) {
     done = true;
     const text = ta.value;
     cell.classList.remove('editing');
-    if (save && text.trim() !== (record.note ?? '')) {
-      try {
-        await saveNote(record, text);
-        const key = record.run ?? record.nombre;
-        allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = text.trim(); });
-      } catch (err) {
-        setStatus(`No se pudo guardar la nota: ${err.message}`, 'err');
-      }
-    }
-    render();
+    if (save) await writeNote(record, text);
+    else render();
   };
   ta.addEventListener('keydown', ev => {
     if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); finish(true); }
@@ -691,11 +745,21 @@ function startNoteEdit(cell) {
 // ── Init ──────────────────────────────────────────────────────
 initPanel({
   // A note saved in the panel must show up in every row of that patient and in the brief
-  onNoteSaved(record, text) {
+  onNoteSaved(record, text, before) {
     const key = record.run ?? record.nombre;
     allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = text; });
     render();
     refreshBrief();
+    if (before && !text) {
+      toast('Nota eliminada', { tone: 'info', action: { label: 'Deshacer', onClick: async () => {
+        await restoreNote(record, before);
+        allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = before; });
+        record.note = before;
+        $('ppNoteText').value = before;
+        render(); refreshBrief();
+        toast('Nota restaurada');
+      } } });
+    }
   },
   // ‹ › and ←/→ walk the patient list in the order the table shows it
   onNavigate(dir) {
@@ -707,6 +771,11 @@ initPanel({
   },
 });
 initPalette(patientList, openPatient);
+
+// Closing the panel returns you to the row you came from, and says which one
+document.addEventListener('rayen:panel-closed', e => {
+  if (e.detail?.id != null) revealRow(rowSelector(e.detail.id));
+});
 initTooltips();
 lockCtl = initLock({ minutes: 15 }); // patient data on screen; blur it when idle
 lockCtl.minutes = 15;

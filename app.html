@@ -417,12 +417,33 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .pend-t b{color:var(--ink);font-weight:500;margin-right:8px}
 .pgrp-more{font-size:var(--t-xs);color:var(--ink-3);padding:6px 4px}
 
-/* Toasts */
-#toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
-.toast{background:var(--ink);color:var(--card);font-size:var(--t-sm);padding:8px 14px;border-radius:var(--r-full);box-shadow:var(--shadow-pop);opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s;max-width:80vw}
+/* Toasts — con acción, barra de tiempo y pausa al pasar el cursor */
+#toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{position:relative;display:flex;align-items:center;gap:14px;background:var(--ink);color:var(--card);font-size:var(--t-sm);padding:10px 16px;border-radius:var(--r-md);box-shadow:var(--shadow-pop);opacity:0;transform:translateY(8px) scale(.98);transition:opacity .18s ease,transform .18s ease;max-width:min(90vw,520px);overflow:hidden}
 .toast.in{opacity:1;transform:none}
+.toast.has-action{pointer-events:auto}
+.toast-msg{flex:1;min-width:0}
+.toast-act{background:none;border:1px solid currentColor;color:inherit;font-size:var(--t-xs);font-weight:600;padding:3px 10px;border-radius:var(--r-full);cursor:pointer;flex-shrink:0;opacity:.9}
+.toast-act:hover{opacity:1;background:rgba(255,255,255,.14)}
+.toast-bar{position:absolute;left:0;bottom:0;height:2px;width:100%;background:currentColor;opacity:.35;transform-origin:left;animation:toastLife linear forwards}
+.toast.paused .toast-bar{animation-play-state:paused}
+@keyframes toastLife{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .toast-bad{background:var(--bad);color:#fff}
 .toast-info{background:var(--info);color:#fff}
+@media (prefers-reduced-motion:reduce){.toast-bar{display:none}}
+/* Confirmación en el lugar donde se hizo clic */
+.flash-ok{color:var(--good)!important;font-weight:600}
+/* La fila a la que vuelves */
+@keyframes rowPulse{0%{background:var(--brand-soft)}100%{background:transparent}}
+tbody tr.flash-row td{animation:rowPulse 1.6s ease-out}
+tbody tr.flash-row td:first-child{box-shadow:inset 2px 0 0 var(--brand)}
+@media (prefers-reduced-motion:reduce){tbody tr.flash-row td{animation:none;background:var(--brand-soft)}}
+/* Esqueletos de carga */
+@keyframes skShimmer{to{background-position:200% 0}}
+.sk{display:inline-block;height:11px;border-radius:var(--r-sm);background:linear-gradient(90deg,var(--surface-2) 25%,var(--rule) 37%,var(--surface-2) 63%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite}
+.sk-row td{padding:var(--row-y) 10px}
+.sk-card{border:1px solid var(--rule);border-radius:var(--r-md);padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
 /* RUN copiable */
 .copy-run{cursor:pointer;border-radius:var(--r-sm)}
 .copy-run:hover,.copy-run:focus-visible{color:var(--brand-2);text-decoration:underline;text-underline-offset:2px}

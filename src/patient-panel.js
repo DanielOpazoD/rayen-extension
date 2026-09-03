@@ -1,6 +1,6 @@
 import { saveNote, patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
-import { esc, stateDot, sicTone, $, initTablist, activateOnKey } from './dom.js';
+import { esc, stateDot, sicTone, $, initTablist, activateOnKey, skeletonCards } from './dom.js';
 import { certificadoPath, sicPdfPath, recetaPdfPath, openPDF } from './pdf.js';
 import { getToken } from './auth.js';
 import { loadFicha, SECTION_LABELS } from './ficha.js';
@@ -16,9 +16,12 @@ let activeTab = 'dx';    // remembered across patients
 let navigate = null;     // (dir) => void, supplied by the host
 
 function close() {
+  const id = cur?.record?.id;
   $('patientPanel').classList.remove('open');
   $('panelBackdrop').classList.remove('open');
   cur = null;
+  // The host brings the table back to the row this patient came from
+  document.dispatchEvent(new CustomEvent('rayen:panel-closed', { detail: { id } }));
 }
 
 const isMine = v => (v.prestadores ?? []).some(p => p.id === CONFIG.officerId);
@@ -41,13 +44,14 @@ export function initPanel({ onNoteSaved, onNavigate } = {}) {
     if (!cur) return;
     const text = $('ppNoteText').value;
     const btn  = $('ppSaveNote');
+    const before = cur.record.note ?? '';
     try {
       await saveNote(cur.record, text);
       cur.record.note = text.trim();
       for (const v of cur.visits) v.note = text.trim();
-      onNoteSaved?.(cur.record, text.trim());
+      onNoteSaved?.(cur.record, text.trim(), before);
       btn.textContent = '✓ Guardado';
-      toast(text.trim() ? 'Nota guardada' : 'Nota eliminada');
+      if (text.trim() && text.trim() !== before) toast('Nota guardada');
     } catch (err) {
       btn.textContent = `✗ ${err.message}`;
     }
@@ -372,6 +376,10 @@ async function loadAndRenderFicha(force = false) {
   const me = cur;
   const { record } = me;
   $('ppFichaStatus').innerHTML = `<span class="muted">Cargando ficha clínica…</span>`;
+  // Show the shape of what is coming instead of an empty pane
+  for (const id of ['ppPaneDx', 'ppPaneAt', 'ppPaneIc', 'ppPaneRx']) {
+    if (!$(id).innerHTML.trim()) $(id).innerHTML = skeletonCards(3);
+  }
   let token = null;
   try { token = await getToken(); } catch { /* no extension context */ }
   if (!token) { $('ppFichaStatus').innerHTML = `<span class="al al-warn">Sin sesión en Eloisa — solo agenda</span>`; return; }
