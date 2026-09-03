@@ -142,11 +142,18 @@ export function buildFixture(today = new Date()) {
   }
 
   const now = Date.now();
+  const syncOk = source => ({
+    source, status: 'ok', attemptedAt: now - 15 * 60_000, completedAt: now - 15 * 60_000,
+    lastSuccessAt: now - 15 * 60_000, failedItems: [], networkCount: 1, cacheCount: 0, hasData: true,
+  });
   return {
     [CONFIG.cacheKey]:     { fetchedDates: dates, records: citas.map(parseCita).filter(Boolean), extra: {}, savedAt: now },
     [CONFIG.historialKey]: { fetchedDates: dates, records: atenciones, extra: { team }, savedAt: now },
     [CONFIG.sicKey]:       { records: sics, savedAt: now, months: MONTHS },
     [CONFIG.prefsKey]:     { months: MONTHS, historial: true },
     [CONFIG.notesKey]:     { [`run_${PATIENTS[0].rut}`]: 'Pendiente resultado de eco abdominal.', [`run_${PATIENTS[4].rut}`]: 'Vive sola; coordinar con hija.' },
+    [CONFIG.syncKeys.agenda]:    syncOk('agenda'),
+    [CONFIG.syncKeys.historial]: syncOk('historial'),
+    [CONFIG.syncKeys.sics]:      syncOk('sics'),
   };
 }

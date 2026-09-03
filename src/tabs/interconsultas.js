@@ -11,6 +11,8 @@ import { state, setData, on } from '../state.js';
 import { initChips, initFilterFold, markSorted, remeasure } from '../ui.js';
 import { openPatientByRun } from '../actions.js';
 import { showExpired } from '../loader.js';
+import { beginSyncSource, finishSyncSource, loadSyncHealth, pendingSyncItems } from '../sync-health.js';
+import { renderSyncStatus } from '../sync-status.js';
 
 /** Interconsultas: loading (cache-first, 30 min TTL), filters, sort, detail rows. */
 
@@ -40,29 +42,65 @@ export function applyFilter(campo, valor) {
 export async function ensureSICs(force = false) {
   if (loading) return;
   if (!force && state.sics.length && loadedFor >= state.loadedMonths) return;
-  let token = null;
-  try { token = await getToken(); } catch { /* no extension context */ }
-  if (!token) { $('sicStatus').textContent = 'Sin sesión activa en Eloisa.'; return; }
-
   loading = true;
   $('btnSicRefresh').disabled = true;
+  let token = null;
+  try { token = await getToken(); } catch { /* no extension context */ }
+  if (!token) {
+    const attemptedAt = Date.now();
+    await beginSyncSource('sics', attemptedAt);
+    await finishSyncSource('sics', {
+      attemptedAt, failedItems: ['sesión pendiente'], hasData: state.sics.length > 0, error: true,
+    });
+    await renderSyncStatus().catch(() => {});
+    $('sicStatus').textContent = 'Sin sesión activa en Eloisa.';
+    loading = false;
+    $('btnSicRefresh').disabled = false;
+    return;
+  }
+
+  const attemptedAt = Date.now();
+  const operationId = `${attemptedAt}-${Math.random().toString(36).slice(2)}`;
+  const health = await loadSyncHealth();
+  const effectiveForce = force || pendingSyncItems(health, 'sics').size > 0;
+  await beginSyncSource('sics', attemptedAt, ['llamadas pendientes'], operationId);
+  await renderSyncStatus().catch(() => {});
   $('sicStatus').textContent = 'Cargando interconsultas…';
   try {
-    const res = await loadSICs(token, state.loadedMonths, pct => { $('sicStatus').textContent = `Cargando interconsultas… ${pct}%`; }, { force });
+    const res = await loadSICs(token, state.loadedMonths, pct => { $('sicStatus').textContent = `Cargando interconsultas… ${pct}%`; }, { force: effectiveForce });
     loadedFor = state.loadedMonths;
     // Change memory: what moved in the watched streams since the last load
     let novedades = null;
     try { novedades = await diffWatched(res.sics, state.prefs.watchEsp); } catch { novedades = null; }
     // The agenda's IC column, the charts, Hoy and Pacientes all depend on the SICs
     setData({ sics: res.sics, novedades });
+    await finishSyncSource('sics', {
+      attemptedAt,
+      failedItems: res.failed ? ['llamadas pendientes'] : [],
+      networkCount: res.fromCache ? 0 : 1,
+      cacheCount: res.fromCache ? 1 : 0,
+      hasData: res.failed === 0 || res.sics.length > 0 || res.staleFallback,
+      cancelled: res.cancelled,
+      error: res.failed > 0,
+      operationId,
+    });
     const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
-    $('sicStatus').textContent = `${res.sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
+    const source = res.staleFallback ? 'caché anterior conservado' : (res.fromCache ? 'caché' : 'red');
+    $('sicStatus').textContent = `${res.sics.length} SIC · ${source} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
     $('btnSicExport').style.display = '';
     $('btnSicExportXls').style.display = '';
   } catch (err) {
+    await finishSyncSource('sics', {
+      attemptedAt,
+      failedItems: [err instanceof AuthError ? 'sesión pendiente' : 'reintento de red'],
+      hasData: state.sics.length > 0,
+      error: true,
+      operationId,
+    });
     $('sicStatus').textContent = err instanceof AuthError ? 'Sesión de Eloisa vencida.' : `Error: ${err.message}`;
     if (err instanceof AuthError) showExpired();
   } finally {
+    await renderSyncStatus().catch(() => {});
     loading = false;
     $('btnSicRefresh').disabled = false;
   }
@@ -84,6 +122,7 @@ export function init() {
   });
   $('btnSicClear').addEventListener('click', () => { clearFilters(); render(); });
   $('btnSicRefresh').addEventListener('click', () => ensureSICs(true));
+  document.addEventListener('rayen:retry-sics', () => ensureSICs(true));
   $('btnSicExport').addEventListener('click',    () => { const r = sortSICs(filterSICs(state.sics)); exportSICsCSV(r); toast(`CSV: ${r.length} interconsultas`); });
   $('btnSicExportXls').addEventListener('click', () => { const r = sortSICs(filterSICs(state.sics)); exportSICsXLS(r); toast(`Excel: ${r.length} interconsultas`); });
 

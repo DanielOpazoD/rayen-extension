@@ -4,6 +4,7 @@ import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from
 import { parseCita, dateRange, localDateStr, matchKey } from './parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 import { loadHistorial, mergeHistorial } from './historial.js';
+import { beginSyncSource, finishSyncSource, loadSyncHealth, pendingSyncItems } from './sync-health.js';
 
 /** Raw citas from the last network fetches (for the API explorer's field discovery). */
 const rawSamples = [];
@@ -47,14 +48,16 @@ async function fetchDay(token, dateStr) {
  *
  * @param {number} months
  * @param {(pct:number, phase:string) => void} onProgress
- * @param {{ historial?: boolean }} opts
+ * @param {{ historial?: boolean, retryOnly?: boolean, operationId?: string|null }} opts
  * @returns {Promise<null | {
  *   records: object[], fromCache: number, fromNetwork: number,
  *   failedDays: number, historialFailed: number, team: Record<string, object>,
  *   sessionExpired: boolean
  * }>} null = no active session token
  */
-export async function loadData(months, onProgress = () => {}, { historial = true } = {}) {
+export async function loadData(months, onProgress = () => {}, {
+  historial = true, retryOnly = false, operationId = null,
+} = {}) {
   const token = await getToken();
   if (!token) return null;
   resetSession();
@@ -68,10 +71,12 @@ export async function loadData(months, onProgress = () => {}, { historial = true
   const wanted   = new Set(allDates);
   const todayStr = localDateStr(today);
   const store    = await loadStore(CONFIG.cacheKey);
+  const previousSync = await loadSyncHealth();
 
   const min = new Date(today);
   min.setMonth(min.getMonth() - CONFIG.retentionMonths);
-  pruneStore(store, localDateStr(min));
+  const minDate8 = localDateStr(min);
+  pruneStore(store, minDate8);
 
   // Today always changes. Historical dates must also be refreshed while they
   // contain an appointment that Eloisa can still close or otherwise update.
@@ -84,18 +89,29 @@ export async function loadData(months, onProgress = () => {}, { historial = true
   // can turn the appointment terminal. This survives cancellation, expiry and
   // runs made with the Ficha clínica option temporarily disabled.
   const historicalRefreshDates = [...refreshDates].filter(d => d !== todayStr);
-  if (historicalRefreshDates.length) {
+  const coupledHistoryDates = retryOnly
+    ? historicalRefreshDates.filter(date => pendingSyncItems(previousSync, 'agenda').has(date))
+    : historicalRefreshDates;
+  if (coupledHistoryDates.length) {
     const historyStore = await loadStore(CONFIG.historialKey);
     let changed = false;
-    for (const date of historicalRefreshDates) {
+    for (const date of coupledHistoryDates) {
       changed = historyStore.fetchedDates.delete(date) || changed;
     }
     if (changed) await saveStore(historyStore);
   }
-  const toFetch = allDates.filter(d => !store.fetchedDates.has(d) || refreshDates.has(d));
+  const retryAgendaDates = retryOnly ? pendingSyncItems(previousSync, 'agenda') : null;
+  const toFetch = retryOnly
+    ? [...retryAgendaDates].filter(d => /^\d{8}$/.test(d) && d >= minDate8 && d <= todayStr)
+    : allDates.filter(d => !store.fetchedDates.has(d) || refreshDates.has(d));
   const citasShare = historial ? 50 : 100;
 
-  let done = 0, failedDays = 0;
+  const agendaAttemptedAt = Date.now();
+  const trackAgenda = !retryOnly || retryAgendaDates.size > 0;
+  if (trackAgenda) await beginSyncSource('agenda', agendaAttemptedAt, toFetch, operationId);
+  let done = 0, failedDays = 0, agendaSucceeded = 0;
+  const agendaFailedDates = [];
+  const agendaSucceededDates = [];
   onProgress(toFetch.length ? 0 : citasShare, 'citas');
 
   for (const batch of chunk(toFetch, CONFIG.batchSize)) {
@@ -103,8 +119,10 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     const okDates = [], newRecords = [];
 
     responses.forEach((day, i) => {
-      if (day === null) { failedDays++; return; }
+      if (day === null) { failedDays++; agendaFailedDates.push(batch[i]); return; }
       okDates.push(batch[i]);
+      agendaSucceeded++;
+      agendaSucceededDates.push(batch[i]);
       dropDay(store, batch[i]);
       for (const c of day) {
         if (rawSamples.length < 30) rawSamples.push(c);
@@ -121,24 +139,105 @@ export async function loadData(months, onProgress = () => {}, { historial = true
 
   let records  = [...store.records.values()].filter(r => wanted.has(r.fecha8));
   let team = {}, historialFailed = 0;
+  const agendaPendingDates = [...new Set([...agendaFailedDates, ...toFetch.slice(done)])];
+  for (const date of pendingSyncItems(previousSync, 'agenda')) {
+    if (!toFetch.includes(date) && /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr) agendaPendingDates.push(date);
+  }
+  if (trackAgenda) {
+    await finishSyncSource('agenda', {
+      attemptedAt: agendaAttemptedAt,
+      failedItems: agendaPendingDates,
+      networkCount: agendaSucceeded,
+      cacheCount: allDates.length - toFetch.length,
+      hasData: records.length > 0,
+      cancelled: run.cancelled,
+      error: session.expired || agendaPendingDates.length > 0,
+      operationId,
+    });
+  }
 
   if (historial && !session.expired && !run.cancelled) {
-    const citaKeys = new Set(records.map(matchKey));
+    const retryHistoryDates = retryOnly
+      ? new Set([...pendingSyncItems(previousSync, 'historial'), ...coupledHistoryDates, ...agendaSucceededDates])
+      : null;
+    const priorHistoryDates = [...pendingSyncItems(previousSync, 'historial')].filter(date =>
+      /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr);
+    const historyRefreshDates = retryOnly ? refreshDates : new Set([...refreshDates, ...priorHistoryDates]);
+    const historialAttemptedAt = Date.now();
+    const trackHistorial = !retryOnly || retryHistoryDates.size > 0;
+    if (trackHistorial) await beginSyncSource('historial', historialAttemptedAt, retryHistoryDates ?? allDates, operationId);
+    const matchingRecords = retryOnly
+      ? [...store.records.values()].filter(record => wanted.has(record.fecha8) || retryHistoryDates.has(record.fecha8))
+      : records;
+    const citaKeys = new Set(matchingRecords.map(matchKey));
     const res = await loadHistorial(token, allDates, citaKeys,
-      pct => onProgress(50 + Math.round(pct / 2), 'ficha'), { refreshDates });
+      pct => onProgress(50 + Math.round(pct / 2), 'ficha'), {
+        refreshDates: historyRefreshDates,
+        onlyDates: retryHistoryDates,
+      });
     records = mergeHistorial(records, res.atenciones);
     team = res.team;
     historialFailed = res.failed;
+    if (trackHistorial) {
+      await finishSyncSource('historial', {
+        attemptedAt: historialAttemptedAt,
+        failedItems: [...new Set([
+          ...res.pendingDates,
+          ...[...pendingSyncItems(previousSync, 'historial')].filter(date =>
+            !retryOnly && !allDates.includes(date) && /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr),
+        ])],
+        networkCount: Math.max(0, res.attemptedCount - res.failedDates.length),
+        cacheCount: allDates.length - res.attemptedCount,
+        hasData: res.atenciones.length > 0 || Object.keys(res.team).length > 0,
+        cancelled: run.cancelled,
+        error: session.expired || res.pendingDates.length > 0,
+        operationId,
+      });
+    }
+  } else if (historial && (session.expired || run.cancelled)) {
+    const historyStore = await loadStore(CONFIG.historialKey);
+    const previousPending = pendingSyncItems(previousSync, 'historial');
+    const pendingDates = new Set([
+      ...previousPending,
+      ...allDates.filter(d => !historyStore.fetchedDates.has(d) || d === todayStr || refreshDates.has(d)),
+    ]);
+    await finishSyncSource('historial', {
+      attemptedAt: agendaAttemptedAt,
+      failedItems: [...pendingDates].filter(d => /^\d{8}$/.test(d) && d >= minDate8 && d <= todayStr),
+      cacheCount: historyStore.fetchedDates.size,
+      hasData: historyStore.records.size > 0 || Object.keys(historyStore.extra.team ?? {}).length > 0,
+      cancelled: run.cancelled,
+      error: true,
+      operationId,
+    });
+  } else if (!historial && retryOnly && (coupledHistoryDates.length || agendaSucceededDates.length)) {
+    const historyStore = await loadStore(CONFIG.historialKey);
+    await finishSyncSource('historial', {
+      attemptedAt: agendaAttemptedAt,
+      failedItems: [...new Set([...pendingSyncItems(previousSync, 'historial'), ...coupledHistoryDates, ...agendaSucceededDates])],
+      cacheCount: historyStore.fetchedDates.size,
+      hasData: historyStore.records.size > 0 || Object.keys(historyStore.extra.team ?? {}).length > 0,
+      error: true,
+      operationId,
+    });
+  } else if (!historial && !retryOnly) {
+    await finishSyncSource('historial', {
+      disabled: true,
+      failedItems: [...pendingSyncItems(previousSync, 'historial')].filter(date =>
+        /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr),
+      operationId,
+    });
   }
 
   return {
     records,
-    fromCache:   allDates.length - toFetch.length,
+    fromCache:   Math.max(0, allDates.length - toFetch.length),
     fromNetwork: toFetch.length,
     failedDays,
     historialFailed,
     team,
     sessionExpired: session.expired,
     cancelled: run.cancelled,
+    sync: await loadSyncHealth(),
   };
 }

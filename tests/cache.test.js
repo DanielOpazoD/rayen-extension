@@ -56,8 +56,8 @@ test('dropDay removes one day so it can be re-inserted', async () => {
   assert.deepEqual([...s.records.keys()], [2]);
 });
 
-test('clearAllCaches keeps notes and prefs; clearEverything keeps nothing', async () => {
-  for (const k of [CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, CONFIG.notesKey, CONFIG.prefsKey]) await storageSet(k, { k });
+test('clearAllCaches keeps notes and prefs but removes data and synchronization metadata', async () => {
+  for (const k of [CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys), CONFIG.notesKey, CONFIG.prefsKey]) await storageSet(k, { k });
   await clearAllCaches();
   assert.deepEqual([...fake.local.keys()].sort(), [CONFIG.notesKey, CONFIG.prefsKey].sort());
   await clearEverything();

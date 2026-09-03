@@ -85,7 +85,7 @@ export function dropDay(store, date8) {
 
 /** Clears all data caches (citas, ficha clínica, SIC). Notes and prefs are kept. */
 export async function clearAllCaches() {
-  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey]);
+  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys)]);
 }
 
 /** Wipes everything the extension stored: caches, notes, prefs, pending report and the session token. */

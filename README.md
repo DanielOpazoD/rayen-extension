@@ -45,6 +45,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
 - **Cancelar** detiene una carga larga sin perder lo ya descargado (cancelación cooperativa: termina el lote en vuelo y no encola más).
 - **Actualizar estados históricos**: los días que todavía contienen citas iniciadas, confirmadas, agendadas o en espera se vuelven a consultar. Si una atención se completa posteriormente en Eloisa, la extensión actualiza tanto su estado como su ficha clínica sin borrar todo el caché.
+- **Sincronización verificable**: una franja bajo el estado general separa Agenda, Ficha clínica e Interconsultas. Indica último intento, último éxito completo y fechas pendientes; «Reintentar pendientes» vuelve a pedir solo esas fechas y nunca presenta una carga parcial como completa.
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
 - Los estados vacíos traen el botón para cargar, en vez de solo decirlo.
 

@@ -1,7 +1,16 @@
-import { test } from 'node:test';
+import { beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSIC, isMine, contactsFromSICs } from '../src/sic.js';
-import { sicGrupo } from '../src/config.js';
+import { parseSIC, isMine, contactsFromSICs, loadSICs } from '../src/sic.js';
+import { CONFIG, sicGrupo } from '../src/config.js';
+import { installFakeChrome } from './helpers/fake-chrome.js';
+import { resetRun, resetSession } from '../src/http.js';
+
+let fake;
+beforeEach(() => {
+  fake = installFakeChrome();
+  resetRun();
+  resetSession();
+});
 
 /** Shape of one SolicitudInterconsultaDerivacionPorIds item (synthetic values). */
 const RAW = {
@@ -80,4 +89,27 @@ test('contactsFromSICs builds a RUN → contact map without overwriting with bla
   const m = contactsFromSICs([b, a]);
   assert.equal(m.get('270493793').telefono, '81869731');
   assert.equal(m.get('270493793').direccion, 'Calle IPC 1');
+});
+
+test('loadSICs counts every failed listing and preserves the previous complete snapshot', async () => {
+  const cached = { records: [{ id: 99, paciente: { run: '' } }], savedAt: 123, months: 6 };
+  fake.local.set(CONFIG.sicKey, cached);
+  globalThis.fetch = async () => new Response('falló', { status: 500 });
+
+  const result = await loadSICs('token', 6, () => {}, { force: true });
+
+  assert.equal(result.failed, 3);
+  assert.equal(result.staleFallback, true);
+  assert.equal(result.fromCache, true);
+  assert.deepEqual(result.sics, cached.records);
+  assert.deepEqual(fake.local.get(CONFIG.sicKey), cached, 'a partial response never replaces the complete cache');
+});
+
+test('loadSICs reports no usable records when every listing fails without a cache', async () => {
+  globalThis.fetch = async () => new Response('falló', { status: 500 });
+  const result = await loadSICs('token', 6, () => {}, { force: true });
+  assert.equal(result.failed, 3);
+  assert.equal(result.staleFallback, undefined);
+  assert.deepEqual(result.sics, []);
+  assert.equal(fake.local.has(CONFIG.sicKey), false);
 });
