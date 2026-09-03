@@ -133,7 +133,7 @@ export function resumirPendientes(pendientes) {
   return [...by.values()];
 }
 
-export const TIPO_LABEL = {
+const TIPO_LABEL = {
   'cr-faltante':     'Sin contrarreferencia',
   'sic-nueva':       'Interconsultas sin cursar',
   'cita-pasada':     'Citas pasadas sin resolver',

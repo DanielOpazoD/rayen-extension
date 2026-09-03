@@ -5,7 +5,7 @@ import { localDateStr } from '../parser.js';
 import { state, on, pendientes } from '../state.js';
 import { jumpToSIC, openPatientById, openPatientByRun } from '../actions.js';
 
-/** The morning brief: novedades, pendientes and the day's agenda. */
+/** The morning brief: novedades and the day's agenda. */
 
 let todayDate = '';   // '' = hoy (con fallback a la última jornada)
 
@@ -25,7 +25,7 @@ function updateBadge() {
 /** Cheap: pure functions over data already in memory. */
 export function refresh() {
   const { allData, sics, novedades, prefs } = state;
-  const shown = renderToday(allData, sics, { pendientes: pendientes(), novedades, especialidades: prefs.watchEsp, dia8: todayDate || undefined });
+  const shown = renderToday(allData, sics, { novedades, especialidades: prefs.watchEsp, dia8: todayDate || undefined });
   $('dayNav').style.display = allData.length ? '' : 'none';
   if (shown) $('dayPick').value = date8ToIso(shown);
   $('dayHint').textContent = todayDate ? '' : 'Hoy (o la última jornada con datos)';
