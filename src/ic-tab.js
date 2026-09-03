@@ -25,7 +25,6 @@ export function setSICSort(key) {
   sortKey = key;
   return { key: sortKey, dir: sortDir };
 }
-export function getSICSort() { return { key: sortKey, dir: sortDir }; }
 
 export function sortSICs(list) {
   const get = SORT_VALUE[sortKey];

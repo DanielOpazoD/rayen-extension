@@ -60,7 +60,7 @@ export function buildFilters(allData) {
 }
 
 /** Reads the filter controls into a plain object (see applyFilters). */
-export function readFilters() {
+function readFilters() {
   return {
     q:      $('search').value.trim().toLowerCase(),
     fecha:  $('filtFecha').value,

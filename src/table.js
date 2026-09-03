@@ -8,7 +8,7 @@ export const COLUMNS = [
   ['razon', 'Razón'], ['tipoAtencion', 'Tipo de atención'], ['diagnostico', 'Diagnóstico'],
   ['estado', 'Estado'], ['ic', 'Interconsulta'], ['nota', 'Notas'],
 ];
-export const COLUMN_COUNT = COLUMNS.length;
+const COLUMN_COUNT = COLUMNS.length;
 export const ALWAYS_VISIBLE = new Set(['fechaAtencion', 'nombre']);
 
 const DOW_LONG = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];

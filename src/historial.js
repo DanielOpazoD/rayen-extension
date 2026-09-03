@@ -71,9 +71,11 @@ function isOfficer(a) {
  * (matchKey of the citas already loaded). Everything else is reduced to a
  * per-day team aggregate.
  *
+ * @param {{ refreshDates?: Set<string> }} opts dates whose appointment state was
+ *   still mutable; their clinical detail must be refreshed along with the agenda
  * @returns {Promise<{ atenciones: object[], team: Record<string, object>, failed: number }>}
  */
-export async function loadHistorial(token, dates8, citaKeys, onProgress = () => {}) {
+export async function loadHistorial(token, dates8, citaKeys, onProgress = () => {}, { refreshDates = new Set() } = {}) {
   const store = await loadStore(CONFIG.historialKey);
   store.extra.team ??= {};
 
@@ -82,7 +84,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   pruneStore(store, localDateStr(min));
 
   const todayStr = localDateStr(new Date());
-  const toFetch  = dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr);
+  const toFetch  = dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr || refreshDates.has(d));
   let done = 0, failed = 0;
   onProgress(toFetch.length ? 0 : 100);
 
@@ -90,10 +92,20 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
     const responses = await Promise.all(batch.map(d => fetchHistorialDay(token, d)));
     const okDates = [];
     const keep    = [];
+    let retryMarkerChanged = false;
 
     responses.forEach((raw, i) => {
       const d8 = batch[i];
-      if (raw === null) { failed++; return; }
+      if (raw === null) {
+        failed++;
+        // If the agenda just moved from a mutable to a terminal state, this is
+        // our last automatic forced refresh. Leave the history date incomplete
+        // so the next load retries it even though the agenda is now closed.
+        if (refreshDates.has(d8)) {
+          retryMarkerChanged = store.fetchedDates.delete(d8) || retryMarkerChanged;
+        }
+        return;
+      }
       okDates.push(d8);
       dropDay(store, d8);
       const parsed = raw.map(parseAtencion).filter(a => a.fecha8 === d8 || !a.fecha8);
@@ -101,7 +113,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
       keep.push(...parsed.filter(a => isOfficer(a) || citaKeys.has(matchKey(a))));
     });
 
-    if (okDates.length) await saveStore(store, okDates, keep);
+    if (okDates.length || retryMarkerChanged) await saveStore(store, okDates, keep);
     done += batch.length;
     onProgress(Math.round((done / toFetch.length) * 100));
     if (session.expired || run.cancelled) break;

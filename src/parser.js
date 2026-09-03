@@ -36,7 +36,7 @@ export function dateRange(from, to) {
 }
 
 /** Calculates age in years from a Rayen DOB string */
-export function calcAge(dob = '') {
+function calcAge(dob = '') {
   const d = String(dob).replace(/\s.*/, '');
   if (d.length < 8 || d === '00010101') return null;
   const bd = new Date(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8));

@@ -32,7 +32,7 @@ function fingerprint(s) {
   };
 }
 
-export function isWatched(s, especialidades) {
+function isWatched(s, especialidades) {
   return especialidades.includes(s.especialidad);
 }
 
@@ -104,9 +104,4 @@ export async function diffWatched(sics, especialidades, { commit = true } = {}) 
   const { cambios, firstRun, next, vigiladas } = computeCambios(sics, especialidades, snapshot);
   if (commit) await storageSet(KEY, { snapshot: next, savedAt: Date.now(), seenAt: savedAt });
   return { cambios, firstRun, desde: savedAt, vigiladas };
-}
-
-/** Forgets the snapshot, so the next load starts the ledger over. */
-export async function resetWatch() {
-  await storageSet(KEY, { snapshot: {}, savedAt: 0, seenAt: 0 });
 }

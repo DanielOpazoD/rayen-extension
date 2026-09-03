@@ -44,6 +44,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **‹ ›** en el panel recorre los pacientes en el orden en que los muestra la tabla; también con ←/→.
 - **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
 - **Cancelar** detiene una carga larga sin perder lo ya descargado (cancelación cooperativa: termina el lote en vuelo y no encola más).
+- **Actualizar estados históricos**: los días que todavía contienen citas iniciadas, confirmadas, agendadas o en espera se vuelven a consultar. Si una atención se completa posteriormente en Eloisa, la extensión actualiza tanto su estado como su ficha clínica sin borrar todo el caché.
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
 - Los estados vacíos traen el botón para cargar, en vez de solo decirlo.
 
@@ -114,7 +115,7 @@ src/
   http.js     apiGet/apiPost/apiBlob con guardia de origen
   auth.js     token desde la pestaña de Eloisa
   parser.js   fechas, RUN (DV módulo 11), EdadExacta, parseCita, parseAtencion
-  api.js      agenda por día, caché incremental, orquesta historial
+  api.js      agenda por día, caché incremental y refresco de estados mutables
   historial.js HistorialAtencion por día + cruce con la agenda (RUN + día)
   ficha.js    ficha por paciente (10 años, todas las secciones) + antecedentes + programas
   sic.js      interconsultas: ids, detalle, contrarreferencias
@@ -126,8 +127,11 @@ src/
   period.js   períodos rápidos y rangos (puro, testeado)
   palette.js  buscador de pacientes ⌘K (ranking puro, testeado)
   toast.js    confirmaciones efímeras y copia al portapapeles
-  cache.js    chrome.storage con runtime.lastError, stores por fecha, prefs
-  table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  UI
+  cache.js    chrome.storage con runtime.lastError, stores por fecha y preferencias
+  state.js / actions.js  estado único y acciones compartidas
+  loader.js / ajustes.js / ui.js  carga, preferencias y patrones de interfaz
+  tabs/       controladores de Hoy, Atenciones, Pacientes, Estadísticas, SIC y Explorador
+  table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  presentación
   export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF
   notes.js / pdf.js / dom.js / explorer.js
 tests/        parser, sic, historial, ficha, table, stats, export, pendientes, period, patient-report, ui-contract
@@ -158,7 +162,7 @@ Criterios visuales: la jerarquía la llevan el tamaño y el peso, no el color. L
 - **Modo oscuro**: sigue al sistema (`prefers-color-scheme`); no hay toggle propio.
 - **`prefers-reduced-motion`**: desactiva transiciones.
 - Los offsets de los elementos fijos se calculan (`--w-fecha`, `--pp-head` medido con `ResizeObserver`), no están cableados en píxeles.
-- Íconos en `icons/` (PNG 16/32/48/128), generados con `python3` sin dependencias; `npm run pack` produce el .zip instalable (33 archivos, sin tests ni node_modules).
+- Íconos en `icons/` (PNG 16/32/48/128), generados con `python3` sin dependencias; `npm run pack` valida el proyecto y produce el `.zip` instalable sin tests ni `node_modules`.
 
 ## Datos de Rayen que conviene saber
 

@@ -10,6 +10,15 @@ const rawSamples = [];
 export function getRawSamples() { return rawSamples; }
 
 /**
+ * A historical appointment is not immutable while Eloisa still shows it in an
+ * open workflow state. Re-fetching these dates keeps later closures visible
+ * without downloading the entire configured period on every refresh.
+ */
+export function isMutableAppointmentStatus(status = '') {
+  return /(iniciad|agendad|confirmad|citad|espera|pendiente|en curso)/i.test(String(status));
+}
+
+/**
  * Fetches all appointments for a single YYYYMMDD date.
  * @returns {Promise<object[]|null>} null on failure — never an empty array,
  *   so a failed day is not mistaken for a day without appointments.
@@ -56,6 +65,7 @@ export async function loadData(months, onProgress = () => {}, { historial = true
   from.setMonth(from.getMonth() - months);
 
   const allDates = dateRange(from, today);
+  const wanted   = new Set(allDates);
   const todayStr = localDateStr(today);
   const store    = await loadStore(CONFIG.cacheKey);
 
@@ -63,8 +73,26 @@ export async function loadData(months, onProgress = () => {}, { historial = true
   min.setMonth(min.getMonth() - CONFIG.retentionMonths);
   pruneStore(store, localDateStr(min));
 
-  // Always re-fetch today — it changes during the day
-  const toFetch = allDates.filter(d => !store.fetchedDates.has(d) || d === todayStr);
+  // Today always changes. Historical dates must also be refreshed while they
+  // contain an appointment that Eloisa can still close or otherwise update.
+  const refreshDates = new Set([todayStr]);
+  for (const record of store.records.values()) {
+    if (wanted.has(record.fecha8) && isMutableAppointmentStatus(record.estado)) refreshDates.add(record.fecha8);
+  }
+
+  // Persist the need for a matching history refresh before the agenda request
+  // can turn the appointment terminal. This survives cancellation, expiry and
+  // runs made with the Ficha clínica option temporarily disabled.
+  const historicalRefreshDates = [...refreshDates].filter(d => d !== todayStr);
+  if (historicalRefreshDates.length) {
+    const historyStore = await loadStore(CONFIG.historialKey);
+    let changed = false;
+    for (const date of historicalRefreshDates) {
+      changed = historyStore.fetchedDates.delete(date) || changed;
+    }
+    if (changed) await saveStore(historyStore);
+  }
+  const toFetch = allDates.filter(d => !store.fetchedDates.has(d) || refreshDates.has(d));
   const citasShare = historial ? 50 : 100;
 
   let done = 0, failedDays = 0;
@@ -91,14 +119,13 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     if (session.expired || run.cancelled) break;
   }
 
-  const wanted = new Set(allDates);
   let records  = [...store.records.values()].filter(r => wanted.has(r.fecha8));
   let team = {}, historialFailed = 0;
 
   if (historial && !session.expired && !run.cancelled) {
     const citaKeys = new Set(records.map(matchKey));
     const res = await loadHistorial(token, allDates, citaKeys,
-      pct => onProgress(50 + Math.round(pct / 2), 'ficha'));
+      pct => onProgress(50 + Math.round(pct / 2), 'ficha'), { refreshDates });
     records = mergeHistorial(records, res.atenciones);
     team = res.team;
     historialFailed = res.failed;

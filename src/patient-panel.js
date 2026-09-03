@@ -1,4 +1,4 @@
-import { saveNote, patientKey } from './notes.js';
+import { patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
 import { esc, stateDot, sicTone, $, initTablist, activateOnKey, skeletonCards } from './dom.js';
 import { certificadoPath, sicPdfPath, recetaPdfPath, openPDF } from './pdf.js';
@@ -8,7 +8,7 @@ import { CONFIG } from './config.js';
 import { whenLabel } from './table.js';
 import { buildPatientReport, SCOPE_LABEL } from './patient-report.js';
 import { openReport } from './export.js';
-import { toast, copyToClipboard } from './toast.js';
+import { copyToClipboard } from './toast.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
@@ -31,30 +31,20 @@ const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
 
 /**
  * Call once at app startup to wire up static panel controls.
- * @param {{ onNoteSaved?: (record: object, text: string) => void }} hooks
- *   onNoteSaved lets the host refresh the table/brief: the same patient can
- *   appear in many rows and they must all show the new note.
+ * @param {{ saveNote: (record: object, text: string) => Promise<boolean>, onNavigate?: (dir: number, record: object) => void }} hooks
+ *   saveNote is the host's single note-writing path (it updates every row,
+ *   shows the toast and offers undo); the panel never writes on its own.
  */
-export function initPanel({ onNoteSaved, onNavigate } = {}) {
+export function initPanel({ saveNote, onNavigate } = {}) {
   navigate = onNavigate;
   $('ppClose').addEventListener('click', close);
   $('panelBackdrop').addEventListener('click', close);
 
   $('ppSaveNote').addEventListener('click', async () => {
     if (!cur) return;
-    const text = $('ppNoteText').value;
-    const btn  = $('ppSaveNote');
-    const before = cur.record.note ?? '';
-    try {
-      await saveNote(cur.record, text);
-      cur.record.note = text.trim();
-      for (const v of cur.visits) v.note = text.trim();
-      onNoteSaved?.(cur.record, text.trim(), before);
-      btn.textContent = '✓ Guardado';
-      if (text.trim() && text.trim() !== before) toast('Nota guardada');
-    } catch (err) {
-      btn.textContent = `✗ ${err.message}`;
-    }
+    const btn = $('ppSaveNote');
+    const saved = await saveNote(cur.record, $('ppNoteText').value);
+    btn.textContent = saved ? '✓ Guardado' : '✗ No guardado';
     setTimeout(() => { btn.textContent = 'Guardar nota'; }, 1800);
   });
 
@@ -101,14 +91,14 @@ export function initPanel({ onNoteSaved, onNavigate } = {}) {
 
   activateOnKey($('patientPanel')); // Enter/Space on visit headers
 
-  $('ppPrev').addEventListener('click', () => navigate?.(-1));
-  $('ppNext').addEventListener('click', () => navigate?.(1));
+  $('ppPrev').addEventListener('click', () => navigate?.(-1, cur?.record));
+  $('ppNext').addEventListener('click', () => navigate?.(1, cur?.record));
   // ←/→ walk the patient list while the panel is open, unless you are typing
   document.addEventListener('keydown', e => {
     if (!cur || $('patientPanel').classList.contains('open') === false) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate?.(-1); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); navigate?.(1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate?.(-1, cur?.record); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navigate?.(1, cur?.record); }
   });
 
   // The RUN is the thing most often retyped elsewhere: one click copies it
@@ -406,6 +396,11 @@ async function loadAndRenderFicha(force = false) {
  * @param {{ allData, sics, contacts, pos?: {i: number, n: number} }} ctx
  *   pos drives the ‹ › controls: where this patient sits in the current list.
  */
+/** Keeps the open panel's textarea in step when a note changes elsewhere (undo, inline edit). */
+export function syncNote(record) {
+  if (cur && patientKey(cur.record) === patientKey(record)) $('ppNoteText').value = record.note ?? '';
+}
+
 export function openPanel(record, { allData, sics = [], contacts = new Map(), pos = null }) {
   const key = patientKey(record);
   cur = {
