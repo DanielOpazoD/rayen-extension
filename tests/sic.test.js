@@ -38,11 +38,8 @@ const RAW = {
   },
 };
 
-const CONTRA = [{ IdSolicitud: 21450486, FechaRegistro: '20260828 000000', Especialidad: 'Traumatología y Ortopedia',
-  NombreProfesional: 'Ana', ApellidoPaternoProfesional: 'Prueba', ApellidoMaternoProfesional: 'Registradora', EstablecimientoContrarrefiere: 'Hospital Hanga Roa' }];
-
 test('parseSIC compacts the request and pulls CIE-10 from ArrDiagnosticos', () => {
-  const s = parseSIC(RAW, CONTRA);
+  const s = parseSIC(RAW);
   assert.equal(s.id, 21450486);
   assert.equal(s.fecha8, '20260902');
   assert.equal(s.estadoId, 13);
@@ -57,9 +54,7 @@ test('parseSIC compacts the request and pulls CIE-10 from ArrDiagnosticos', () =
   assert.equal(s.paciente.direccion, 'Calle IPC 1');
   assert.equal(s.registrador.id, 439717);
   assert.equal(s.ejecutor.nombre, 'Daniel Prueba Ejecutor');
-  assert.equal(s.contrarreferencias.length, 1);
-  assert.equal(s.contrarreferencias[0].fecha, '28-08-2026');
-  assert.equal(s.contrarreferencias[0].profesional, 'Ana Prueba Registradora');
+  assert.equal('contrarreferencias' in s, false, 'administrative metadata is not exposed as a clinical field');
 });
 
 test('parseSIC: EsAuge is a string "Si"/"No" in the API', () => {

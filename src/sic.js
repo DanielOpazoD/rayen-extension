@@ -1,5 +1,5 @@
 import { CONFIG, SIC_ESTADOS, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO, sicGrupo } from './config.js';
-import { apiGet, apiPost, rayenParams, chunk, session, run, AuthError } from './http.js';
+import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
 import { formatRun, fmtDate, localDateStr } from './parser.js';
 import { storageGet, storageSet } from './cache.js';
 
@@ -13,10 +13,9 @@ function nameOf(v) {
 
 /**
  * Compacts one item of SolicitudInterconsultaDerivacionPorIds (~5 KB) into the
- * fields the app shows. `contrarrefs` = matching rows of
- * ObtenerHistorialContrarreferenciasPorSicIds.
+ * fields the app shows.
  */
-export function parseSIC(raw, contrarrefs = []) {
+export function parseSIC(raw) {
   const si  = raw.SolicitudInterconsulta ?? {};
   const u   = raw.UsuarioApsDerivacion ?? {};
   const dx0 = raw.ArrDiagnosticos?.find(d => d.EsPrincipal) ?? raw.ArrDiagnosticos?.[0];
@@ -77,12 +76,6 @@ export function parseSIC(raw, contrarrefs = []) {
       id:     si.IdFuncionarioPrestadorEjecutor ?? 0,
       nombre: ejecutor.NombreFormateado ?? '',
     },
-    contrarreferencias: contrarrefs.map(c => ({
-      fecha:           fmtDate(c.FechaRegistro ?? ''),
-      especialidad:    c.Especialidad ?? '',
-      profesional:     [c.NombreProfesional, c.ApellidoPaternoProfesional, c.ApellidoMaternoProfesional].filter(Boolean).join(' '),
-      establecimiento: c.EstablecimientoContrarrefiere ?? '',
-    })),
   };
 }
 
@@ -117,15 +110,6 @@ async function fetchDetails(token, ids) {
   const path = `${BASE}/SolicitudInterconsultaDerivacionPorIds/Ids=${ids.join('%2C')};TIPOSOLICITUD=1;TraerDocumentos=true`;
   try {
     const data = await apiGet(token, path);
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return null;
-  }
-}
-
-async function fetchContrarrefs(token, ids) {
-  try {
-    const data = await apiPost(token, `${BASE}/ObtenerHistorialContrarreferenciasPorSicIds`, { ids });
     return Array.isArray(data) ? data : [];
   } catch {
     return null;
@@ -171,31 +155,13 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     const res = await Promise.all(batch.map(g => fetchDetails(token, g)));
     res.forEach(r => r === null ? failed++ : details.push(...r));
     done += batch.length;
-    onProgress(5 + Math.round((done / Math.max(groups.length, 1)) * 75));
+    onProgress(5 + Math.round((done / Math.max(groups.length, 1)) * 95));
     if (session.expired) throw new AuthError(401);
     if (run.cancelled) break;
   }
   if (run.cancelled) failed += Math.max(0, groups.length - done);
 
-  // Contrarreferencias, grouped by SIC id
-  const byId = new Map();
-  const detailIds = details.map(d => Number(d.NumeroSolicitud ?? d.Id));
-  let cdone = 0;
-  const cgroups = chunk(detailIds, CONFIG.sicIdsPerCall);
-  for (const batch of chunk(cgroups, CONFIG.sicBatch)) {
-    const res = await Promise.all(batch.map(g => fetchContrarrefs(token, g)));
-    for (const rows of res) {
-      if (rows === null) { failed++; continue; }
-      for (const c of rows) {
-        if (!byId.has(c.IdSolicitud)) byId.set(c.IdSolicitud, []);
-        byId.get(c.IdSolicitud).push(c);
-      }
-    }
-    cdone += batch.length;
-    onProgress(80 + Math.round((cdone / Math.max(cgroups.length, 1)) * 20));
-  }
-
-  const sics = details.map(d => parseSIC(d, byId.get(Number(d.NumeroSolicitud ?? d.Id)) ?? []));
+  const sics = details.map(parseSIC);
   sics.sort((x, y) => (y.fecha8 || '').localeCompare(x.fecha8 || '') || y.id - x.id);
 
   const completedAt = Date.now();

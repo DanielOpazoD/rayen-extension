@@ -127,16 +127,10 @@ export function renderCharts(records, team, container, sics = []) {
   if (sics.length) {
     const byEsp = count(sics, s => s.especialidad);
     const byGrp = count(sics, s => ({ pendiente: 'Pendiente', enviada: 'En curso', atendida: 'Atendida', cerrada: 'Cerrada', fallida: 'Fallida' })[s.grupo] || s.grupo);
-    const at = sics.filter(s => ['atendida', 'cerrada'].includes(s.grupo));
-    const cr = { 'Con contrarreferencia': at.filter(s => s.contrarreferencias.length).length };
-    cr['Sin contrarreferencia'] = at.length - cr['Con contrarreferencia'];
     const byPrio = count(sics, s => `P${s.prioridad}`);
-    const crEsp = {}; const atEsp = count(at, s => s.especialidad);
-    Object.keys(atEsp).forEach(e => { const tot = atEsp[e]; const sin = at.filter(s => s.especialidad === e && !s.contrarreferencias.length).length; if (tot >= 3) crEsp[e] = Math.round(100 * sin / tot); });
     sicHTML =
       `<h3 class="chart-h3">Interconsultas del hospital · ${sics.length}</h3>` +
-      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140, filter: 'sicEsp' }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>` +
-      `<div class="chart-section">${card(hb(cr, 'Atendidas: ¿volvió la contrarreferencia?', 2, { color: BLUE, labelW: 130 }))}${card(hb(crEsp, '% sin contrarreferencia por especialidad (≥3 atendidas)', 12, { color: BLUE, labelW: 140 }))}</div>`;
+      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140, filter: 'sicEsp' }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>`;
   }
 
   // ── Equipo ──

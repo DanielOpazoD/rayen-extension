@@ -31,15 +31,15 @@ test('buildPatientReport falls back to the agenda when the ficha is not loaded a
   assert.ok(css.includes('@page'));
 });
 
-test('buildPatientReport: interconsultas scope renders SIC and marks a missing contrarreferencia', () => {
+test('buildPatientReport: interconsultas scope renders the clinical SIC without administrative metadata', () => {
   const sic = { id: 9, fecha: '10-08-2026', especialidad: 'Reumatología', estado: 'Atendido', grupo: 'atendida', esAuge: true,
     registrador: { nombre: 'Opazo' }, ejecutor: { nombre: 'Mezzano' }, motivo: 'Confirmación', diagnostico: 'AR', cie10: 'M06.9',
-    fundamentos: 'Dolor poliarticular', examenes: '', contrarreferencias: [] };
+    fundamentos: 'Dolor poliarticular', examenes: '' };
   const cur = { record: { nombre: 'P', runStr: '', dob: '', sexo: '', prevision: '' }, visits: [], sics: [sic], ficha: { visits: [yo], master: null, antecedentes: { farmacos: [] } } };
   const { fragment } = buildPatientReport(cur, 'ic');
   assert.match(fragment, /Interconsultas · 1/);
   assert.match(fragment, /M06\.9/);
-  assert.match(fragment, /sin contrarreferencia registrada/);
+  assert.doesNotMatch(fragment, /contrarreferencia/i);
   assert.doesNotMatch(fragment, /Atenciones · /, 'ic scope has no atenciones section');
 });
 
