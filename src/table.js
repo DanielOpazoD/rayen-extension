@@ -1,4 +1,4 @@
-import { esc, stateClass, sicClass } from './dom.js';
+import { esc, stateDot, sicTone } from './dom.js';
 import { dateToInt } from './parser.js';
 import { CONFIG } from './config.js';
 
@@ -61,7 +61,7 @@ function dxCell(p) {
   const tip = list.map(d => `${d.nombre}${d.clasificacion && d.clasificacion !== d.nombre ? ` [${d.clasificacion}]` : ''}${d.certeza ? ` (${d.certeza})` : ''}${d.esAuge ? ' GES' : ''}`).join('\n');
   return `<span class="dx-main" data-tip="${esc(tip)}">${esc(d0.nombre)}</span>` +
     (d0.certeza && d0.certeza !== 'Confirmada' ? `<span class="dx-cert">${esc(d0.certeza.toLowerCase())}</span>` : '') +
-    (d0.esAuge ? `<span class="badge bges">GES</span>` : '') +
+    (d0.esAuge ? `<span class="bges">GES</span>` : '') +
     (list.length > 1 ? `<span class="dx-more" data-tip="${esc(tip)}">+${list.length - 1}</span>` : '');
 }
 
@@ -75,7 +75,7 @@ function sicLine(s, role, extra = '') {
   return `<div class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="0" data-tip="${esc(tip)}">` +
     `<span class="rol rol-${role}">${ROLE_LABEL[role]}</span>` +
     `<span class="ic-esp">${esc(s.especialidad)}</span>` +
-    `<span class="badge ${sicClass(s.grupo)} sm">${esc(s.estado)}</span>` +
+    stateDot(s.estado, { tone: sicTone(s.grupo), small: true }) +
     (s.contrarreferencias.length ? `<span class="ic-cr">CR</span>` : '') +
     `</div>`;
 }
@@ -128,25 +128,57 @@ function row(p, ctx) {
     <td data-c="razon">${esc(p.razon)}</td>
     <td data-c="tipoAtencion" class="wrap" data-tip="${esc(p.tipoAtencion)}">${esc(p.tipoAtencion)}${flags}${prest}</td>
     <td data-c="diagnostico" class="wrap dx-cell">${dxCell(p)}</td>
-    <td data-c="estado"><span class="badge ${stateClass(p.estado)}">${esc(p.estado)}</span></td>
+    <td data-c="estado">${stateDot(p.estado)}</td>
     <td data-c="ic" class="wrap ic-cell">${icCell(p, ctx)}</td>
     <td data-c="nota" class="note-cell" data-id="${esc(p.id)}">${noteEl}</td>
   </tr>`;
 }
 
+// ── Chunked rendering ─────────────────────────────────────────
+// Rows have variable height (wrapped cells), so true windowing would need
+// per-row measurement. Rendering in chunks as the user scrolls keeps filtering
+// instant with thousands of rows and stays exact for printing and Ctrl+F.
+const CHUNK = 120;
+let pending = [], rendered = 0, lastCtx = null;
+
 /**
- * Renders the atenciones table body.
+ * Renders the atenciones table body (first chunk only; the rest streams in).
  * @param {object[]} data   already filtered + sorted
  * @param {number}   total  size of the unfiltered dataset
  * @param {{ sicsById: Map, sicsByRun: Map }} ctx
  */
 export function renderTable(data, total, ctx = { sicsById: new Map(), sicsByRun: new Map() }) {
-  document.getElementById('countRow').textContent = `${data.length} de ${total} registros`;
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = data.length
-    ? data.map(p => row(p, ctx)).join('')
-    : `<tr><td colspan="${COLUMN_COUNT}" class="empty">Sin resultados</td></tr>`;
+  pending = data; rendered = 0; lastCtx = ctx;
+  updateCount(total);
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="${COLUMN_COUNT}" class="empty">Sin resultados</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = '';
+  appendChunk();
 }
+
+function updateCount(total = null) {
+  const el = document.getElementById('countRow');
+  const shown = rendered < pending.length ? `${rendered} de ` : '';
+  const base = `${shown}${pending.length} de ${total ?? el.dataset.total} registros`;
+  if (total !== null) el.dataset.total = total;
+  el.textContent = base;
+}
+
+/** Appends the next chunk. @returns {boolean} true if rows remain */
+export function appendChunk() {
+  if (rendered >= pending.length) return false;
+  const slice = pending.slice(rendered, rendered + CHUNK);
+  document.getElementById('tbody').insertAdjacentHTML('beforeend', slice.map(p => row(p, lastCtx)).join(''));
+  rendered += slice.length;
+  updateCount();
+  return rendered < pending.length;
+}
+
+export function hasMoreRows() { return rendered < pending.length; }
 
 /** Applies hidden-column classes to the table element. */
 export function applyColumnVisibility(table, hidden) {

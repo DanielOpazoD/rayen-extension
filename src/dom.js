@@ -7,18 +7,26 @@ export function esc(s) {
 
 export const $ = id => document.getElementById(id);
 
-/** Badge class for an appointment/atención state. */
-export function stateClass(estado = '') {
-  if (estado === 'Completado')       return 'bc';
-  if (/presentó/i.test(estado))      return 'bn';
-  if (estado === 'Iniciado')         return 'bi';
-  if (/^(Espontánea|Sin cita)$/.test(estado)) return 'bf';
-  return 'bx';
+/** Semantic tone for an appointment/atención state. */
+export function stateTone(estado = '') {
+  if (estado === 'Completado')                return 'ok';
+  if (/presentó/i.test(estado))               return 'bad';
+  if (estado === 'Iniciado')                  return 'warn';
+  if (/^(Espontánea|Sin cita)$/.test(estado)) return 'info';
+  return 'neutral';
 }
 
-/** Badge class for a SIC lifecycle group. */
-export function sicClass(grupo = '') {
-  return ({ pendiente: 'bi', enviada: 'bic', atendida: 'bc', cerrada: 'bg', fallida: 'bn' })[grupo] ?? 'bx';
+/** Semantic tone for a SIC lifecycle group. */
+export function sicTone(grupo = '') {
+  return ({ pendiente: 'warn', enviada: 'info', atendida: 'ok', cerrada: 'neutral', fallida: 'bad' })[grupo] ?? 'neutral';
+}
+
+/**
+ * A state reads as a coloured dot plus its label — quieter than a filled pill
+ * and it keeps the meaning in the text, not only in the colour.
+ */
+export function stateDot(estado, { tone, small = false } = {}) {
+  return `<span class="st st-${tone ?? stateTone(estado)}${small ? ' sm' : ''}">${esc(estado)}</span>`;
 }
 
 /**

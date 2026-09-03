@@ -1,5 +1,5 @@
-import { esc, sicClass, fillSelect, $ } from './dom.js';
-import { CONFIG, SIC_GRUPO, SIC_PRIORIDAD } from './config.js';
+import { esc, sicTone, stateDot, fillSelect, $ } from './dom.js';
+import { CONFIG, SIC_GRUPO, prioridadInfo } from './config.js';
 import { isMine } from './sic.js';
 
 let expanded = new Set();
@@ -51,9 +51,10 @@ function summary(all, shown) {
   + (shown !== all.length ? `<div class="stat stat-muted"><div class="stat-n">${shown}</div><div class="stat-l">Filtradas</div></div>` : '');
 }
 
+/** Raw priority code + the inference explained on hover — never a made-up label. */
 function prioBadge(p) {
-  const lbl = SIC_PRIORIDAD[p] ?? `P${p}`;
-  return `<span class="prio prio-${p}" data-tip="Prioridad ${p}">${esc(lbl)}</span>`;
+  const { code, hint } = prioridadInfo(p);
+  return `<span class="prio prio-${p}" data-tip="${esc(hint)}">${esc(code)}</span>`;
 }
 
 function detailRow(s) {
@@ -98,8 +99,8 @@ function detailRow(s) {
 
 function mainRow(s) {
   const open = expanded.has(s.id);
-  const cr   = s.contrarreferencias.length ? `<span class="badge bc" data-tip="Contrarreferencia recibida">CR</span>` : '';
-  const ges  = s.esAuge ? `<span class="badge bges">GES</span>` : '';
+  const cr   = s.contrarreferencias.length ? `<span class="ic-cr" data-tip="Contrarreferencia recibida">CR</span>` : '';
+  const ges  = s.esAuge ? `<span class="bges">GES</span>` : '';
   const mine = isMine(s) ? `<span class="mine" data-tip="Registrada o ejecutada por ti">★</span>` : '';
   const age  = s.antiguedadDias > 60 && ['pendiente', 'enviada'].includes(s.grupo) ? 'age-old' : '';
   return `<tr class="sic-row ${open ? 'open' : ''}" data-id="${s.id}" tabindex="0" aria-expanded="${open}">
@@ -109,7 +110,7 @@ function mainRow(s) {
     <td class="wrap">${esc(s.especialidad)}<br><small class="muted">${esc(s.motivo)}</small></td>
     <td class="wrap">${s.cie10 ? `<b class="cie">${esc(s.cie10)}</b> ` : ''}${esc(s.diagnostico)}</td>
     <td>${prioBadge(s.prioridad)}</td>
-    <td><span class="badge ${sicClass(s.grupo)}" data-tip="${esc(s.estado)}">${esc(s.estado)}</span></td>
+    <td>${stateDot(s.estado, { tone: sicTone(s.grupo) })}</td>
     <td>${ges} ${cr}</td>
     <td class="wrap"><small>${esc(s.registrador.nombre)}</small></td>
   </tr>` + (open ? detailRow(s) : '');

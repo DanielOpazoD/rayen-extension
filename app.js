@@ -7,7 +7,9 @@ import { AuthError } from './src/http.js';
 import { renderCharts }                   from './src/charts.js';
 import { initPanel, openPanel }           from './src/patient-panel.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer.js';
-import { renderTable, sortRecords, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
+import { renderTable, sortRecords, appendChunk, hasMoreRows, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
+import { renderToday } from './src/today.js';
+import { initLock }    from './src/lock.js';
 import { buildStats, buildFilters, filterRecords } from './src/stats.js';
 import { loadSICs, contactsFromSICs }     from './src/sic.js';
 import { renderSICTab, filterSICs, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
@@ -82,6 +84,7 @@ const showTab = initTablist(document.querySelector('.tabs'), name => {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
   if (name === 'interconsultas') ensureSICs();
   if (name === 'explorador')     renderExplorerExtras();
+  if (name === 'hoy')            renderToday(allData, sics);
 }, 'tab');
 
 // ── Atenciones ────────────────────────────────────────────────
@@ -101,6 +104,7 @@ async function applyResult(result) {
   buildFilters(allData);
   buildStats(allData, team);
   render();
+  renderToday(allData, sics);
   renderCharts(allData, team, $('chartsSection'));
   updateBadge();
   ['statsBar','chartsSection','barEl','tblWrap','exportWrap','clearWrap'].forEach(id => { $(id).style.display = ''; });
@@ -208,7 +212,8 @@ async function ensureSICs(force = false) {
     indexSICs();
     buildSICFilters(sics);
     renderSICs();
-    if (allData.length) render(); // IC column of the agenda depends on the SICs
+    // The agenda's IC column and the Hoy tab both depend on the SICs
+    if (allData.length) { render(); renderToday(allData, sics); }
     const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
     $('sicStatus').textContent = `${sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
     $('btnSicExport').style.display = '';
@@ -265,7 +270,8 @@ function jumpToSIC({ id, run }) {
 // ── View options: density + columns ───────────────────────────
 function applyDensity(dense) {
   document.body.classList.toggle('dense', dense);
-  $('btnDensity').textContent = dense ? '☰ Cómodo' : '☰ Compacto';
+  $('btnDensity').textContent = dense ? 'Cómodo' : 'Compacto';
+  $('btnDensity').classList.toggle('on', dense);
 }
 $('btnDensity').addEventListener('click', () => {
   const dense = !document.body.classList.contains('dense');
@@ -371,6 +377,21 @@ FILTER_IDS.forEach(id => {
   // Typing re-renders after a pause; selects re-render at once
   $(id).addEventListener(id === 'search' ? 'input' : 'change', id === 'search' ? renderSoon : render);
 });
+// Stream the rest of the rows in as the user scrolls; also drive the sticky shadow
+$('tblWrap').addEventListener('scroll', e => {
+  const w = e.currentTarget;
+  w.classList.toggle('scrolled', w.scrollLeft > 0);
+  if (hasMoreRows() && w.scrollTop + w.clientHeight > w.scrollHeight - 600) appendChunk();
+}, { passive: true });
+
+// Patient cards in the Hoy tab open the same panel as the table
+$('todayContent').addEventListener('click', e => {
+  const card = e.target.closest('.pat-link[data-id]');
+  if (!card) return;
+  const record = allData.find(p => String(p.id) === card.dataset.id);
+  if (record) openPanel(record, { allData, sics, contacts });
+});
+
 $('btnClearFilters').addEventListener('click', () => {
   FILTER_IDS.forEach(id => { $(id).value = ''; });
   render();
@@ -463,8 +484,10 @@ function startNoteEdit(cell) {
 // ── Init ──────────────────────────────────────────────────────
 initPanel();
 initTooltips();
-activateOnKey($('mainTable')); // Enter/Space on sortable headers, patient names, SIC lines
-activateOnKey($('sicBody'));   // Enter/Space expands a SIC row
+initLock({ minutes: 15 }); // patient data on screen; blur it when idle
+activateOnKey($('mainTable'));    // Enter/Space on sortable headers, patient names, SIC lines
+activateOnKey($('sicBody'));      // Enter/Space expands a SIC row
+activateOnKey($('todayContent')); // Enter/Space opens a patient from Hoy
 loadPrefs().then(p => {
   $('months').value = String(p.months);
   $('optHistorial').checked = p.historial;

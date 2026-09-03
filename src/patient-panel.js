@@ -1,6 +1,6 @@
 import { saveNote, patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
-import { esc, stateClass, sicClass, $, initTablist, activateOnKey } from './dom.js';
+import { esc, stateDot, sicTone, $, initTablist, activateOnKey } from './dom.js';
 import { certificadoPath, sicPdfPath, recetaPdfPath, openPDF } from './pdf.js';
 import { getToken } from './auth.js';
 import { loadFicha, SECTION_LABELS } from './ficha.js';
@@ -166,7 +166,7 @@ function renderDx() {
 
   html += h4(ficha?.visits?.length ? 'Diagnósticos (historial completo, todos los profesionales)' : 'Diagnósticos (mis atenciones)');
   html += probs.length ? probs.map(d =>
-    `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="badge bges">GES</span>' : ''}</span>` +
+    `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
     `<span class="pp-row-m">${d.certeza && d.certeza !== 'Confirmada' ? `<i>${esc(d.certeza.toLowerCase())}</i> · ` : ''}${d.fecha}</span></div>`).join('')
     : empty('Sin diagnósticos registrados');
 
@@ -207,7 +207,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
       </div>
       <div class="pp-who ${mine ? 'me' : ''}">${esc(who)}</div>
       ${(v.diagnosticos ?? []).map(d =>
-        `<span class="pp-dx">${esc(d.nombre)}${d.certeza ? ` <em>(${esc(d.certeza)})</em>` : ''}${d.esAuge ? ' <span class="badge bges">GES</span>' : ''}</span>`
+        `<span class="pp-dx">${esc(d.nombre)}${d.certeza ? ` <em>(${esc(d.certeza)})</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>`
       ).join('')}
       <div class="pp-body">
         ${v.anamnesis.motivo   ? `<div class="pp-sec"><span class="pp-sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}
@@ -227,7 +227,7 @@ function agendaVisitHTML(v) {
         <span class="pp-hora">${esc(whenLabel(v))}</span>
         <span class="pp-tipo">${esc(v.tipoAtencion)}</span>
         <span class="spacer"></span>
-        <span class="badge ${stateClass(v.estado)}">${esc(v.estado)}</span>
+        ${stateDot(v.estado)}
         ${v.origen === 'cita' && v.estado === 'Completado' ? `<button class="btn-mini" data-pdf="${esc(certificadoPath(v.id))}" data-tip="Certificado de atención">Cert.</button>` : ''}
       </div>
       ${v.razon ? `<span class="pp-razon">${esc(v.razon)}</span>` : ''}
@@ -255,7 +255,7 @@ function renderIc() {
   let html = '';
   html += sics.length ? sics.map(s => `
       <div class="pp-sic">
-        <div class="pp-sic-h"><strong>${esc(s.fecha)}</strong> <span class="badge ${sicClass(s.grupo)}">${esc(s.estado)}</span>
+        <div class="pp-sic-h"><strong>${esc(s.fecha)}</strong> ${stateDot(s.estado, { tone: sicTone(s.grupo) })}
           <span class="spacer"></span><button class="btn-mini" data-pdf="${esc(sicPdfPath(s.id))}" data-tip="Solicitud PDF">PDF</button></div>
         <div class="pp-sic-b"><b>${esc(s.especialidad)}</b>${s.cie10 ? ` · <span class="cie">${esc(s.cie10)}</span>` : ''} ${esc(s.diagnostico)}
           ${s.registrador.nombre ? `<br><span class="muted">Solicitó ${esc(s.registrador.nombre)}${s.motivo ? ` · ${esc(s.motivo)}` : ''}</span>` : ''}

@@ -72,7 +72,18 @@ export const SIC_ESTADOS_ORIGEN  = [13, 25, 26, 28, 30, 32];
 export const SIC_ESTADOS_DESTINO = [2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 19, 20, 27, 28, 29, 30, 31, 32];
 
 /**
- * SIC priority. Inferred from distribution in the HAR (1 rarest = 33, 2 = 720, 3 = 230);
- * Rayen does not expose the labels through the API captured.
+ * SIC priority. Rayen sends only the number — never a label — so the UI shows
+ * the raw code and explains the inference on hover. Showing "Alta/Media/Baja"
+ * would present a statistical guess as if it were a clinical fact.
+ * Distribution observed in the HAR of 983 SIC: P1 = 33, P2 = 720, P3 = 230.
  */
-export const SIC_PRIORIDAD = Object.freeze({ 1: 'Alta', 2: 'Media', 3: 'Baja' });
+export const SIC_PRIORIDAD = Object.freeze({
+  1: { code: 'P1', hint: 'Prioridad 1 · la menos frecuente (33 de 983 SIC del período). Rayen no envía una etiqueta; por su rareza es probablemente la más urgente, pero no está confirmado.' },
+  2: { code: 'P2', hint: 'Prioridad 2 · la más frecuente (720 de 983 SIC del período). Rayen no envía una etiqueta.' },
+  3: { code: 'P3', hint: 'Prioridad 3 · frecuencia intermedia (230 de 983 SIC del período). Rayen no envía una etiqueta.' },
+});
+
+/** @returns {{code: string, hint: string}} */
+export function prioridadInfo(n) {
+  return SIC_PRIORIDAD[n] ?? { code: `P${n}`, hint: 'Código de prioridad no visto en los datos analizados.' };
+}

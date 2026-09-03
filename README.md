@@ -16,6 +16,7 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 
 | Pestaña | Contenido |
 |---|---|
+| **Hoy** | Pantalla de entrada: la agenda del día y, por paciente, sus diagnósticos previos, las interconsultas que siguen abiertas (con antigüedad en días) y la última nota. Si hoy no hay agenda cargada, muestra la última jornada. |
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
 | **Estadísticas** | Tiles y gráficos SVG: día, mes, previsión, tipo, diagnósticos; equipo del hospital por profesión/profesional. |
 | **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos, contrarreferencias, PDF. Rol explícito: **Emití / Recibí / Otra**. |
@@ -41,6 +42,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - El reporte que se abre para imprimir/PDF se borra del almacenamiento en cuanto se muestra.
 - Si la sesión de Eloisa vence (HTTP 401/403), la carga se detiene en la primera llamada fallida y la barra de estado ofrece **Abrir Eloisa**; al volver a esta pestaña con sesión nueva, se recarga sola.
 - Los archivos exportados contienen datos de pacientes: trátalos como tal.
+- **Bloqueo por inactividad**: a los 15 minutos sin uso la pantalla se difumina tras un aviso y hay que pulsar «Continuar». Es una pantalla de privacidad frente a quien pase por el lado, no autenticación: la protección real sigue siendo la sesión del sistema operativo.
 
 ## Desarrollo
 
@@ -67,6 +69,8 @@ src/
   historial.js HistorialAtencion por día + cruce con la agenda (RUN + día)
   ficha.js    ficha por paciente (10 años, todas las secciones) + antecedentes + programas
   sic.js      interconsultas: ids, detalle, contrarreferencias
+  today.js    vista Hoy: agenda del día + antecedentes de cada paciente
+  lock.js     bloqueo por inactividad (pantalla de privacidad)
   cache.js    chrome.storage con runtime.lastError, stores por fecha, prefs
   table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  UI
   export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF
@@ -75,6 +79,23 @@ tests/        parser, sic, historial, ficha, table
 ```
 
 Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
+
+## Sistema de diseño
+
+Toda la hoja de estilos se construye sobre tokens; no hay valores sueltos que reinventen la escala.
+
+| | Valores |
+|---|---|
+| **Tipografía** | 5 pasos: `--t-xs 12` · `--t-sm 13` (celdas de tabla) · `--t-base 15` (cuerpo) · `--t-lg 18` · `--t-xl 24` |
+| **Espaciado** | Escala de 4 px: `--sp-1` … `--sp-6` |
+| **Radios** | 3: `--r-sm 4` · `--r-md 8` · `--r-full` |
+| **Color** | Semántico. Cada color de texto es ≥4.5:1 sobre su superficie; **`--ink-4` nunca se usa para texto**, solo bordes e iconos. |
+
+Criterios visuales: la jerarquía la llevan el tamaño y el peso, no el color. Los estados se leen como punto de color + palabra (`.st`), no como píldoras rellenas — solo GES y las banderas U/E/📎 conservan fondo, porque son alertas genuinas. Separación por filetes de 1 px en lugar de cajas; sin cebra en las tablas. El verde de marca queda reservado a la acción primaria y al estado activo.
+
+**El RUN del paciente** se trata como identificador clínico, no como metadato: 12 px, `--ink-2` (7,84:1) y cifras tabulares.
+
+**La prioridad de las SIC** se muestra como el código que envía Rayen (`P1`/`P2`/`P3`) con la inferencia explicada al pasar el cursor. La API nunca envía una etiqueta, así que la interfaz no inventa «Alta/Media/Baja».
 
 ## Accesibilidad y apariencia
 
