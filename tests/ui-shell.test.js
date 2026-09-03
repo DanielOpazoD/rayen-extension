@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const read = file => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
 const html = read('app.html');
 const css = read('styles/app.css');
+const dev = read('dev/index.html');
 
 test('la aplicación carga una única hoja visual local y empaquetada', () => {
   const stylesheets = [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)].map(match => match[1]);
@@ -13,6 +14,8 @@ test('la aplicación carga una única hoja visual local y empaquetada', () => {
 
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.pack, /\bsrc styles icons\b/, 'el ZIP debe incluir la hoja visual');
+  assert.match(dev, /querySelectorAll\('link\[href\]'\)/, 'el arnés debe trasladar recursos enlazados');
+  assert.match(dev, /new URL\(link\.getAttribute\('href'\), appRoot\)/, 'el arnés debe resolverlos desde la raíz de la app');
 });
 
 test('los contratos visuales cubren foco, movimiento, modo oscuro y pantallas estrechas', () => {
