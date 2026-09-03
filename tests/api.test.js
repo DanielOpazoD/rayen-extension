@@ -15,6 +15,12 @@ const rawCita = (id, d8, estado = 'Completado') => ({
   Id: id, FechaHoraInicio: `${d8} 090000`, Tag: { Nombre: estado }, TipoDeAtencion: { Nombre: 'Consulta' },
   UsuarioAps: { Id: 1, Rut: '17752753K', NombreFormateado: 'Ana Prueba', FechaDeNacimiento: '19800101 000000', Sexo: { Nombre: 'Mujer' } },
 });
+const rawAtencion = (id, d8) => ({
+  Id: id, IdCita: 0, Fecha: `${d8} 091500`, RutPaciente: '17752753K', NombreCompleto: 'Ana Prueba',
+  FechaNacimiento: '19800101 000000', IdSexo: 2, TipoDeAtencion: 'Consulta',
+  Diagnosticos: [], Actividades: [],
+  FuncionariosPrestadores: [{ Id: 99, NombreCompleto: 'Otro Profesional', NombreInstrumento: 'Médico' }],
+});
 function scriptFetch(handler) {
   calls = [];
   globalThis.fetch = async (url, init) => {
@@ -163,8 +169,86 @@ test('a failed day is counted, stays un-fetched, and keeps what the cache had fo
   scriptFetch(() => new Response('boom', { status: 500 }));
   const res = await loadData(1, () => {}, { historial: false });
   assert.equal(res.failedDays, 1);
+  assert.equal(res.sync.agenda.status, 'partial');
+  assert.ok(res.sync.agenda.failedItems.includes(today8));
   assert.equal(res.sessionExpired, false, 'a 500 is not an expired session');
   assert.equal(res.records.length, 1, "today's cached rows survive a failed refresh");
+});
+
+test('retryOnly requests the pending agenda date and clears its warning after recovery', async () => {
+  const dates = window1m();
+  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [], extra: {}, savedAt: 1 });
+  scriptFetch(() => new Response('boom', { status: 500 }));
+  await loadData(1, () => {}, { historial: false });
+
+  const fetchedDates = [];
+  scriptFetch(url => { fetchedDates.push(dayOf(url)); return []; });
+  const res = await loadData(1, () => {}, { historial: false, retryOnly: true });
+
+  assert.deepEqual(fetchedDates, [today8]);
+  assert.equal(res.sync.agenda.status, 'ok');
+  assert.deepEqual(res.sync.agenda.failedItems, []);
+});
+
+test('an agenda retry that closes a mutable historical appointment also refreshes its history', async () => {
+  const dates = window1m();
+  const staleDate = dates[0];
+  fake.local.set(CONFIG.cacheKey, {
+    fetchedDates: dates,
+    records: [{ id: 7, fecha8: staleDate, run: '17752753K', estado: 'Iniciada', nombre: 'Ana Prueba' }],
+    extra: {}, savedAt: 1,
+  });
+  fake.local.set(CONFIG.historialKey, {
+    fetchedDates: dates, records: [rawAtencion(70, staleDate)], extra: { team: {} }, savedAt: 1,
+  });
+  fake.local.set(CONFIG.syncKeys.agenda, {
+    source: 'agenda', status: 'partial', failedItems: [staleDate], lastSuccessAt: 1,
+  });
+  fake.local.set(CONFIG.syncKeys.historial, {
+    source: 'historial', status: 'ok', failedItems: [], lastSuccessAt: 1,
+  });
+
+  const historyDates = [];
+  scriptFetch((url, _n, init) => {
+    if (url.includes('HistorialAtencion')) {
+      historyDates.push(JSON.parse(init.body).FechaInicio.slice(0, 8));
+      return [rawAtencion(71, staleDate)];
+    }
+    return [rawCita(7, staleDate, 'Completado')];
+  });
+  const res = await loadData(1, () => {}, { historial: true, retryOnly: true });
+
+  assert.deepEqual(historyDates, [staleDate]);
+  assert.equal(res.sync.agenda.status, 'ok');
+  assert.equal(res.sync.historial.status, 'ok');
+  assert.ok(fake.local.get(CONFIG.historialKey).records.some(record => record.id === 71));
+});
+
+test('a recovered agenda date refreshes history even when no appointment was cached before', async () => {
+  const dates = window1m();
+  const recoveredDate = dates[0];
+  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [], extra: {}, savedAt: 1 });
+  fake.local.set(CONFIG.historialKey, { fetchedDates: dates, records: [], extra: { team: {} }, savedAt: 1 });
+  fake.local.set(CONFIG.syncKeys.agenda, {
+    source: 'agenda', status: 'partial', failedItems: [recoveredDate], lastSuccessAt: 1,
+  });
+  fake.local.set(CONFIG.syncKeys.historial, {
+    source: 'historial', status: 'ok', failedItems: [], lastSuccessAt: 1,
+  });
+
+  const historyDates = [];
+  scriptFetch((url, _n, init) => {
+    if (url.includes('HistorialAtencion')) {
+      historyDates.push(JSON.parse(init.body).FechaInicio.slice(0, 8));
+      return [rawAtencion(72, recoveredDate)];
+    }
+    return [rawCita(8, recoveredDate, 'Completado')];
+  });
+  const res = await loadData(1, () => {}, { historial: true, retryOnly: true });
+
+  assert.deepEqual(historyDates, [recoveredDate]);
+  assert.equal(res.sync.historial.status, 'ok');
+  assert.ok(fake.local.get(CONFIG.historialKey).records.some(record => record.id === 72));
 });
 
 test('401 flags the session and stops after the batch in flight', async () => {
@@ -173,6 +257,114 @@ test('401 flags the session and stops after the batch in flight', async () => {
   assert.equal(res.sessionExpired, true);
   assert.ok(calls.length <= CONFIG.batchSize, `stopped after one batch (${calls.length} calls)`);
   assert.equal(fake.local.get(CONFIG.cacheKey), undefined, 'nothing was marked as fetched');
+});
+
+test('an interrupted agenda run records the clinical-history dates it did not reach', async () => {
+  scriptFetch((url, n) => {
+    if (n === 1) cancelRun();
+    return url.includes('HistorialAtencion') ? [] : [];
+  });
+  const res = await loadData(1, () => {}, { historial: true });
+  assert.equal(res.cancelled, true);
+  assert.equal(res.sync.historial.status, 'error');
+  assert.ok(res.sync.historial.failedItems.length > 0);
+  assert.equal(calls.some(url => url.includes('HistorialAtencion')), false);
+});
+
+test('retryOnly recovers pending agenda and history dates outside the visible period', async () => {
+  const old = new Date();
+  old.setMonth(old.getMonth() - 2);
+  const old8 = localDateStr(old);
+  const dates = window1m();
+  fake.local.set(CONFIG.cacheKey, {
+    fetchedDates: dates, records: [{ id: 7, fecha8: old8, run: '17752753K', nombre: 'Ana Prueba' }], extra: {}, savedAt: 1,
+  });
+  fake.local.set(CONFIG.historialKey, { fetchedDates: dates, records: [], extra: { team: {} }, savedAt: 1 });
+  for (const source of ['agenda', 'historial']) fake.local.set(CONFIG.syncKeys[source], {
+    source, status: 'partial', failedItems: [old8], lastSuccessAt: 1,
+  });
+
+  const agendaDates = [], historyDates = [];
+  scriptFetch((url, _n, init) => {
+    if (url.includes('HistorialAtencion')) {
+      historyDates.push(JSON.parse(init.body).FechaInicio.slice(0, 8));
+      return [rawAtencion(77, old8)];
+    }
+    agendaDates.push(dayOf(url));
+    return [rawCita(7, old8)];
+  });
+  const res = await loadData(1, () => {}, { historial: true, retryOnly: true });
+
+  assert.deepEqual(agendaDates, [old8]);
+  assert.deepEqual(historyDates, [old8]);
+  assert.equal(res.sync.agenda.status, 'ok');
+  assert.equal(res.sync.historial.status, 'ok');
+  assert.ok(fake.local.get(CONFIG.historialKey).records.some(record => record.id === 77), 'the off-window clinical detail stays cached');
+});
+
+test('a normal shorter load preserves pending dates outside its visible window', async () => {
+  const old = new Date();
+  old.setMonth(old.getMonth() - 2);
+  const old8 = localDateStr(old);
+  const dates = window1m();
+  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [], extra: {}, savedAt: 1 });
+  fake.local.set(CONFIG.historialKey, { fetchedDates: dates, records: [], extra: { team: {} }, savedAt: 1 });
+  for (const source of ['agenda', 'historial']) fake.local.set(CONFIG.syncKeys[source], {
+    source, status: 'partial', failedItems: [old8], lastSuccessAt: 1,
+  });
+  scriptFetch(url => url.includes('HistorialAtencion') ? [] : []);
+
+  const res = await loadData(1, () => {}, { historial: true });
+
+  assert.ok(res.sync.agenda.failedItems.includes(old8));
+  assert.ok(res.sync.historial.failedItems.includes(old8));
+  assert.equal(res.sync.agenda.status, 'error');
+  assert.equal(res.sync.historial.status, 'partial');
+});
+
+test('turning clinical history off does not erase its pending retry dates', async () => {
+  const pendingDate = window1m()[0];
+  fake.local.set(CONFIG.syncKeys.historial, {
+    source: 'historial', status: 'partial', failedItems: [pendingDate], lastSuccessAt: 1,
+  });
+  scriptFetch(() => []);
+
+  const res = await loadData(1, () => {}, { historial: false });
+
+  assert.equal(res.sync.historial.status, 'disabled');
+  assert.deepEqual(res.sync.historial.failedItems, [pendingDate]);
+});
+
+test('a normal load retries an in-window history date even if its cache marker still exists', async () => {
+  const dates = window1m();
+  const pendingDate = dates[0];
+  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [], extra: {}, savedAt: 1 });
+  fake.local.set(CONFIG.historialKey, { fetchedDates: dates, records: [], extra: { team: {} }, savedAt: 1 });
+  fake.local.set(CONFIG.syncKeys.historial, {
+    source: 'historial', status: 'partial', failedItems: [pendingDate], lastSuccessAt: 1,
+  });
+  const historyDates = [];
+  scriptFetch((url, _n, init) => {
+    if (url.includes('HistorialAtencion')) historyDates.push(JSON.parse(init.body).FechaInicio.slice(0, 8));
+    return [];
+  });
+
+  const res = await loadData(1, () => {}, { historial: true });
+
+  assert.ok(historyDates.includes(pendingDate));
+  assert.equal(res.sync.historial.failedItems.includes(pendingDate), false);
+});
+
+test('retryOnly clears pending agenda dates that have aged outside retention', async () => {
+  fake.local.set(CONFIG.syncKeys.agenda, {
+    source: 'agenda', status: 'partial', failedItems: ['20200101'], lastSuccessAt: 1,
+  });
+  scriptFetch(() => []);
+
+  const res = await loadData(1, () => {}, { historial: false, retryOnly: true });
+
+  assert.deepEqual(calls, []);
+  assert.deepEqual(res.sync.agenda.failedItems, []);
 });
 
 test('cancelRun() stops queuing batches and reports cancelled; the fetched batch is kept', async () => {

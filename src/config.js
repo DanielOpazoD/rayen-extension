@@ -16,6 +16,11 @@ export const CONFIG = Object.freeze({
   watchKey:     'rayen_watch_v1',
   notesKey:     'rayen_notes_v1',
   prefsKey:     'rayen_prefs_v1',
+  syncKeys: Object.freeze({
+    agenda:    'rayen_sync_agenda_v1',
+    historial: 'rayen_sync_historial_v1',
+    sics:      'rayen_sync_sics_v1',
+  }),
 
   // SIC list is re-fetched when older than this (states change over time)
   sicTtlMs: 30 * 60 * 1000,

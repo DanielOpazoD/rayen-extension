@@ -85,6 +85,14 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 #statusBar.err{color:var(--bad)}#statusBar.err::before{background:var(--bad)}
 #statusBar.warn{color:var(--warn)}#statusBar.warn::before{background:var(--warn)}
 #statusBar .btn-mini{margin-left:var(--sp-1)}
+.sync-health{padding:8px var(--gutter);background:var(--card);border-bottom:1px solid var(--rule);font-size:var(--t-sm)}
+.sync-health-h{display:flex;align-items:center;gap:var(--sp-2);min-height:26px}.sync-health-h>strong{font-weight:600}.sync-health-h .btn-mini:first-of-type{margin-left:auto}
+.sync-overall{color:var(--ink-3)}.sync-overall.ok{color:var(--good)}.sync-overall.warn{color:var(--warn)}.sync-overall.bad{color:var(--bad)}.sync-overall.info{color:var(--brand)}
+.sync-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);padding-top:8px}.sync-details[hidden]{display:none}#syncSources{display:contents}
+.sync-source{padding:9px 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface)}
+.sync-source-h{display:flex;align-items:center;justify-content:space-between;gap:8px}.sync-meta,.sync-pending{margin-top:4px;color:var(--ink-3);font-size:var(--t-xs);line-height:1.4}.sync-pending{color:var(--warn)}
+.sync-badge{padding:2px 6px;border-radius:999px;background:var(--shade);font-size:var(--t-xs);white-space:nowrap}.sync-badge.ok{color:var(--good)}.sync-badge.warn{color:var(--warn)}.sync-badge.bad{color:var(--bad)}.sync-badge.info{color:var(--brand)}
+@media(max-width:760px){.sync-details{grid-template-columns:1fr}.sync-health-h{flex-wrap:wrap}.sync-health-h .btn-mini:first-of-type{margin-left:0}}
 
 .tabs{display:flex;gap:2px;padding:0 var(--gutter);background:var(--card);border-bottom:1px solid var(--rule)}
 .tab-btn{padding:9px 14px;border:none;background:none;cursor:pointer;font-size:var(--t-sm);font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
@@ -591,6 +599,14 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 </header>
 <progress id="progress" value="0" max="100" style="display:none"></progress>
 <div id="statusBar" class="idle" role="status" aria-live="polite">Presiona "Cargar datos" para comenzar.</div>
+<section id="syncHealth" class="sync-health" aria-label="Estado de sincronización" hidden>
+  <div class="sync-health-h">
+    <strong>Sincronización</strong><span id="syncOverall" class="sync-overall">Sin comprobar</span>
+    <button class="btn-mini" id="btnSyncDetails" aria-expanded="false" aria-controls="syncDetails">Ver detalle</button>
+    <button class="btn-mini" id="btnRetrySync" hidden>Reintentar pendientes</button>
+  </div>
+  <div id="syncDetails" class="sync-details" hidden><div id="syncSources"></div></div>
+</section>
 <nav class="tabs" role="tablist" aria-label="Secciones">
   <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-hoy" data-tab="hoy">Hoy</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-atenciones" data-tab="atenciones">Atenciones</button>

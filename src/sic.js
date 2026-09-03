@@ -128,7 +128,7 @@ async function fetchContrarrefs(token, ids) {
     const data = await apiPost(token, `${BASE}/ObtenerHistorialContrarreferenciasPorSicIds`, { ids });
     return Array.isArray(data) ? data : [];
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -136,7 +136,8 @@ async function fetchContrarrefs(token, ids) {
  * Loads every SIC where Hospital Hanga Roa is origin or destination within the
  * window. Cached for CONFIG.sicTtlMs unless `force`.
  *
- * @returns {Promise<{ sics: object[], fromCache: boolean, savedAt: number, failed: number }>}
+ * @returns {Promise<{ sics: object[], fromCache: boolean, savedAt: number, failed: number,
+ *   staleFallback?: boolean, cancelled?: boolean }>}
  */
 export async function loadSICs(token, months, onProgress = () => {}, { force = false } = {}) {
   const cached = (await storageGet(CONFIG.sicKey)) ?? null;
@@ -159,7 +160,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     listIds(token, 'SOLICITUD_INTERCONSULTA', from8, to8, SIC_ESTADOS_DESTINO, 'IDNODOORIGEN'),
   ]);
   if (session.expired) throw new AuthError(401);
-  let failed = (a === null) + (b === null);
+  let failed = (a === null) + (b === null) + (c === null);
   const ids = [...new Set([...(a ?? []), ...(b ?? []), ...(c ?? [])])];
   onProgress(5);
 
@@ -174,6 +175,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     if (session.expired) throw new AuthError(401);
     if (run.cancelled) break;
   }
+  if (run.cancelled) failed += Math.max(0, groups.length - done);
 
   // Contrarreferencias, grouped by SIC id
   const byId = new Map();
@@ -182,9 +184,12 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
   const cgroups = chunk(detailIds, CONFIG.sicIdsPerCall);
   for (const batch of chunk(cgroups, CONFIG.sicBatch)) {
     const res = await Promise.all(batch.map(g => fetchContrarrefs(token, g)));
-    for (const rows of res) for (const c of rows) {
-      if (!byId.has(c.IdSolicitud)) byId.set(c.IdSolicitud, []);
-      byId.get(c.IdSolicitud).push(c);
+    for (const rows of res) {
+      if (rows === null) { failed++; continue; }
+      for (const c of rows) {
+        if (!byId.has(c.IdSolicitud)) byId.set(c.IdSolicitud, []);
+        byId.get(c.IdSolicitud).push(c);
+      }
     }
     cdone += batch.length;
     onProgress(80 + Math.round((cdone / Math.max(cgroups.length, 1)) * 20));
@@ -193,9 +198,18 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
   const sics = details.map(d => parseSIC(d, byId.get(Number(d.NumeroSolicitud ?? d.Id)) ?? []));
   sics.sort((x, y) => (y.fecha8 || '').localeCompare(x.fecha8 || '') || y.id - x.id);
 
-  const savedAt = Date.now();
-  await storageSet(CONFIG.sicKey, { records: sics, savedAt, months });
-  return { sics, fromCache: false, savedAt, failed };
+  const completedAt = Date.now();
+  if (failed || run.cancelled) {
+    // A partial list must not replace a previously complete snapshot. Keep it
+    // visible, mark the source partial and retry the whole source next time.
+    if (cached) return {
+      sics: cached.records, fromCache: true, savedAt: cached.savedAt, failed,
+      staleFallback: true, cancelled: run.cancelled,
+    };
+    return { sics, fromCache: false, savedAt: completedAt, failed, cancelled: run.cancelled };
+  }
+  await storageSet(CONFIG.sicKey, { records: sics, savedAt: completedAt, months });
+  return { sics, fromCache: false, savedAt: completedAt, failed: 0 };
 }
 
 /** Contact/demographic info per RUN, harvested from SIC patient payloads. */

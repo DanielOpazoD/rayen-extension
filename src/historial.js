@@ -71,11 +71,14 @@ function isOfficer(a) {
  * (matchKey of the citas already loaded). Everything else is reduced to a
  * per-day team aggregate.
  *
- * @param {{ refreshDates?: Set<string> }} opts dates whose appointment state was
- *   still mutable; their clinical detail must be refreshed along with the agenda
- * @returns {Promise<{ atenciones: object[], team: Record<string, object>, failed: number }>}
+ * @param {{ refreshDates?: Set<string>, onlyDates?: Set<string>|null }} opts dates whose appointment state was
+ *   still mutable, or a restricted set requested by the synchronization retry
+ * @returns {Promise<{ atenciones: object[], team: Record<string, object>, failed: number,
+ *   failedDates: string[], pendingDates: string[], attemptedCount: number, fromCache: boolean }>}
  */
-export async function loadHistorial(token, dates8, citaKeys, onProgress = () => {}, { refreshDates = new Set() } = {}) {
+export async function loadHistorial(token, dates8, citaKeys, onProgress = () => {}, {
+  refreshDates = new Set(), onlyDates = null,
+} = {}) {
   const store = await loadStore(CONFIG.historialKey);
   store.extra.team ??= {};
 
@@ -84,8 +87,11 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   pruneStore(store, localDateStr(min));
 
   const todayStr = localDateStr(new Date());
-  const toFetch  = dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr || refreshDates.has(d));
+  const toFetch  = onlyDates
+    ? [...onlyDates].filter(d => /^\d{8}$/.test(d) && d >= localDateStr(min) && d <= todayStr)
+    : dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr || refreshDates.has(d));
   let done = 0, failed = 0;
+  const failedDates = [];
   onProgress(toFetch.length ? 0 : 100);
 
   for (const batch of chunk(toFetch, CONFIG.historialBatch)) {
@@ -98,6 +104,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
       const d8 = batch[i];
       if (raw === null) {
         failed++;
+        failedDates.push(d8);
         // If the agenda just moved from a mutable to a terminal state, this is
         // our last automatic forced refresh. Leave the history date incomplete
         // so the next load retries it even though the agenda is now closed.
@@ -120,10 +127,15 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   }
 
   const wanted = new Set(dates8);
+  const pendingDates = [...new Set([...failedDates, ...toFetch.slice(done)])];
   return {
     atenciones: [...store.records.values()].filter(a => wanted.has(a.fecha8)),
     team:       Object.fromEntries(Object.entries(store.extra.team).filter(([d]) => wanted.has(d))),
     failed,
+    failedDates,
+    pendingDates,
+    attemptedCount: done,
+    fromCache: toFetch.length === 0,
   };
 }
 

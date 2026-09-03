@@ -8,11 +8,14 @@ import { COLUMNS } from './table.js';
 import { CONFIG } from './config.js';
 import { state, setData, emit } from './state.js';
 import { setStatus } from './ui.js';
+import { initSyncStatus, renderSyncStatus } from './sync-status.js';
+import { failRunningSyncSources, loadSyncHealth, pendingSyncItems } from './sync-health.js';
 
 /** Fetching, refreshing and the expired-session path. Emits 'fetched' after a manual load. */
 
 let refreshTimer = null;
 let expired = false;
+let fetchInFlight = null;
 
 async function applyResult(result) {
   setData({ allData: await attachNotes(result.records), team: result.team ?? {} });
@@ -27,14 +30,17 @@ function summarize(result) {
   return { text: parts.join(' · '), cls: fails ? 'warn' : 'ok' };
 }
 
-export async function handleFetch() {
+async function performFetch({ retryOnly = false, forceHistorial = false } = {}) {
+  const operationId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const btn  = $('btnFetch');
   const prog = $('progress');
   state.loadedMonths = parseInt($('months').value);
-  const historial = $('optHistorial').checked;
-  savePrefs({ months: state.loadedMonths, historial }).catch(() => {});
+  const selectedHistorial = $('optHistorial').checked;
+  const historial = selectedHistorial || forceHistorial;
+  savePrefs({ months: state.loadedMonths, historial: selectedHistorial }).catch(() => {});
 
   btn.disabled = true;
+  $('btnRetrySync').disabled = true;
   btn.textContent = 'Cargando...';
   $('btnCancel').style.display = '';
   $('btnCancel').disabled = false;
@@ -45,7 +51,7 @@ export async function handleFetch() {
     $('todayContent').innerHTML = `<div class="today-h"><span class="sk" style="width:220px;height:20px"></span></div>` + skeletonCards(3);
   }
   prog.value = 0;
-  setStatus('Conectando con Eloisa...');
+  setStatus(retryOnly ? 'Reintentando sincronizaciones pendientes…' : 'Conectando con Eloisa...');
 
   let result;
   try {
@@ -54,14 +60,17 @@ export async function handleFetch() {
       const label = phase === 'ficha' ? 'Ficha clínica' : 'Agenda';
       setStatus(`${label}… ${pct}%`);
       document.title = `${pct}% · ${label} — Rayen`;   // visible desde otra pestaña
-    }, { historial });
+    }, { historial, retryOnly, operationId });
   } catch (err) {
+    await failRunningSyncSources(operationId).catch(() => {});
+    await renderSyncStatus().catch(() => {});
     setStatus(`Error al cargar: ${err.message}`, 'err');
     result = null;
   } finally {
     prog.style.display = 'none';
     $('btnCancel').style.display = 'none';
     btn.disabled = false;
+    $('btnRetrySync').disabled = false;
     btn.textContent = 'Actualizar';
     document.title = 'Rayen Atenciones — Hospital Hanga Roa';
   }
@@ -72,7 +81,8 @@ export async function handleFetch() {
     return;
   }
 
-  if (result.records.length) await applyResult(result);
+  await renderSyncStatus(result.sync).catch(() => {});
+  await applyResult(result);
   if (result.sessionExpired) { showExpired(); return; }
   if (result.cancelled) {
     setStatus(`Carga cancelada · ${state.allData.length} atenciones desde lo ya descargado`, 'warn');
@@ -84,6 +94,33 @@ export async function handleFetch() {
   setStatus(s.text, s.cls);
   armRefresh();
   emit('fetched');
+  return result;
+}
+
+function runFetch(options = {}) {
+  if (fetchInFlight) return fetchInFlight;
+  fetchInFlight = performFetch(options).finally(() => { fetchInFlight = null; });
+  return fetchInFlight;
+}
+
+export async function handleFetch() {
+  return runFetch();
+}
+
+async function retryPending() {
+  if (fetchInFlight) return;
+  const btn = $('btnRetrySync');
+  btn.disabled = true;
+  try {
+    const health = await loadSyncHealth();
+    const retrySics = pendingSyncItems(health, 'sics').size > 0;
+    const retryAgenda = pendingSyncItems(health, 'agenda').size > 0;
+    const retryHistory = pendingSyncItems(health, 'historial').size > 0;
+    if (retryAgenda || retryHistory) await runFetch({ retryOnly: true, forceHistorial: retryAgenda || retryHistory });
+    if (retrySics) document.dispatchEvent(new CustomEvent('rayen:retry-sics'));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 export function armRefresh() {
@@ -103,6 +140,7 @@ async function silentRefresh() {
   window.scrollTo(0, scrollY);
   const s = summarize(result);
   setStatus(`${s.text} · auto`, s.cls);
+  await renderSyncStatus(result.sync).catch(() => {});
 }
 
 async function openEloisa() {
@@ -128,6 +166,7 @@ export function init(prefs) {
   $('months').value = String(prefs.months);
   $('optHistorial').checked = prefs.historial;
   $('btnFetch').addEventListener('click', handleFetch);
+  initSyncStatus(retryPending);
   $('btnCancel').addEventListener('click', () => {
     cancelRun();
     $('btnCancel').disabled = true;
