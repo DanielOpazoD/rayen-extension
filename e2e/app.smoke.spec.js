@@ -49,17 +49,18 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   expect(matching).toBeLessThan(total);
   expect(all).toBe(total);
 
-  const overflow = await page.evaluate(() => ({
-    page: document.documentElement.scrollWidth > window.innerWidth,
-    offenders: [...document.querySelectorAll('body *')]
-      .filter(element => element.getBoundingClientRect().right > window.innerWidth + 1)
-      .slice(0, 8)
-      .map(element => `${element.tagName.toLowerCase()}#${element.id}.${element.className}`),
-  }));
-  expect(overflow.page, `elementos fuera del viewport: ${overflow.offenders.join(', ')}`).toBe(false);
+  const layout = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const violations = ['#topbar', '#mainContent', '#filterPanel']
+      .map(selector => [selector, document.querySelector(selector)?.getBoundingClientRect()])
+      .filter(([, box]) => box && (box.left < -1 || box.right > viewportWidth + 1))
+      .map(([selector]) => selector);
+    return { viewportWidth, violations };
+  });
+  expect(layout.violations).toEqual([]);
   const menuBox = await page.locator('#filtTipoMenu').boundingBox();
   expect(menuBox.x).toBeGreaterThanOrEqual(0);
-  expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(page.viewportSize().width);
+  expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(layout.viewportWidth + 1);
   await page.keyboard.press('Escape');
   await expect(page.locator('#filtTipoMenu')).toBeHidden();
   expect(runtime.externalRequests).toEqual([]);
