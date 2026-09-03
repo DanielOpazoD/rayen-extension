@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Rayen Atenciones - Hospital Hanga Roa",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Agenda, ficha clínica e interconsultas del Dr. Opazo desde Eloisa/Rayen, con caché local y exportación CSV.",
   "permissions": ["storage", "tabs", "scripting", "unlimitedStorage"],
   "host_permissions": ["https://clinicohangaroa.eloisa.cl/*"],
