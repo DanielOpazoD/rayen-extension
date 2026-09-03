@@ -82,6 +82,7 @@ flowchart LR
 | Panel o reporte de paciente | `src/patient-panel.js`, `src/patient-report.js`, `src/ficha.js` | identidad, escape de texto y variantes del reporte |
 | Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
 | Sistema visual y responsive | `styles/app.css`, `src/ui.js`, `src/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido |
+| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
 | Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
 
 ## Mapa completo de módulos
@@ -141,6 +142,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `npm run docs:check`: cobertura y enlaces del mapa arquitectónico.
 - `npm run release:check`: coherencia de versiones, permisos y archivos MV3.
 - `npm run check`: ejecuta todas las anteriores.
+- `npm run test:e2e`: ejecuta el recorrido sintético en Chromium a 1440×900 y 582×900, sin solicitudes externas.
 - `npm run pack`: vuelve a validar y genera el ZIP instalable.
 
-Las pruebas reales deben registrarse por nivel: fuente local, arnés sintético, extensión cargada en Chrome y sesión autenticada de Eloisa. No se debe ascender evidencia de un nivel al siguiente.
+El CI ejecuta `quality` y `browser-smoke` como trabajos independientes. Las pruebas reales deben registrarse por nivel: fuente local, arnés sintético, extensión cargada en Chrome y sesión autenticada de Eloisa. No se debe ascender evidencia de un nivel al siguiente.

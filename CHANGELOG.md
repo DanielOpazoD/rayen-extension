@@ -5,6 +5,8 @@
 - Separa las 569 líneas del sistema visual de `app.html` hacia `styles/app.css`, sin cambiar su resultado renderizado.
 - Añade acceso «Saltar al contenido» para navegación por teclado.
 - Protege automáticamente la hoja visual empaquetada, las referencias ARIA y los contratos de foco, modo oscuro, movimiento reducido y pantallas estrechas.
+- Añade un smoke reproducible en Chromium para carga, filtros, teclado y diseño estrecho usando exclusivamente datos sintéticos y red local.
+- Separa en CI la calidad estática del recorrido de navegador y evita duplicar ambos trabajos en cada push de una rama con PR.
 
 ## 2.4.0 — 2026-09-03
 
