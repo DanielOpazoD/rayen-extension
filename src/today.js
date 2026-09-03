@@ -2,7 +2,6 @@ import { esc, stateDot, sicTone, $ } from './dom.js';
 import { localDateStr, dateToInt } from './parser.js';
 import { patientKey } from './notes.js';
 import { sicRole } from './table.js';
-import { TIPO_LABEL, resumirPendientes } from './pendientes.js';
 
 /** SIC groups that still need someone to act on them. */
 const OPEN_GROUPS = new Set(['pendiente', 'enviada']);
@@ -41,31 +40,6 @@ function novedadesHTML({ cambios, firstRun, desde, vigiladas }, especialidades) 
         <span class="nov-pac">${esc(c.paciente)}</span>
         <span class="nov-esp">${esc(c.especialidad)}</span>
         <span class="nov-mov">${c.antes ? `${esc(c.antes)} → ` : ''}<b>${esc(c.ahora)}</b></span>
-      </div>`).join('')}
-  </section>`;
-}
-
-// ── Pendientes: open loops, grouped and explainable ────────────
-
-function pendientesHTML(pendientes) {
-  if (!pendientes.length) {
-    return `<section class="brief">
-      <h3 class="brief-h">Pendientes</h3>
-      <div class="brief-empty">Nada vencido según las reglas activas.</div></section>`;
-  }
-  const grupos = resumirPendientes(pendientes);
-  return `<section class="brief">
-    <h3 class="brief-h">Pendientes <span>${pendientes.length}</span></h3>
-    ${grupos.map(g => `
-      <div class="pgrp">
-        <div class="pgrp-h">${esc(g.titulo)} <span>${g.items.length}</span></div>
-        ${g.items.slice(0, 5).map(p => `
-          <div class="pend ${p.sicId ? 'sic-link' : 'pat-run'}" ${p.sicId ? `data-sic="${p.sicId}"` : `data-run="${esc(p.run ?? '')}"`} role="button" tabindex="0"
-               data-tip="${esc(p.nota ? `${p.detalle}\n${p.nota}` : p.detalle)}">
-            <span class="pend-d">${p.dias}<small>d</small></span>
-            <span class="pend-t"><b>${esc(p.paciente)}</b>${esc(p.titulo)}</span>
-          </div>`).join('')}
-        ${g.items.length > 5 ? `<div class="pgrp-more">y ${g.items.length - 5} más</div>` : ''}
       </div>`).join('')}
   </section>`;
 }
@@ -121,19 +95,19 @@ function card(rec, allData, sics) {
 }
 
 /**
- * The morning brief: what changed in the watched streams, what is overdue, and
- * who is on today's agenda with their background.
+ * The morning brief: what changed in the watched streams and who is on today's
+ * agenda with their background. Overdue loops live in Pacientes, not here.
  *
  * @param {object[]} allData
  * @param {object[]} sics
- * @param {{ pendientes?: object[], novedades?: object, especialidades?: string[], dia8?: string }} extra
+ * @param {{ novedades?: object, especialidades?: string[], dia8?: string }} extra
  *   dia8 shows a chosen day instead of today (no fallback to the last day with data).
  * @returns {string} the day actually shown (YYYYMMDD)
  */
 export function renderToday(allData, sics = [], extra = {}) {
   const el = $('todayContent');
   if (!allData.length) {
-    el.innerHTML = `<div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy, lo que venció y lo que cambió en tus interconsultas.</div>`;
+    el.innerHTML = `<div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy y los cambios recientes en tus interconsultas.</div>`;
     return;
   }
 
@@ -149,9 +123,7 @@ export function renderToday(allData, sics = [], extra = {}) {
   const pend = rows.filter(r => !/Completado|presentó/i.test(r.estado)).length;
   const esHoy = dia === hoy;
 
-  const brief =
-    (extra.novedades ? novedadesHTML(extra.novedades, extra.especialidades ?? []) : '') +
-    (extra.pendientes ? pendientesHTML(extra.pendientes) : '');
+  const brief = extra.novedades ? novedadesHTML(extra.novedades, extra.especialidades ?? []) : '';
 
   const agenda = rows.length
     ? `<div class="today-h">
@@ -163,5 +135,3 @@ export function renderToday(allData, sics = [], extra = {}) {
   el.innerHTML = brief + agenda;
   return dia;
 }
-
-export { TIPO_LABEL };

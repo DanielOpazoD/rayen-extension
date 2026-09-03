@@ -16,7 +16,7 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 
 | Pestaña | Contenido |
 |---|---|
-| **Hoy** | El parte de la mañana, en tres bloques: **Novedades** (qué cambió desde la última carga en las interconsultas vigiladas), **Pendientes** (bucles vencidos según reglas explicables) y la **agenda del día** con los antecedentes de cada paciente. El contador del ícono muestra pendientes, no citas: una alerta que hay que ir a buscar es una alerta que no existe. |
+| **Hoy** | Una jornada enfocada: **Novedades** muestra qué cambió desde la última carga en las interconsultas vigiladas y la **agenda del día** presenta los antecedentes de cada paciente. Los pendientes no ocupan esta vista; siguen disponibles en Pacientes y en el contador del ícono. |
 | **Pacientes** | Una fila por persona, no por cita: última atención, número de visitas, diagnósticos activos (con GES), interconsultas abiertas, pendientes y tu nota. Ordenable por cualquier columna, con filtros rápidos (con IC abierta · con pendientes · GES · con nota mía · vistos una sola vez) y exportación CSV. Responde «¿quiénes son mis pacientes con X?», que antes obligaba a exportar a Excel. |
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
 | **Estadísticas** | Tiles con porcentajes (pacientes únicos, atenciones/día, inasistencia, GES, diagnóstico…) y gráficos SVG donde cada barra lleva valor y porcentaje: día, mes, hora, sexo, grupo etario, visitas por paciente, estado, razón, GES, tipo, diagnósticos, certeza; interconsultas por especialidad, estado, prioridad y contrarreferencia (% sin CR por especialidad); equipo del hospital por profesión/profesional/tipo. |
@@ -29,7 +29,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 
 ## Filtros, períodos y ajustes
 
-- **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). Lo mismo en Interconsultas.
+- **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). **Tipo de atención** permite combinar varias opciones mediante casillas. Lo mismo en Interconsultas.
 - **Período**: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año*; las fechas explícitas mandan sobre el chip.
 - La altura de las tablas se **mide**, no se cablea: al plegar los filtros la tabla crece sola.
 - **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.

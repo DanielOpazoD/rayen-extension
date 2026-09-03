@@ -10,6 +10,7 @@ import { state, setData, emit } from './state.js';
 import { setStatus } from './ui.js';
 import { initSyncStatus, renderSyncStatus } from './sync-status.js';
 import { failRunningSyncSources, loadSyncHealth, pendingSyncItems } from './sync-health.js';
+import { summarizeLoad } from './load-summary.js';
 
 /** Fetching, refreshing and the expired-session path. Emits 'fetched' after a manual load. */
 
@@ -19,15 +20,6 @@ let fetchInFlight = null;
 
 async function applyResult(result) {
   setData({ allData: await attachNotes(result.records), team: result.team ?? {} });
-}
-
-function summarize(result) {
-  const parts = [`${state.allData.length} atenciones`];
-  parts.push(result.fromNetwork > 0 ? `${result.fromNetwork} días vía red · ${result.fromCache} desde caché` : 'todo desde caché');
-  const fails = result.failedDays + result.historialFailed;
-  if (fails) parts.push(`⚠ ${fails} días fallaron (se reintentan en la próxima carga)`);
-  parts.push(new Date().toLocaleTimeString('es-CL'));
-  return { text: parts.join(' · '), cls: fails ? 'warn' : 'ok' };
 }
 
 async function performFetch({ retryOnly = false, forceHistorial = false } = {}) {
@@ -90,7 +82,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
     return;
   }
   expired = false;
-  const s = summarize(result);
+  const s = summarizeLoad(state.allData.length, result);
   setStatus(s.text, s.cls);
   armRefresh();
   emit('fetched');
@@ -138,8 +130,8 @@ async function silentRefresh() {
   const scrollY = window.scrollY;
   await applyResult(result);
   window.scrollTo(0, scrollY);
-  const s = summarize(result);
-  setStatus(`${s.text} · auto`, s.cls);
+  const s = summarizeLoad(state.allData.length, result);
+  setStatus(s.text, s.cls);
   await renderSyncStatus(result.sync).catch(() => {});
 }
 

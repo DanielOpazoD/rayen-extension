@@ -8,6 +8,7 @@ import { esc, $, revealRow } from '../dom.js';
 import { state, on, tableCtx } from '../state.js';
 import { initChips, initFilterFold, initMenu, markSorted, debounce, setStatus } from '../ui.js';
 import { writeNote, openPatientById, copyRun, jumpToSIC } from '../actions.js';
+import { decodeMultiValue, initMultiSelect } from '../multi-select.js';
 
 /** The agenda table: filters, sort, inline notes, columns, export. */
 
@@ -15,7 +16,7 @@ const FILTER_IDS = ['search', 'filtFecha', 'filtDia', 'filtSexo', 'filtEstado', 
 
 let sortCol = 'fechaAtencion', sortDir = -1;
 let hiddenCols = new Set();
-let perChips, updateFilterCount;
+let perChips, typeSelect, updateFilterCount;
 
 /** The rows as the user sees them: filtered and sorted. Also what exports get. */
 export function currentRows() {
@@ -31,9 +32,10 @@ export function render() {
 
 /** From a chart bar: one filter, everything else cleared. */
 export function applyFilter(campo, valor) {
-  FILTER_IDS.forEach(id => { $(id).value = ''; });
+  FILTER_IDS.forEach(id => { if (id !== 'filtTipo') $(id).value = ''; });
+  typeSelect.setValues(campo === 'filtTipo' ? [valor] : [], { notify: false });
   perChips.reset();
-  $(campo).value = valor;
+  if (campo !== 'filtTipo') $(campo).value = valor;
   render();
 }
 
@@ -112,6 +114,9 @@ export function init(prefs) {
   }));
 
   perChips = initChips('perChips', 'filtPer', render);
+  typeSelect = initMultiSelect({
+    inputId: 'filtTipo', buttonId: 'filtTipoButton', menuId: 'filtTipoMenu', onChange: render,
+  });
   updateFilterCount = initFilterFold('btnFilters', 'filterPanel', FILTER_IDS, 'filtPer');
   const renderSoon = debounce(render, 150);
   FILTER_IDS.forEach(id => {
@@ -122,11 +127,13 @@ export function init(prefs) {
     const before = Object.fromEntries(FILTER_IDS.map(id => [id, $(id).value]));
     const beforePer = $('filtPer').value;
     const n = Object.values(before).filter(Boolean).length + (beforePer !== 'todo' ? 1 : 0);
-    FILTER_IDS.forEach(id => { $(id).value = ''; });
+    FILTER_IDS.forEach(id => { if (id !== 'filtTipo') $(id).value = ''; });
+    typeSelect.setValues([], { notify: false });
     perChips.reset();
     render();
     if (n) toast(`${n} filtro${n > 1 ? 's' : ''} limpiado${n > 1 ? 's' : ''}`, { tone: 'info', action: { label: 'Deshacer', onClick: () => {
-      for (const [id, v] of Object.entries(before)) $(id).value = v;
+      for (const [id, v] of Object.entries(before)) if (id !== 'filtTipo') $(id).value = v;
+      typeSelect.setValues(decodeMultiValue(before.filtTipo), { notify: false });
       perChips.set(beforePer);
       render();
     } } });
@@ -190,7 +197,8 @@ export function init(prefs) {
   });
 
   on('data', () => {
-    buildFilters(state.allData);
+    const { tipos } = buildFilters(state.allData);
+    typeSelect.setOptions(tipos);
     render();
     if (state.allData.length) ['barEl', 'tblWrap', 'exportWrap'].forEach(id => { $(id).style.display = ''; });
   });

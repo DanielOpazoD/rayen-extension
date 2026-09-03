@@ -1,6 +1,7 @@
 import { fillSelect, $ } from './dom.js';
 import { dateToInt } from './parser.js';
 import { resolveRange, inRange } from './period.js';
+import { decodeMultiValue } from './multi-select.js';
 
 export function buildStats(allData, team = {}) {
   const t    = allData.length;
@@ -55,8 +56,8 @@ export function buildFilters(allData) {
   fillSelect($('filtSexo'),   sexos);
   fillSelect($('filtEstado'), estados);
   fillSelect($('filtPrev'),   prevs);
-  fillSelect($('filtTipo'),   tipos);
   fillSelect($('filtPrest'),  prest);
+  return { tipos };
 }
 
 /** Reads the filter controls into a plain object (see applyFilters). */
@@ -68,7 +69,7 @@ function readFilters() {
     sexo:   $('filtSexo').value,
     estado: $('filtEstado').value,
     prev:   $('filtPrev').value,
-    tipo:   $('filtTipo').value,
+    tipo:   decodeMultiValue($('filtTipo').value),
     prest:  $('filtPrest').value,
     ic:     $('filtIC').value,
     dx:     $('filtDx').value,
@@ -120,7 +121,7 @@ export function applyFilters(allData, f, ctx = EMPTY_CTX) {
     (!f.sexo   || p.sexo === f.sexo) &&
     (!f.estado || p.estado === f.estado) &&
     (!f.prev   || p.prevision === f.prev) &&
-    (!f.tipo   || p.tipoAtencion === f.tipo) &&
+    (!f.tipo?.length || (Array.isArray(f.tipo) ? f.tipo.includes(p.tipoAtencion) : p.tipoAtencion === f.tipo)) &&
     (!f.prest  || (p.prestadores ?? []).some(x => x.nombre === f.prest)) &&
     icMatch(p) && dxMatch(p)
   );
