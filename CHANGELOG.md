@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 2.4.0 — 2026-09-03
+
+- Reorganiza la cabecera con una jerarquía clara entre opciones de carga, actualización y acciones secundarias.
+- Convierte Ficha clínica en un interruptor visual y adapta las acciones a pantallas estrechas sin desbordar la página.
+- Mueve el borrado de caché y datos fuera de la barra principal hacia una sección explícita de Datos locales dentro de Preferencias.
+- Cambia Ajustes por Preferencias y moderniza tamaños, radios, estados presionados y navegación horizontal.
+
 ## 2.3.0 — 2026-09-03
 
 - Permite combinar varios tipos de atención desde un selector moderno con casillas, resumen compacto y uso por teclado.

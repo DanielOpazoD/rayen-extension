@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Rayen Atenciones - Hospital Hanga Roa",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Agenda, ficha clínica, interconsultas y recetas del Dr. Opazo desde Eloisa/Rayen, con caché local y exportación.",
   "icons": {
     "16": "icons/icon16.png",

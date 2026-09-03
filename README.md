@@ -34,7 +34,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - La altura de las tablas se **mide**, no se cablea: al plegar los filtros la tabla crece sola.
 - **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
 - **Hoy**: flechas ◀ ▶, selector de fecha y botón «Hoy» para ver cualquier jornada.
-- **Ajustes** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, y las especialidades vigiladas para Novedades (lista construida con las especialidades reales de las SIC cargadas). Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
+- **Preferencias** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, especialidades vigiladas para Novedades y gestión de datos locales. Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
 - La búsqueda de Atenciones también cubre las notas propias.
 
 ## Sin callejones sin salida
@@ -89,7 +89,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 
 - Los datos clínicos descargados se guardan **en claro** en `chrome.storage.local` del perfil de Chrome (hasta 13 meses; se podan solos). Úsala solo en un equipo propio con disco cifrado.
 - El token de sesión vive en `chrome.storage.session` (memoria): no se escribe en disco.
-- **✕ Borrar ▾ → Borrar caché** elimina agenda, ficha y SIC; las notas propias (`rayen_notes_v1`) se conservan. **Borrar todos los datos** vacía todo el almacenamiento de la extensión (notas, preferencias y token incluidos) tras doble confirmación.
+- **Preferencias → Datos locales → Vaciar caché** elimina agenda, ficha y SIC; las notas propias (`rayen_notes_v1`) se conservan. **Eliminar todo** vacía todo el almacenamiento de la extensión (notas, preferencias y token incluidos) tras doble confirmación.
 - El reporte que se abre para imprimir/PDF se borra del almacenamiento en cuanto se muestra.
 - Si la sesión de Eloisa vence (HTTP 401/403), la carga se detiene en la primera llamada fallida y la barra de estado ofrece **Abrir Eloisa**; al volver a esta pestaña con sesión nueva, se recarga sola.
 - Los archivos exportados contienen datos de pacientes: trátalos como tal.
