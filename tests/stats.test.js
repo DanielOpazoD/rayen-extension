@@ -34,6 +34,12 @@ test('applyFilters: simple equality filters', () => {
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, tipo: 'Control', dia: 'Mié' }, ctx)), [2, 3]);
 });
 
+test('applyFilters: tipo de atención acepta selección múltiple', () => {
+  assert.deepEqual(ids(applyFilters(rows, { ...NONE, tipo: ['Morbilidad', 'Control'] }, ctx)), [1, 2, 3]);
+  assert.deepEqual(ids(applyFilters(rows, { ...NONE, tipo: ['Morbilidad'] }, ctx)), [1]);
+  assert.deepEqual(ids(applyFilters(rows, { ...NONE, tipo: [] }, ctx)), [1, 2, 3]);
+});
+
 test('applyFilters: IC role filters use the loaded SICs and the officer id', () => {
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, ic: 'cita' }, ctx)),     [1]);
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, ic: 'recibi' }, ctx)),   [1]);
