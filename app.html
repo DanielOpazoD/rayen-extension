@@ -99,28 +99,33 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .stat-n{font-size:var(--t-xl);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.02em}
 .stat-l{font-size:var(--t-xs);color:var(--ink-3);margin-top:2px}
 
-/* ═══ Filter bar ═══ */
-.bar{padding:var(--sp-3) var(--gutter) var(--sp-2);display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(auto-fit,minmax(140px,1fr));gap:6px;align-items:center}
-.bar input,.bar select{padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r-sm);outline:none;background:var(--card);min-width:0;width:100%}
-.bar input::placeholder{color:var(--ink-3)}
-.bar input:focus,.bar select:focus{border-color:var(--brand)}
-.bar-tools{display:flex;gap:6px;padding:0 var(--gutter) var(--sp-3);align-items:center;flex-wrap:wrap;position:relative}
-.bar-tools .spacer{flex:1}
-.bar .more{display:none}
-.bar.show-more .more{display:block}
-#colsMenu{display:none;position:absolute;right:var(--gutter);top:100%;background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:10px 12px;z-index:30;columns:2;gap:14px;min-width:280px}
+/* ═══ Toolbar: una sola fila; el resto se pliega ═══ */
+.toolbar{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) var(--gutter);flex-wrap:wrap;position:relative}
+.toolbar input[type=text]{flex:1;min-width:200px;max-width:360px;padding:6px 10px;border:1px solid var(--rule);border-radius:var(--r-sm);outline:none;background:var(--card)}
+.toolbar input::placeholder{color:var(--ink-3)}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--brand)}
+.toolbar select{padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);outline:none}
+.toolbar .spacer{flex:1}
+.filter-panel{padding:0 var(--gutter) var(--sp-3);animation:fpIn .14s ease}
+.filter-panel[hidden]{display:none}
+@keyframes fpIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.filter-panel{animation:none}}
+.fp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:var(--sp-2) var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--surface-3);border:1px solid var(--rule);border-radius:var(--r-md)}
+.fp-grid label{display:flex;flex-direction:column;gap:4px;font-size:var(--t-xs);color:var(--ink-3);min-width:0}
+.fp-grid select,.fp-grid input[type=date]{padding:5px 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm);color:var(--ink);width:100%;outline:none}
+.fp-grid select:focus,.fp-grid input:focus{border-color:var(--brand)}
+.fp-range span{display:flex;align-items:center;gap:5px}
+.fp-range i{color:var(--ink-4);font-style:normal}
+.fp-foot{display:flex;justify-content:flex-end;padding-top:var(--sp-2)}
+#colsMenu{display:none;position:absolute;right:var(--gutter);top:calc(100% - 4px);background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:10px 12px;z-index:30;columns:2;gap:14px;min-width:280px}
 #colsMenu.open{display:block}
 #colsMenu label{display:flex;gap:6px;align-items:center;font-size:var(--t-sm);padding:3px 0;cursor:pointer;break-inside:avoid;color:var(--ink-2)}
 
-/* Período: chips + rango explícito */
-.bar-period{display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--gutter) var(--sp-2);flex-wrap:wrap}
+/* Período: chips en la toolbar */
 .chips{display:flex;gap:4px;flex-wrap:wrap}
 .chip{padding:3px 10px;border:1px solid var(--rule);border-radius:var(--r-full);background:var(--card);color:var(--ink-2);font-size:var(--t-xs);font-weight:500;cursor:pointer;line-height:1.6}
 .chip:hover{border-color:var(--brand);color:var(--brand-2)}
 .chip.on{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-2);font-weight:600}
-.range{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);color:var(--ink-3)}
-.range input[type=date]{padding:3px 6px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-xs);color:var(--ink-2)}
-.range input[type=date]:focus{border-color:var(--brand);outline:none}
 /* Hoy: navegación por día */
 .day-nav{display:flex;align-items:center;gap:6px;padding:var(--sp-3) var(--gutter) 0;flex-wrap:wrap}
 .day-nav input[type=date]{padding:3px 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm)}
@@ -141,7 +146,7 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .sic-table thead th.sorted[data-dir=asc]::after{content:'↑'}
 
 /* ═══ Tables — hairlines, no zebra, quiet header ═══ */
-.tbl-wrap{margin:0 var(--gutter) var(--sp-5);border-radius:var(--r-md);overflow:auto;max-height:calc(100vh - 232px);background:var(--card);border:1px solid var(--rule)}
+.tbl-wrap{margin:0 var(--gutter) var(--sp-5);border-radius:var(--r-md);overflow:auto;max-height:calc(100vh - var(--chrome-h, 232px));background:var(--card);border:1px solid var(--rule)}
 table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);table-layout:fixed}
 col.c-fecha{width:var(--w-fecha)}
 col.c-nombre{width:206px} col.c-edad{width:56px} col.c-sexo{width:42px}
@@ -350,6 +355,23 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 #ppSaveNote{margin-top:6px;padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:var(--r-sm);font-size:var(--t-sm);font-weight:600;cursor:pointer;width:100%}
 #ppSaveNote:hover{background:var(--brand-2)}
 
+/* ═══ Pacientes ═══ */
+.pac-table col.p-nom{width:230px} .pac-table col.p-eda{width:70px} .pac-table col.p-n{width:52px}
+.pac-table col.p-ult{width:104px} .pac-table col.p-dx{width:250px} .pac-table col.p-sic{width:180px}
+.pac-table col.p-pend{width:150px} .pac-table col.p-nota{width:170px}
+.pac-table thead th[data-psort]{cursor:pointer}
+.pac-table thead th.sorted::after{content:'↓';margin-left:4px;color:var(--brand-2);font-size:11px}
+.pac-table thead th.sorted[data-dir=asc]::after{content:'↑'}
+.pac-row{cursor:pointer}
+.pac-dx{display:block;font-size:var(--t-xs);color:var(--ink-2);line-height:1.45}
+.pac-dx b{font-weight:500;color:var(--ink)}
+.pac-more{color:var(--ink-3)}
+.pac-sic{display:flex;flex-wrap:wrap;gap:4px}
+.pac-pend{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);color:var(--warn);font-weight:600}
+.pac-pend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pac-none{color:var(--ink-4)}
+.pac-nota{font-size:var(--t-xs);color:var(--ink-2);white-space:normal;word-break:break-word;display:block}
+
 /* ═══ Interconsultas ═══ */
 .sic-status{padding:0 var(--sp-2);font-size:var(--t-xs);color:var(--ink-3)}
 .sic-table col.s-fecha{width:104px} .sic-table col.s-dias{width:52px}
@@ -500,7 +522,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 </style>
 </head>
 <body>
-<div class="topbar">
+<div class="topbar" id="topbar">
 <header>
   <div class="brand">
     <span class="mark" aria-hidden="true"></span>
@@ -572,6 +594,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 <nav class="tabs" role="tablist" aria-label="Secciones">
   <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-hoy" data-tab="hoy">Hoy</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-atenciones" data-tab="atenciones">Atenciones</button>
+  <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-pacientes" data-tab="pacientes">Pacientes</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-estadisticas" data-tab="estadisticas">Estadísticas</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-interconsultas" data-tab="interconsultas">Interconsultas</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-explorador" data-tab="explorador">Explorador API</button>
@@ -604,37 +627,37 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 <!-- Tab: Atenciones -->
 <div class="tab-pane" id="tab-atenciones" role="tabpanel">
 <div id="barEl" style="display:none">
-<div class="bar">
-  <input type="text" id="search" placeholder="Buscar nombre, RUN, diagnóstico…" aria-label="Buscar">
-  <select id="filtFecha" aria-label="Fecha"><option value="">Todas las fechas</option></select>
-  <select id="filtEstado" aria-label="Estado"><option value="">Todos los estados</option></select>
-  <select id="filtTipo" aria-label="Tipo de atención"><option value="">Todos los tipos</option></select>
-  <select id="filtDx" aria-label="Diagnóstico"><option value="">Dx: todos</option><option value="con">Con diagnóstico</option><option value="sin">Sin diagnóstico</option><option value="ges">GES</option><option value="urg">Urgencias</option></select>
-  <select id="filtIC" aria-label="Interconsultas">
-    <option value="">IC: todas</option>
-    <option value="recibi">IC que recibí (me derivaron al paciente)</option>
-    <option value="emiti">IC que emití (yo derivé)</option>
-    <option value="cita">Cita originada por una IC</option>
-    <option value="paciente">Paciente con alguna SIC</option>
-    <option value="no">Sin IC ni SIC</option>
-  </select>
-  <select id="filtDia" class="more" aria-label="Día de la semana"><option value="">Todos los días</option></select>
-  <select id="filtSexo" class="more" aria-label="Sexo"><option value="">Todos los sexos</option></select>
-  <select id="filtPrev" class="more" aria-label="Previsión"><option value="">Todas las previsiones</option></select>
-  <select id="filtPrest" class="more" aria-label="Prestador"><option value="">Todos los prestadores</option></select>
-</div>
-<div class="bar-period" role="group" aria-label="Período">
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Buscar nombre, RUN, diagnóstico, nota…" aria-label="Buscar">
   <input type="hidden" id="filtPer" value="todo">
-  <div class="chips" id="perChips"></div>
-  <span class="range"><input type="date" id="filtDesde" aria-label="Desde"><span>–</span><input type="date" id="filtHasta" aria-label="Hasta"></span>
-</div>
-<div class="bar-tools">
-  <button class="btn-mini" id="btnClearFilters" data-tip="Limpiar filtros">Filtros</button>
-  <button class="btn-mini" id="btnMoreFilters" data-tip="Día, sexo, previsión, prestador" aria-expanded="false">Más filtros</button>
+  <div class="chips" id="perChips" role="group" aria-label="Período"></div>
+  <button class="btn-mini" id="btnFilters" aria-expanded="false" aria-controls="filterPanel" data-tip="Estado, tipo, diagnóstico, interconsultas, día, sexo, previsión, prestador y rango de fechas">Filtros</button>
   <span class="spacer"></span>
   <button class="btn-mini" id="btnDensity" data-tip="Alternar densidad de filas">Compacto</button>
   <button class="btn-mini" id="btnCols" data-tip="Mostrar / ocultar columnas" aria-haspopup="true" aria-expanded="false">Columnas</button>
   <div id="colsMenu"></div>
+</div>
+<div class="filter-panel" id="filterPanel" hidden>
+  <div class="fp-grid">
+    <label>Estado<select id="filtEstado"><option value="">Todos</option></select></label>
+    <label>Tipo de atención<select id="filtTipo"><option value="">Todos</option></select></label>
+    <label>Diagnóstico<select id="filtDx"><option value="">Todos</option><option value="con">Con diagnóstico</option><option value="sin">Sin diagnóstico</option><option value="ges">GES</option><option value="urg">Urgencias</option></select></label>
+    <label>Interconsultas<select id="filtIC">
+      <option value="">Todas</option>
+      <option value="recibi">Que recibí</option>
+      <option value="emiti">Que emití</option>
+      <option value="cita">Cita originada por IC</option>
+      <option value="paciente">Paciente con alguna SIC</option>
+      <option value="no">Sin IC ni SIC</option>
+    </select></label>
+    <label>Fecha exacta<select id="filtFecha"><option value="">Todas</option></select></label>
+    <label>Día de la semana<select id="filtDia"><option value="">Todos</option></select></label>
+    <label>Sexo<select id="filtSexo"><option value="">Todos</option></select></label>
+    <label>Previsión<select id="filtPrev"><option value="">Todas</option></select></label>
+    <label>Prestador<select id="filtPrest"><option value="">Todos</option></select></label>
+    <label class="fp-range">Rango de fechas<span><input type="date" id="filtDesde" aria-label="Desde"><i>–</i><input type="date" id="filtHasta" aria-label="Hasta"></span></label>
+  </div>
+  <div class="fp-foot"><button class="btn-mini" id="btnClearFilters">Limpiar filtros</button></div>
 </div>
 </div>
 <div class="tbl-wrap" id="tblWrap" style="display:none">
@@ -661,47 +684,85 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 </div>
 </div>
 
+<!-- Tab: Pacientes -->
+<div class="tab-pane" id="tab-pacientes" role="tabpanel">
+  <div class="toolbar" id="pacBar" style="display:none">
+    <input type="text" id="pacSearch" placeholder="Buscar paciente por nombre, RUN o diagnóstico…" aria-label="Buscar paciente">
+    <select id="pacFilt" aria-label="Filtro rápido">
+      <option value="">Todos los pacientes</option>
+      <option value="sic">Con interconsulta abierta</option>
+      <option value="pend">Con algo pendiente</option>
+      <option value="ges">Con diagnóstico GES</option>
+      <option value="nota">Con nota mía</option>
+      <option value="rec">Vistos una sola vez</option>
+    </select>
+    <span class="spacer"></span>
+    <span class="sic-status" id="pacCount"></span>
+    <button class="btn-mini" id="btnPacExport" data-tip="Exportar la lista filtrada">CSV</button>
+  </div>
+  <div class="tbl-wrap" id="pacWrap" style="display:none">
+    <table class="pac-table" aria-label="Pacientes">
+      <colgroup><col class="p-nom"><col class="p-eda"><col class="p-n"><col class="p-ult"><col class="p-dx"><col class="p-sic"><col class="p-pend"><col class="p-nota"></colgroup>
+      <thead><tr>
+        <th data-psort="nombre" tabindex="0" aria-sort="none">Paciente</th>
+        <th data-psort="edad" tabindex="0" aria-sort="none">Edad</th>
+        <th data-psort="visitas" tabindex="0" aria-sort="none" data-tip="Atenciones tuyas en el período cargado">Vis.</th>
+        <th data-psort="ultima" class="sorted" data-dir="desc" tabindex="0" aria-sort="descending">Última</th>
+        <th class="ns">Diagnósticos</th>
+        <th data-psort="sics" tabindex="0" aria-sort="none">Interconsultas</th>
+        <th data-psort="pend" tabindex="0" aria-sort="none">Pendientes</th>
+        <th class="ns">Nota</th>
+      </tr></thead>
+      <tbody id="pacBody"></tbody>
+      <tfoot><tr><td colspan="8" id="pacFoot"></td></tr></tfoot>
+    </table>
+  </div>
+  <div class="today-empty" id="pacEmpty"><b>Sin datos todavía</b>Carga la agenda para ver a tus pacientes.
+    <button class="btn btn-primary empty-cta" data-act="fetch">Cargar datos</button></div>
+</div>
+
 <!-- Tab: Interconsultas -->
 <div class="tab-pane" id="tab-interconsultas" role="tabpanel">
   <div class="stats" id="sicSummary"></div>
-  <div class="bar">
+  <div class="toolbar">
     <input type="text" id="sicSearch" placeholder="Buscar paciente, RUN, N° SIC, diagnóstico, CIE-10, fundamentos…" aria-label="Buscar interconsultas">
-    <select id="sicGrupo" aria-label="Estado">
-      <option value="">Todos los estados</option>
-      <option value="pendiente">Pendientes (nueva / revisión / observada)</option>
-      <option value="enviada">En curso (enviada / aceptada / con cita)</option>
-      <option value="atendida">Atendidas</option>
-      <option value="cerrada">Cerradas (alta / egresada)</option>
-      <option value="fallida">Fallidas (rechazada / cancelada / no asiste)</option>
-    </select>
-    <select id="sicEsp" aria-label="Especialidad"><option value="">Todas las especialidades</option></select>
-    <select id="sicQuien" aria-label="Rol">
-      <option value="">Todas las SIC del hospital</option>
-      <option value="emitidas">Emitidas por mí (yo derivé)</option>
-      <option value="recibidas">Recibidas por mí (me derivaron)</option>
-      <option value="mias">Mías (emitidas o recibidas)</option>
-    </select>
-    <select id="sicGes" aria-label="GES"><option value="">GES: todas</option><option value="si">Solo GES</option><option value="no">Sin GES</option></select>
-    <select id="sicPrio" aria-label="Prioridad"><option value="">Prioridad: todas</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option></select>
-    <select id="sicContra" aria-label="Contrarreferencia">
-      <option value="">Contrarreferencia: todas</option>
-      <option value="si">Con contrarreferencia</option>
-      <option value="falta">Falta — atendida y sin contrarreferencia</option>
-      <option value="no">Sin contrarreferencia (cualquier estado)</option>
-    </select>
-  </div>
-  <div class="bar-period" role="group" aria-label="Período">
     <input type="hidden" id="sicPer" value="todo">
-    <div class="chips" id="sicPerChips"></div>
-    <span class="range"><input type="date" id="sicDesde" aria-label="Desde"><span>–</span><input type="date" id="sicHasta" aria-label="Hasta"></span>
-  </div>
-  <div class="bar-tools">
-    <button class="btn-mini" id="btnSicClear" data-tip="Limpiar filtros">Filtros</button>
+    <div class="chips" id="sicPerChips" role="group" aria-label="Período"></div>
+    <button class="btn-mini" id="btnSicFilters" aria-expanded="false" aria-controls="sicFilterPanel" data-tip="Estado, especialidad, rol, contrarreferencia, GES, prioridad y rango de fechas">Filtros</button>
     <span class="sic-status" id="sicStatus" role="status">Carga los datos para ver las interconsultas.</span>
     <span class="spacer"></span>
-    <button class="btn-mini" id="btnSicRefresh" data-tip="Volver a pedir las interconsultas a Eloisa">Actualizar IC</button>
+    <button class="btn-mini" id="btnSicRefresh" data-tip="Volver a pedir las interconsultas a Eloisa">Actualizar</button>
     <button class="btn-mini" id="btnSicExport" style="display:none">CSV</button>
     <button class="btn-mini" id="btnSicExportXls" style="display:none">Excel</button>
+  </div>
+  <div class="filter-panel" id="sicFilterPanel" hidden>
+    <div class="fp-grid">
+      <label>Estado<select id="sicGrupo">
+        <option value="">Todos</option>
+        <option value="pendiente">Pendientes</option>
+        <option value="enviada">En curso</option>
+        <option value="atendida">Atendidas</option>
+        <option value="cerrada">Cerradas</option>
+        <option value="fallida">Fallidas</option>
+      </select></label>
+      <label>Especialidad<select id="sicEsp"><option value="">Todas</option></select></label>
+      <label>Rol<select id="sicQuien">
+        <option value="">Todas del hospital</option>
+        <option value="emitidas">Emitidas por mí</option>
+        <option value="recibidas">Recibidas por mí</option>
+        <option value="mias">Mías</option>
+      </select></label>
+      <label>Contrarreferencia<select id="sicContra">
+        <option value="">Todas</option>
+        <option value="si">Con contrarreferencia</option>
+        <option value="falta">Falta — atendida sin CR</option>
+        <option value="no">Sin CR (cualquier estado)</option>
+      </select></label>
+      <label>GES<select id="sicGes"><option value="">Todas</option><option value="si">Solo GES</option><option value="no">Sin GES</option></select></label>
+      <label>Prioridad<select id="sicPrio"><option value="">Todas</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option></select></label>
+      <label class="fp-range">Rango de fechas<span><input type="date" id="sicDesde" aria-label="Desde"><i>–</i><input type="date" id="sicHasta" aria-label="Hasta"></span></label>
+    </div>
+    <div class="fp-foot"><button class="btn-mini" id="btnSicClear">Limpiar filtros</button></div>
   </div>
   <div class="tbl-wrap">
     <table class="sic-table" aria-label="Interconsultas">

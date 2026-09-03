@@ -1,7 +1,7 @@
 import { loadData, getRawSamples }        from './src/api.js';
 import { getToken }                       from './src/auth.js';
 import { attachNotes, saveNote, restoreNote }          from './src/notes.js';
-import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } from './src/export.js';
+import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas, exportRows } from './src/export.js';
 import { toast, copyToClipboard, flashOk } from './src/toast.js';
 import { initPalette } from './src/palette.js';
 import { PERIODS, date8ToIso, isoToDate8 } from './src/period.js';
@@ -12,6 +12,7 @@ import { initPanel, openPanel }           from './src/patient-panel.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer.js';
 import { renderTable, sortRecords, appendChunk, hasMoreRows, rowSelector, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
 import { renderToday } from './src/today.js';
+import { buildPatients, filterPatients, sortPatients, setPatientSort, renderPatients, PACIENTE_COLS } from './src/patients.js';
 import { initLock }    from './src/lock.js';
 import { computePendientes } from './src/pendientes.js';
 import { diffWatched }       from './src/watch.js';
@@ -44,6 +45,7 @@ let refreshMin   = 15;
 let lockCtl      = null;
 let todayDate    = '';   // '' = hoy (con fallback a la última jornada)
 let lastRendered = [];   // orden actual de la tabla: alimenta ‹ › y la paleta
+let pacientes    = [];   // derivado de allData + sics + pendientes
 let hiddenCols   = new Set();
 
 const FILTER_IDS = ['search','filtFecha','filtDia','filtSexo','filtEstado','filtPrev','filtTipo','filtPrest','filtIC','filtDx','filtDesde','filtHasta'];
@@ -71,6 +73,21 @@ function initChips(containerId, hiddenId, onChange) {
   return { set, reset: () => set('todo') };
 }
 
+/**
+ * The tables fill whatever the controls leave. Measuring beats the hardcoded
+ * offset that used to be there: fold the filters and the table grows by itself.
+ */
+function measureChrome() {
+  const pane = document.querySelector('.tab-pane.active');
+  const bar  = pane?.querySelector('.toolbar');
+  const fp   = pane?.querySelector('.filter-panel:not([hidden])');
+  const h = ($('topbar')?.offsetHeight ?? 0) + (bar?.offsetHeight ?? 0) + (fp?.offsetHeight ?? 0)
+          + (pane?.querySelector('.stats')?.offsetHeight ?? 0) + 48;
+  document.documentElement.style.setProperty('--chrome-h', `${h}px`);
+}
+const remeasure = () => requestAnimationFrame(measureChrome);
+window.addEventListener('resize', remeasure);
+
 // ── Utils ─────────────────────────────────────────────────────
 function setStatus(msg, cls = 'idle') {
   const el = $('statusBar');
@@ -95,6 +112,7 @@ function updateBadge() {
 function refreshBrief() {
   pendientes = allData.length ? computePendientes(allData, sics, { umbrales }) : [];
   const shown = renderToday(allData, sics, { pendientes, novedades, especialidades: watchEsp, dia8: todayDate || undefined });
+  refreshPatients();
   $('dayNav').style.display = allData.length ? '' : 'none';
   if (shown) $('dayPick').value = date8ToIso(shown);
   $('dayHint').textContent = todayDate ? '' : 'Hoy (o la última jornada con datos)';
@@ -196,6 +214,8 @@ const showTab = initTablist(document.querySelector('.tabs'), name => {
   if (name === 'interconsultas') ensureSICs();
   if (name === 'explorador')     renderExplorerExtras();
   if (name === 'hoy')            refreshBrief();
+  if (name === 'pacientes')      renderPacientes();
+  remeasure();
 }, 'tab');
 
 // ── Atenciones ────────────────────────────────────────────────
@@ -205,9 +225,7 @@ function render() {
   const data = sortRecords(filterRecords(allData, tableCtx()), sortCol, sortDir);
   lastRendered = data;
   renderTable(data, allData.length, tableCtx());
-  const active = FILTER_IDS.filter(id => $(id).value).length + ($('filtPer').value !== 'todo' ? 1 : 0);
-  $('btnClearFilters').textContent = active ? `✕ ${active} filtro${active > 1 ? 's' : ''}` : '✕ Filtros';
-  $('btnClearFilters').classList.toggle('on', active > 0);
+  updateFilterCount();
 }
 
 async function applyResult(result) {
@@ -309,6 +327,50 @@ async function silentRefresh() {
   setStatus(`${s.text} · auto`, s.cls);
 }
 
+// ── Pacientes ─────────────────────────────────────────────────
+function refreshPatients() {
+  pacientes = allData.length ? buildPatients(allData, sics, pendientes) : [];
+  renderPacientes();
+  const has = pacientes.length > 0;
+  $('pacBar').style.display  = has ? '' : 'none';
+  $('pacWrap').style.display = has ? '' : 'none';
+  $('pacEmpty').style.display = has ? 'none' : '';
+}
+
+function renderPacientes() {
+  const shown = sortPatients(filterPatients(pacientes, { q: $('pacSearch').value, modo: $('pacFilt').value }));
+  renderPatients(pacientes, shown);
+  remeasure();
+}
+
+['pacSearch', 'pacFilt'].forEach(id => {
+  $(id).addEventListener(id === 'pacSearch' ? 'input' : 'change', renderPacientes);
+});
+document.querySelectorAll('.pac-table th[data-psort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const { dir } = setPatientSort(th.dataset.psort);
+    document.querySelectorAll('.pac-table th[data-psort]').forEach(t => { t.classList.remove('sorted'); t.removeAttribute('data-dir'); t.setAttribute('aria-sort', 'none'); });
+    th.classList.add('sorted'); th.dataset.dir = dir > 0 ? 'asc' : 'desc';
+    th.setAttribute('aria-sort', dir > 0 ? 'ascending' : 'descending');
+    renderPacientes();
+  });
+});
+$('pacBody').addEventListener('click', e => {
+  const copy = e.target.closest('.copy-run');
+  if (copy) { e.stopPropagation(); navigator.clipboard.writeText(copy.dataset.run).then(() => flashOk(copy, '✓ copiado')).catch(() => copyToClipboard(copy.dataset.run, 'RUN copiado')); return; }
+  const sic = e.target.closest('[data-sic]');
+  if (sic) { e.stopPropagation(); jumpToSIC({ id: sic.dataset.sic }); return; }
+  const tr = e.target.closest('.pac-row');
+  if (!tr) return;
+  const rec = allData.find(p => String(p.id) === tr.dataset.id);
+  if (rec) openPatient(rec);
+});
+$('btnPacExport').addEventListener('click', () => {
+  const shown = sortPatients(filterPatients(pacientes, { q: $('pacSearch').value, modo: $('pacFilt').value }));
+  exportRows(PACIENTE_COLS, shown, `pacientes_dr_opazo`);
+  toast(`CSV: ${shown.length} pacientes`);
+});
+
 // ── Interconsultas ────────────────────────────────────────────
 function indexSICs() {
   sicsById  = new Map(sics.map(s => [s.id, s]));
@@ -323,6 +385,8 @@ function indexSICs() {
 
 function renderSICs() {
   renderSICTab(sics, sortSICs(filterSICs(sics)));
+  updateSicCount();
+  remeasure();
 }
 
 document.querySelectorAll('.sic-table th[data-sort]').forEach(th => {
@@ -643,6 +707,27 @@ $('sicSummary').addEventListener('click', e => {
 });
 
 const perChips = initChips('perChips', 'filtPer', render);
+
+/** One fold control per tab: the panel holds every secondary filter. */
+function initFilterFold(btnId, panelId, ids, perId, onClear) {
+  const btn = $(btnId), panel = $(panelId);
+  btn.addEventListener('click', () => {
+    const open = panel.hasAttribute('hidden');
+    panel.toggleAttribute('hidden', !open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.classList.toggle('on', open);
+    remeasure();
+    if (open) panel.querySelector('select')?.focus();
+  });
+  return function updateCount() {
+    const n = ids.filter(id => $(id).value).length + ($(perId).value !== 'todo' ? 1 : 0);
+    btn.textContent = n ? `Filtros · ${n}` : 'Filtros';
+    btn.classList.toggle('on', n > 0 || !panel.hasAttribute('hidden'));
+    void onClear;
+  };
+}
+const updateFilterCount = initFilterFold('btnFilters', 'filterPanel', FILTER_IDS, 'filtPer');
+const updateSicCount    = initFilterFold('btnSicFilters', 'sicFilterPanel', SIC_FILTER_IDS, 'sicPer');
 $('btnClearFilters').addEventListener('click', () => {
   const before = Object.fromEntries(FILTER_IDS.map(id => [id, $(id).value]));
   const beforePer = $('filtPer').value;

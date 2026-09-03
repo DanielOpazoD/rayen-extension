@@ -109,6 +109,11 @@ export function exportXLS(records) {
   download(toXLS(ATENCION_COLS, records, 'Atenciones'), `atenciones_dr_opazo_${stamp()}.xls`);
 }
 
+/** Generic CSV for any column set — used by the Pacientes view. */
+export function exportRows(cols, rows, basename) {
+  download(toCSV(cols, rows), `${basename}_${stamp()}.csv`);
+}
+
 const NOTAS_COLS = [
   ['Paciente', p => p.nombre], ['RUN', p => p.runStr], ['Edad', p => p.edad, 'n'],
   ['Últ. atención', p => p.fechaAtencion], ['Nota', p => p.note],

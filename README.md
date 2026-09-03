@@ -17,6 +17,7 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 | Pestaña | Contenido |
 |---|---|
 | **Hoy** | El parte de la mañana, en tres bloques: **Novedades** (qué cambió desde la última carga en las interconsultas vigiladas), **Pendientes** (bucles vencidos según reglas explicables) y la **agenda del día** con los antecedentes de cada paciente. El contador del ícono muestra pendientes, no citas: una alerta que hay que ir a buscar es una alerta que no existe. |
+| **Pacientes** | Una fila por persona, no por cita: última atención, número de visitas, diagnósticos activos (con GES), interconsultas abiertas, pendientes y tu nota. Ordenable por cualquier columna, con filtros rápidos (con IC abierta · con pendientes · GES · con nota mía · vistos una sola vez) y exportación CSV. Responde «¿quiénes son mis pacientes con X?», que antes obligaba a exportar a Excel. |
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
 | **Estadísticas** | Tiles con porcentajes (pacientes únicos, atenciones/día, inasistencia, GES, diagnóstico…) y gráficos SVG donde cada barra lleva valor y porcentaje: día, mes, hora, sexo, grupo etario, visitas por paciente, estado, razón, GES, tipo, diagnósticos, certeza; interconsultas por especialidad, estado, prioridad y contrarreferencia (% sin CR por especialidad); equipo del hospital por profesión/profesional/tipo. |
 | **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos, contrarreferencias, PDF. Rol explícito: **Emití / Recibí / Otra**. |
@@ -28,7 +29,9 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 
 ## Filtros, períodos y ajustes
 
-- **Período** en Atenciones e Interconsultas: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año* más un rango explícito desde–hasta (las fechas explícitas mandan sobre el chip). El botón «Filtros» muestra cuántos hay activos y los limpia.
+- **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). Lo mismo en Interconsultas.
+- **Período**: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año*; las fechas explícitas mandan sobre el chip.
+- La altura de las tablas se **mide**, no se cablea: al plegar los filtros la tabla crece sola.
 - **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
 - **Hoy**: flechas ◀ ▶, selector de fecha y botón «Hoy» para ver cualquier jornada.
 - **Ajustes** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, y las especialidades vigiladas para Novedades (lista construida con las especialidades reales de las SIC cargadas). Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
@@ -115,6 +118,7 @@ src/
   historial.js HistorialAtencion por día + cruce con la agenda (RUN + día)
   ficha.js    ficha por paciente (10 años, todas las secciones) + antecedentes + programas
   sic.js      interconsultas: ids, detalle, contrarreferencias
+  patients.js vista Pacientes: agregación por persona (pura, testeada)
   today.js    parte matinal: novedades + pendientes + agenda con antecedentes
   pendientes.js  motor de reglas explicables sobre datos ya descargados
   watch.js    memoria de cambio de las interconsultas vigiladas
