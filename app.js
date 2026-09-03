@@ -741,13 +741,6 @@ $('btnClearFilters').addEventListener('click', () => {
     render();
   } } });
 });
-$('btnMoreFilters').addEventListener('click', () => {
-  const bar  = document.querySelector('#barEl .bar');
-  const open = bar.classList.toggle('show-more');
-  $('btnMoreFilters').textContent = open ? '− Menos filtros' : '+ Más filtros';
-  $('btnMoreFilters').classList.toggle('on', open);
-  $('btnMoreFilters').setAttribute('aria-expanded', String(open));
-});
 
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.addEventListener('click', () => {

@@ -1,0 +1,21 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Rayen · dev</title>
+<style>#devBadge{position:fixed;left:12px;bottom:12px;z-index:9999;font:600 11px/1 system-ui;letter-spacing:.06em;background:#7d5200;color:#fff;padding:6px 9px;border-radius:4px;opacity:.85;pointer-events:none}</style>
+<script type="module">
+  // Dev harness: real app.html + real app.js, fake chrome.* and synthetic data.
+  // Open via `npm run dev` (or any static server at the repo root) → /dev/
+  import { seed } from './chrome-stub.js';
+  import { buildFixture } from './fixture.js';
+  seed(buildFixture());
+
+  const html = await (await fetch('../app.html')).text();
+  const doc  = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script').forEach(s => s.remove());
+  document.title = `${doc.title} · dev`;
+  document.head.append(...doc.head.querySelectorAll('style, link, meta[name=viewport]'));
+  document.body.innerHTML = doc.body.innerHTML;
+  document.body.insertAdjacentHTML('beforeend', '<div id="devBadge">DEV · DATOS SINTÉTICOS</div>');
+
+  await import('../app.js');
+</script>
