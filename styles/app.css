@@ -45,6 +45,10 @@ button,select,input,textarea{font-family:inherit;color:inherit;font-size:var(--t
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:var(--r-sm)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 
+.skip-link{position:fixed;left:var(--sp-3);top:var(--sp-3);z-index:3000;padding:7px 12px;border-radius:var(--r-sm);background:var(--ink);color:var(--card);font-size:var(--t-sm);font-weight:600;transform:translateY(calc(-100% - var(--sp-5)));transition:transform .12s}
+.skip-link:focus{transform:translateY(0)}
+#mainContent:focus{outline:none}
+
 /* ═══ Top bar — neutral surface, brand only as a mark ═══ */
 .topbar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--rule)}
 header{padding:var(--sp-3) var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:var(--sp-5)}
