@@ -10,7 +10,7 @@
     "docs:check": "node scripts/check-architecture.mjs",
     "release:check": "node scripts/check-release.mjs",
     "check": "npm run lint && npm test && npm run docs:check && npm run release:check",
-    "pack": "npm run check && rm -f rayen-extension-$npm_package_version.zip && zip -r -q rayen-extension-$npm_package_version.zip manifest.json app.html app.js popup.html popup-init.js report.html report.js src icons README.md ARCHITECTURE.md DOCUMENTATION_MAP.md MAPA_API.html CHANGELOG.md && unzip -l rayen-extension-$npm_package_version.zip | tail -1",
+    "pack": "npm run check && rm -f rayen-extension-$npm_package_version.zip && zip -r -q rayen-extension-$npm_package_version.zip manifest.json app.html app.js popup.html popup-init.js report.html report.js src styles icons README.md ARCHITECTURE.md DOCUMENTATION_MAP.md MAPA_API.html CHANGELOG.md && unzip -l rayen-extension-$npm_package_version.zip | tail -1",
     "dev": "python3 -m http.server 8765 --bind 127.0.0.1"
   },
   "engines": {
