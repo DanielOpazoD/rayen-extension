@@ -110,7 +110,7 @@ npm run pack       # genera rayen-extension-<versión>.zip
 
 La estructura completa y la responsabilidad de cada archivo viven en [`ARCHITECTURE.md`](ARCHITECTURE.md); el CI exige que su mapa incluya cada módulo de `src/` exactamente una vez.
 
-Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
+Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); la interfaz vive en `app.html` y su sistema visual en `styles/app.css`. Los colores salen de tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
 
 ## Sistema de diseño
 
@@ -131,7 +131,7 @@ Criterios visuales: la jerarquía la llevan el tamaño y el peso, no el color. L
 
 ## Accesibilidad y apariencia
 
-- **Teclado**: pestañas (app y panel) con ←/→/Home/End; cabeceras de la tabla ordenan con Enter/Espacio y exponen `aria-sort`; nombres de paciente, líneas de IC, filas de SIC y visitas del panel son enfocables y se activan con Enter/Espacio; `Esc` cierra el panel. Los tooltips aparecen también al enfocar.
+- **Teclado**: «Saltar al contenido» evita recorrer toda la cabecera; pestañas (app y panel) con ←/→/Home/End; cabeceras de la tabla ordenan con Enter/Espacio y exponen `aria-sort`; nombres de paciente, líneas de IC, filas de SIC y visitas del panel son enfocables y se activan con Enter/Espacio; `Esc` cierra el panel. Los tooltips aparecen también al enfocar.
 - **Modo oscuro**: sigue al sistema (`prefers-color-scheme`); no hay toggle propio.
 - **`prefers-reduced-motion`**: desactiva transiciones.
 - Los offsets de los elementos fijos se calculan (`--w-fecha`, `--pp-head` medido con `ResizeObserver`), no están cableados en píxeles.
