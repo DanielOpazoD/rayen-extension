@@ -101,6 +101,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 
 ```bash
 npm install        # herramientas de desarrollo y pruebas
+npx playwright install chromium # una vez por equipo, instala el navegador del smoke
 npm run lint       # eslint .
 npm test           # node --test, sin dependencias
 npm run test:e2e   # smoke Playwright en escritorio y ventana estrecha, con datos sintéticos
