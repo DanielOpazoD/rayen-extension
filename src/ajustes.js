@@ -5,7 +5,7 @@ import { state, setData, setPrefs, on } from './state.js';
 import { initMenu, setStatus } from './ui.js';
 import { armRefresh } from './loader.js';
 
-/** The Ajustes menu and the two-step Borrar menu. */
+/** Preferences and local-data controls. */
 
 let lockCtl = null;
 
@@ -61,12 +61,9 @@ export function init({ lock }) {
     }
   });
 
-  initMenu('btnClearCache', 'clearMenu', 'clearWrap');
   $('clearMenu').addEventListener('click', async e => {
     const b = e.target.closest('button[data-clear]');
     if (!b) return;
-    $('clearMenu').classList.remove('open');
-    $('btnClearCache').setAttribute('aria-expanded', 'false');
     const all = b.dataset.clear === 'all';
     const msg = all
       ? '¿Borrar TODOS los datos de la extensión?\n\nAgenda, ficha clínica, interconsultas, NOTAS, preferencias y el token de sesión. No se puede deshacer.'
@@ -75,6 +72,8 @@ export function init({ lock }) {
     if (all && !confirm('Última confirmación: se borrarán también tus notas por paciente. ¿Continuar?')) return;
     try {
       if (all) await clearEverything(); else await clearAllCaches();
+      $('settingsMenu').classList.remove('open');
+      $('btnSettings').setAttribute('aria-expanded', 'false');
       setData({ allData: [], team: {}, sics: [], novedades: null });
       setStatus(all ? 'Todos los datos borrados.' : 'Caché borrado. Pulsa Actualizar para recargar desde la red.', 'idle');
     } catch (err) {
