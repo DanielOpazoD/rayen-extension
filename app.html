@@ -417,6 +417,35 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .pend-t b{color:var(--ink);font-weight:500;margin-right:8px}
 .pgrp-more{font-size:var(--t-xs);color:var(--ink-3);padding:6px 4px}
 
+/* Toasts */
+#toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:var(--ink);color:var(--card);font-size:var(--t-sm);padding:8px 14px;border-radius:var(--r-full);box-shadow:var(--shadow-pop);opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s;max-width:80vw}
+.toast.in{opacity:1;transform:none}
+.toast-bad{background:var(--bad);color:#fff}
+.toast-info{background:var(--info);color:#fff}
+/* RUN copiable */
+.copy-run{cursor:pointer;border-radius:var(--r-sm)}
+.copy-run:hover,.copy-run:focus-visible{color:var(--brand-2);text-decoration:underline;text-underline-offset:2px}
+#ppSector .copy-run{color:var(--ink-2)}
+/* Navegación entre pacientes */
+.pp-nav{display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
+.pp-nav .btn-mini{padding:2px 7px;font-size:var(--t-base);line-height:1.1}
+.pp-pos{font-size:var(--t-xs);color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+/* Estados vacíos accionables */
+.empty-cta{display:inline-block;margin-top:var(--sp-3)}
+/* Paleta de comandos */
+#palette{position:fixed;inset:0;z-index:2500;background:rgba(10,15,15,.34);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh}
+#palette[hidden]{display:none}
+.pal-box{width:min(560px,92vw);background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);overflow:hidden}
+#palInput{width:100%;border:none;border-bottom:1px solid var(--rule);padding:14px 16px;font-size:var(--t-lg);background:var(--card);outline:none}
+.pal-list{max-height:46vh;overflow:auto}
+.pal-item{display:flex;justify-content:space-between;gap:12px;padding:9px 16px;cursor:pointer;border-bottom:1px solid var(--rule-2)}
+.pal-item.on{background:var(--brand-soft)}
+.pal-name{font-size:var(--t-sm);font-weight:500;color:var(--ink)}
+.pal-meta{font-size:var(--t-xs);color:var(--ink-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pal-empty{padding:16px;font-size:var(--t-sm);color:var(--ink-3)}
+.pal-foot{padding:7px 16px;font-size:var(--t-xs);color:var(--ink-3);background:var(--surface-2);border-top:1px solid var(--rule)}
+
 /* ═══ Explorer ═══ */
 .explorer{padding:var(--sp-5) var(--gutter);max-width:1000px}
 .explorer>p{font-size:var(--t-sm);color:var(--ink-3);margin-bottom:var(--sp-3);max-width:70ch}
@@ -472,6 +501,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <input type="checkbox" id="optHistorial" checked> Ficha clínica
     </label>
     <button class="btn btn-primary" id="btnFetch">Cargar datos</button>
+    <button class="btn btn-danger" id="btnCancel" style="display:none">Cancelar</button>
     <div class="menu-wrap" id="exportWrap" style="display:none">
       <button class="btn" id="btnExport" aria-haspopup="menu" aria-expanded="false">Exportar ▾</button>
       <div class="menu" id="exportMenu" role="menu">
@@ -480,6 +510,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
         <button role="menuitem" data-fmt="html">HTML</button>
         <button role="menuitem" data-fmt="pdf">PDF (imprimir)</button>
         <button role="menuitem" data-fmt="json">JSON</button>
+        <button role="menuitem" data-fmt="notas">Mis notas <small>una fila por paciente con nota</small></button>
         <div class="menu-note">Exporta lo que está filtrado en la tabla</div>
       </div>
     </div>
@@ -536,7 +567,8 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
     <span class="muted" id="dayHint"></span>
   </div>
   <div class="today" id="todayContent">
-    <div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy con los antecedentes de cada paciente.</div>
+    <div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy, lo que venció y lo que cambió en tus interconsultas.
+      <button class="btn btn-primary empty-cta" data-act="fetch">Cargar datos</button></div>
   </div>
 </div>
 
@@ -544,7 +576,8 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 <div class="tab-pane" id="tab-estadisticas" role="tabpanel">
   <div class="stats" id="statsBar" style="display:none"></div>
   <div id="chartsSection" style="display:none"></div>
-  <div class="today-empty" id="statsEmpty">Carga los datos primero para ver estadísticas.</div>
+  <div class="today-empty" id="statsEmpty"><b>Sin datos todavía</b>Carga la agenda para ver las estadísticas.
+    <button class="btn btn-primary empty-cta" data-act="fetch">Cargar datos</button></div>
 </div>
 
 <!-- Tab: Atenciones -->
@@ -702,6 +735,11 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <p id="ppMeta"></p>
       <span id="ppSector"></span>
     </div>
+    <span class="pp-nav">
+      <button class="btn-mini" id="ppPrev" data-tip="Paciente anterior (←)" aria-label="Paciente anterior">‹</button>
+      <span id="ppPos" class="pp-pos"></span>
+      <button class="btn-mini" id="ppNext" data-tip="Paciente siguiente (→)" aria-label="Paciente siguiente">›</button>
+    </span>
     <div class="menu-wrap" id="ppPdfWrap">
       <button id="ppPdfBtn" class="pp-hbtn" data-tip="Imprimir o guardar en PDF la historia de este paciente" aria-haspopup="menu" aria-expanded="false">PDF ▾</button>
       <div class="menu" id="ppPdfMenu" role="menu">

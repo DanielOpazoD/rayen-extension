@@ -109,6 +109,26 @@ export function exportXLS(records) {
   download(toXLS(ATENCION_COLS, records, 'Atenciones'), `atenciones_dr_opazo_${stamp()}.xls`);
 }
 
+const NOTAS_COLS = [
+  ['Paciente', p => p.nombre], ['RUN', p => p.runStr], ['Edad', p => p.edad, 'n'],
+  ['Últ. atención', p => p.fechaAtencion], ['Nota', p => p.note],
+];
+
+/** One row per patient with a note — your own knowledge, backed up. */
+export function exportNotas(records, fmt = 'csv') {
+  const seen = new Map();
+  for (const r of records) {
+    if (!r.note) continue;
+    const k = r.run ?? r.nombre;
+    const prev = seen.get(k);
+    if (!prev || (r.fechaAtencion || '') > (prev.fechaAtencion || '')) seen.set(k, r);
+  }
+  const rows = [...seen.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  if (fmt === 'xls') download(toXLS(NOTAS_COLS, rows, 'Notas'), `notas_dr_opazo_${stamp()}.xls`);
+  else download(toCSV(NOTAS_COLS, rows), `notas_dr_opazo_${stamp()}.csv`);
+  return rows.length;
+}
+
 export function exportSICsXLS(sics) {
   download(toXLS(SIC_COLS, sics, 'Interconsultas'), `interconsultas_hhr_${stamp()}.xls`);
 }

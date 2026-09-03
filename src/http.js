@@ -19,6 +19,15 @@ export const session = { expired: false };
 export function resetSession() { session.expired = false; }
 
 /**
+ * Cooperative cancellation. Loaders check `run.cancelled` between batches, so
+ * the in-flight requests finish but nothing further is queued — no torn state,
+ * and whatever was already cached stays cached.
+ */
+export const run = { cancelled: false };
+export function cancelRun() { run.cancelled = true; }
+export function resetRun() { run.cancelled = false; }
+
+/**
  * Resolves a relative or absolute URL and guarantees it targets the Eloisa
  * origin. The Bearer token must never leave that origin.
  * @throws {Error} when the URL points elsewhere

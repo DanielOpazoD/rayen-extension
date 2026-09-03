@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { getToken } from './auth.js';
-import { apiGet, rayenParams, chunk, session, resetSession } from './http.js';
+import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from './http.js';
 import { parseCita, dateRange, localDateStr, matchKey } from './parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 import { loadHistorial, mergeHistorial } from './historial.js';
@@ -49,6 +49,7 @@ export async function loadData(months, onProgress = () => {}, { historial = true
   const token = await getToken();
   if (!token) return null;
   resetSession();
+  resetRun();
 
   const today = new Date();
   const from  = new Date(today);
@@ -87,14 +88,14 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     if (okDates.length) await saveStore(store, okDates, newRecords);
     done += batch.length;
     onProgress(Math.round((done / toFetch.length) * citasShare), 'citas');
-    if (session.expired) break; // no point hammering a dead session
+    if (session.expired || run.cancelled) break;
   }
 
   const wanted = new Set(allDates);
   let records  = [...store.records.values()].filter(r => wanted.has(r.fecha8));
   let team = {}, historialFailed = 0;
 
-  if (historial && !session.expired) {
+  if (historial && !session.expired && !run.cancelled) {
     const citaKeys = new Set(records.map(matchKey));
     const res = await loadHistorial(token, allDates, citaKeys,
       pct => onProgress(50 + Math.round(pct / 2), 'ficha'));
@@ -111,5 +112,6 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     historialFailed,
     team,
     sessionExpired: session.expired,
+    cancelled: run.cancelled,
   };
 }

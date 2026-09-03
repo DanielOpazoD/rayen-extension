@@ -34,6 +34,16 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Ajustes** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, y las especialidades vigiladas para Novedades (lista construida con las especialidades reales de las SIC cargadas). Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
 - La búsqueda de Atenciones también cubre las notas propias.
 
+## Sin callejones sin salida
+
+- **⌘K / Ctrl+K** (o `/`) abre el buscador de pacientes desde cualquier pestaña: nombre o RUN, ignora acentos, ↑↓ y ↵.
+- **Clic en el RUN** lo copia al portapapeles — en la tabla y en el panel.
+- **‹ ›** en el panel recorre los pacientes en el orden en que los muestra la tabla; también con ←/→.
+- **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
+- **Cancelar** detiene una carga larga sin perder lo ya descargado (cancelación cooperativa: termina el lote en vuelo y no encola más).
+- **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
+- Los estados vacíos traen el botón para cargar, en vez de solo decirlo.
+
 ## Pendientes: las reglas
 
 Las interconsultas del hospital son **internas** (origen y destino son el nodo 5576): el especialista está en el mismo edificio. Por eso una contrarreferencia que falta es una brecha de registro, no de logística. En el trimestre analizado, **131 de 174** solicitudes atendidas no tenían contrarreferencia en Rayen.
@@ -101,6 +111,8 @@ src/
   watch.js    memoria de cambio de las interconsultas vigiladas
   lock.js     bloqueo por inactividad (pantalla de privacidad)
   period.js   períodos rápidos y rangos (puro, testeado)
+  palette.js  buscador de pacientes ⌘K (ranking puro, testeado)
+  toast.js    confirmaciones efímeras y copia al portapapeles
   cache.js    chrome.storage con runtime.lastError, stores por fecha, prefs
   table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  UI
   export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF

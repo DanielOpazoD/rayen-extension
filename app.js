@@ -1,10 +1,12 @@
 import { loadData, getRawSamples }        from './src/api.js';
 import { getToken }                       from './src/auth.js';
 import { attachNotes, saveNote }          from './src/notes.js';
-import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF } from './src/export.js';
+import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } from './src/export.js';
+import { toast, copyToClipboard } from './src/toast.js';
+import { initPalette } from './src/palette.js';
 import { PERIODS, date8ToIso, isoToDate8 } from './src/period.js';
 import { clearAllCaches, clearEverything, loadPrefs, savePrefs } from './src/cache.js';
-import { AuthError } from './src/http.js';
+import { AuthError, cancelRun } from './src/http.js';
 import { renderCharts }                   from './src/charts.js';
 import { initPanel, openPanel }           from './src/patient-panel.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer.js';
@@ -41,6 +43,7 @@ let umbrales     = { ...CONFIG.pendientes };
 let refreshMin   = 15;
 let lockCtl      = null;
 let todayDate    = '';   // '' = hoy (con fallback a la última jornada)
+let lastRendered = [];   // orden actual de la tabla: alimenta ‹ › y la paleta
 let hiddenCols   = new Set();
 
 const FILTER_IDS = ['search','filtFecha','filtDia','filtSexo','filtEstado','filtPrev','filtTipo','filtPrest','filtIC','filtDx','filtDesde','filtHasta'];
@@ -102,6 +105,24 @@ $('dayNext').addEventListener('click', () => shiftDay(1));
 $('dayToday').addEventListener('click', () => { todayDate = ''; refreshBrief(); });
 $('dayPick').addEventListener('change', () => { todayDate = isoToDate8($('dayPick').value); refreshBrief(); });
 
+/** Deduped patients in the order the table shows them — for ‹ › and the palette. */
+function patientList() {
+  const seen = new Set(), out = [];
+  for (const r of (lastRendered.length ? lastRendered : allData)) {
+    const k = r.run ?? r.nombre;
+    if (seen.has(k)) continue;
+    seen.add(k); out.push(r);
+  }
+  return out;
+}
+
+function openPatient(record) {
+  const list = patientList();
+  const key  = record.run ?? record.nombre;
+  const i    = list.findIndex(p => (p.run ?? p.nombre) === key);
+  openPanel(record, { allData, sics, contacts, pos: i >= 0 ? { i, n: list.length } : null });
+}
+
 // ── Session expiry ────────────────────────────────────────────
 let expired = false;
 
@@ -142,6 +163,7 @@ function tableCtx() { return { sicsById, sicsByRun, officerId: CONFIG.officerId 
 
 function render() {
   const data = sortRecords(filterRecords(allData, tableCtx()), sortCol, sortDir);
+  lastRendered = data;
   renderTable(data, allData.length, tableCtx());
   const active = FILTER_IDS.filter(id => $(id).value).length + ($('filtPer').value !== 'todo' ? 1 : 0);
   $('btnClearFilters').textContent = active ? `✕ ${active} filtro${active > 1 ? 's' : ''}` : '✕ Filtros';
@@ -178,6 +200,7 @@ async function handleFetch() {
 
   btn.disabled = true;
   btn.textContent = 'Cargando...';
+  $('btnCancel').style.display = '';
   prog.style.display = 'block';
   prog.value = 0;
   setStatus('Conectando con Eloisa...');
@@ -193,6 +216,7 @@ async function handleFetch() {
     result = null;
   } finally {
     prog.style.display = 'none';
+    $('btnCancel').style.display = 'none';
     btn.disabled = false;
     btn.textContent = 'Actualizar';
   }
@@ -205,6 +229,11 @@ async function handleFetch() {
 
   if (result.records.length) await applyResult(result);
   if (result.sessionExpired) { showExpired(); return; }
+  if (result.cancelled) {
+    setStatus(`Carga cancelada · ${allData.length} atenciones desde lo ya descargado`, 'warn');
+    toast('Carga cancelada; lo descargado se conservó', { tone: 'info' });
+    return;
+  }
   expired = false;
   const s = summarize(result);
   setStatus(s.text, s.cls);
@@ -300,8 +329,8 @@ SIC_FILTER_IDS.forEach(id => {
   $(id).addEventListener('change', renderSICs);
 });
 $('btnSicRefresh').addEventListener('click', () => ensureSICs(true));
-$('btnSicExport').addEventListener('click', () => exportSICsCSV(sortSICs(filterSICs(sics))));
-$('btnSicExportXls').addEventListener('click', () => exportSICsXLS(sortSICs(filterSICs(sics))));
+$('btnSicExport').addEventListener('click', () => { const r = sortSICs(filterSICs(sics)); exportSICsCSV(r); toast(`CSV: ${r.length} interconsultas`); });
+$('btnSicExportXls').addEventListener('click', () => { const r = sortSICs(filterSICs(sics)); exportSICsXLS(r); toast(`Excel: ${r.length} interconsultas`); });
 const sicChips = initChips('sicPerChips', 'sicPer', renderSICs);
 $('btnSicClear').addEventListener('click', () => { SIC_FILTER_IDS.forEach(i => { $(i).value = ''; }); sicChips.reset(); renderSICs(); });
 
@@ -317,8 +346,8 @@ $('sicBody').addEventListener('click', async e => {
   const open = e.target.closest('.pat-open');
   if (open) {
     const rec = allData.find(p => p.run === open.dataset.run);
-    if (rec) openPanel(rec, { allData, sics, contacts });
-    else $('sicStatus').textContent = 'Ese paciente no tiene atenciones tuyas en el período cargado.';
+    if (rec) openPatient(rec);
+    else toast('Ese paciente no tiene atenciones tuyas en el período cargado.', { tone: 'info' });
     return;
   }
   const row = e.target.closest('tr.sic-row');
@@ -370,6 +399,27 @@ $('btnCols').addEventListener('click', e => {
 });
 document.addEventListener('click', e => {
   if (!e.target.closest('#colsMenu') && !e.target.closest('#btnCols')) $('colsMenu').classList.remove('open');
+});
+
+// Clicking a bar filters the table by that value and jumps to Atenciones
+$('chartsSection').addEventListener('click', e => {
+  const g = e.target.closest('[data-f]');
+  if (!g) return;
+  const raw = g.dataset.f;
+  const i = raw.indexOf(':');
+  const campo = raw.slice(0, i), valor = raw.slice(i + 1);
+  if (campo === 'sicEsp') {
+    SIC_FILTER_IDS.forEach(id => { $(id).value = ''; });
+    $('sicEsp').value = valor;
+    showTab('interconsultas');
+    renderSICs();
+  } else {
+    FILTER_IDS.forEach(id => { $(id).value = ''; });
+    $(campo).value = valor;
+    showTab('atenciones');
+    render();
+  }
+  toast(`Filtrado por «${valor}»`, { tone: 'info' });
 });
 
 // ── Ajustes ───────────────────────────────────────────────────
@@ -455,14 +505,29 @@ $('btnExplorerFetch').addEventListener('click', async () => {
 
 // ── Events ────────────────────────────────────────────────────
 $('btnFetch').addEventListener('click', handleFetch);
-const EXPORTERS = { csv: exportCSV, xls: exportXLS, html: exportHTML, json: exportJSON, pdf: exportPDF };
+$('btnCancel').addEventListener('click', () => { cancelRun(); $('btnCancel').disabled = true; setStatus('Cancelando… se conserva lo ya descargado', 'warn'); });
+document.addEventListener('click', e => {
+  if (e.target.closest('.empty-cta[data-act="fetch"]')) handleFetch();
+});
+const EXPORTERS = {
+  csv: exportCSV, xls: exportXLS, html: exportHTML, json: exportJSON, pdf: exportPDF,
+  notas: rows => { const n = exportNotas(rows); toast(n ? `${n} pacientes con nota exportados` : 'No hay notas que exportar', { tone: n ? 'ok' : 'info' }); },
+};
+const EXPORT_LABEL = { csv: 'CSV', xls: 'Excel', html: 'HTML', json: 'JSON', pdf: 'PDF', notas: '' };
 $('btnExport').addEventListener('click', e => { e.stopPropagation(); const open = $('exportMenu').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(open)); });
 $('exportMenu').addEventListener('click', async e => {
   const b = e.target.closest('button[data-fmt]');
   if (!b) return;
   $('exportMenu').classList.remove('open');
-  try { await EXPORTERS[b.dataset.fmt](sortRecords(filterRecords(allData, tableCtx()), sortCol, sortDir)); }
-  catch (err) { setStatus(`No se pudo exportar: ${err.message}`, 'err'); }
+  const rows = sortRecords(filterRecords(allData, tableCtx()), sortCol, sortDir);
+  try {
+    await EXPORTERS[b.dataset.fmt](rows);
+    const lbl = EXPORT_LABEL[b.dataset.fmt];
+    if (lbl) toast(`${lbl}: ${rows.length} atenciones`);
+  } catch (err) {
+    setStatus(`No se pudo exportar: ${err.message}`, 'err');
+    toast('No se pudo exportar', { tone: 'bad' });
+  }
 });
 document.addEventListener('click', e => { if (!e.target.closest('#exportWrap')) $('exportMenu').classList.remove('open'); });
 $('btnClearCache').addEventListener('click', e => { e.stopPropagation(); const open = $('clearMenu').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(open)); });
@@ -507,13 +572,13 @@ $('todayContent').addEventListener('click', e => {
   const byRun = e.target.closest('.pat-run[data-run]');
   if (byRun) {
     const record = allData.find(p => p.run === byRun.dataset.run);
-    if (record) openPanel(record, { allData, sics, contacts });
+    if (record) openPatient(record);
     return;
   }
   const card = e.target.closest('.pat-link[data-id]');
   if (!card) return;
   const record = allData.find(p => String(p.id) === card.dataset.id);
-  if (record) openPanel(record, { allData, sics, contacts });
+  if (record) openPatient(record);
 });
 
 // Summary tiles in the IC tab double as filters
@@ -571,10 +636,13 @@ $('tbody').addEventListener('click', async e => {
     return;
   }
 
+  const copy = e.target.closest('.copy-run');
+  if (copy) { e.stopPropagation(); copyToClipboard(copy.dataset.run, 'RUN copiado'); return; }
+
   const patCell = e.target.closest('.pat-link');
   if (patCell) {
     const record = allData.find(p => String(p.id) === patCell.dataset.id);
-    if (record) openPanel(record, { allData, sics, contacts });
+    if (record) openPatient(record);
     return;
   }
 
@@ -629,7 +697,16 @@ initPanel({
     render();
     refreshBrief();
   },
+  // ‹ › and ←/→ walk the patient list in the order the table shows it
+  onNavigate(dir) {
+    const list = patientList();
+    const key  = document.getElementById('ppName').textContent;
+    const i    = list.findIndex(p => p.nombre === key);
+    const next = list[i + dir];
+    if (next) openPatient(next);
+  },
 });
+initPalette(patientList, openPatient);
 initTooltips();
 lockCtl = initLock({ minutes: 15 }); // patient data on screen; blur it when idle
 lockCtl.minutes = 15;

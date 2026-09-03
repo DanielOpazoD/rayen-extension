@@ -8,10 +8,12 @@ import { CONFIG } from './config.js';
 import { whenLabel } from './table.js';
 import { buildPatientReport, SCOPE_LABEL } from './patient-report.js';
 import { openReport } from './export.js';
+import { toast, copyToClipboard } from './toast.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
 let activeTab = 'dx';    // remembered across patients
+let navigate = null;     // (dir) => void, supplied by the host
 
 function close() {
   $('patientPanel').classList.remove('open');
@@ -30,7 +32,8 @@ const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
  *   onNoteSaved lets the host refresh the table/brief: the same patient can
  *   appear in many rows and they must all show the new note.
  */
-export function initPanel({ onNoteSaved } = {}) {
+export function initPanel({ onNoteSaved, onNavigate } = {}) {
+  navigate = onNavigate;
   $('ppClose').addEventListener('click', close);
   $('panelBackdrop').addEventListener('click', close);
 
@@ -44,6 +47,7 @@ export function initPanel({ onNoteSaved } = {}) {
       for (const v of cur.visits) v.note = text.trim();
       onNoteSaved?.(cur.record, text.trim());
       btn.textContent = '✓ Guardado';
+      toast(text.trim() ? 'Nota guardada' : 'Nota eliminada');
     } catch (err) {
       btn.textContent = `✗ ${err.message}`;
     }
@@ -92,6 +96,22 @@ export function initPanel({ onNoteSaved } = {}) {
   setHead();
 
   activateOnKey($('patientPanel')); // Enter/Space on visit headers
+
+  $('ppPrev').addEventListener('click', () => navigate?.(-1));
+  $('ppNext').addEventListener('click', () => navigate?.(1));
+  // ←/→ walk the patient list while the panel is open, unless you are typing
+  document.addEventListener('keydown', e => {
+    if (!cur || $('patientPanel').classList.contains('open') === false) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate?.(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navigate?.(1); }
+  });
+
+  // The RUN is the thing most often retyped elsewhere: one click copies it
+  $('ppHeader').addEventListener('click', e => {
+    const r = e.target.closest('.copy-run');
+    if (r) { e.stopPropagation(); copyToClipboard(r.dataset.run, 'RUN copiado'); }
+  });
 
   $('patientPanel').addEventListener('click', async e => {
     const pdf = e.target.closest('button[data-pdf]');
@@ -373,11 +393,12 @@ async function loadAndRenderFicha(force = false) {
 
 /**
  * Opens the patient panel. Renders agenda data at once, then fetches the full
- * ficha (12 months, all professionals) and re-renders every pane.
+ * ficha (10 years, all professionals) and re-renders every pane.
  * @param {object} record
- * @param {{ allData: object[], sics: object[], contacts: Map<string, object> }} ctx
+ * @param {{ allData, sics, contacts, pos?: {i: number, n: number} }} ctx
+ *   pos drives the ‹ › controls: where this patient sits in the current list.
  */
-export function openPanel(record, { allData, sics = [], contacts = new Map() }) {
+export function openPanel(record, { allData, sics = [], contacts = new Map(), pos = null }) {
   const key = patientKey(record);
   cur = {
     record, key,
@@ -392,6 +413,9 @@ export function openPanel(record, { allData, sics = [], contacts = new Map() }) 
   $('ppPdfMenu').classList.remove('open');
   $('ppPdfMenu').querySelectorAll('button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
   $('ppNoteText').value = record.note ?? '';
+  $('ppPos').textContent = pos ? `${pos.i + 1}/${pos.n}` : '';
+  $('ppPrev').disabled = !pos || pos.i <= 0;
+  $('ppNext').disabled = !pos || pos.i >= pos.n - 1;
   renderAll();
   showTab(activeTab);
   $('patientPanel').classList.add('open');

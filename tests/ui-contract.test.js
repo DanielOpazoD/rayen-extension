@@ -36,3 +36,35 @@ test('sicTone maps every SIC lifecycle group, with a safe default', () => {
   assert.equal(sicTone('otro'), 'neutral');
   assert.equal(sicTone(), 'neutral');
 });
+
+// ── Command palette ────────────────────────────────────────────
+import { searchPatients } from '../src/palette.js';
+
+const pac = (nombre, runStr, extra = {}) => ({ nombre, runStr, edad: 40, fechaAtencion: '01-09-2026', ...extra });
+const PACS = [
+  pac('Gabriela Keisy Torres Haoa', '13.754.664-7'),
+  pac('Gabriel Pakarati Araki',     '17.616.600-2'),
+  pac('Luis Oyaneder Lagos',        '17.752.753-K'),
+  pac('María Tuki Pakomio',         '9.876.543-2'),
+];
+
+test('searchPatients: sin consulta devuelve el principio de la lista', () => {
+  assert.equal(searchPatients(PACS, '', 2).length, 2);
+  assert.equal(searchPatients(PACS, '   ')[0].nombre, PACS[0].nombre);
+});
+
+test('searchPatients: prefijo de RUN gana sobre coincidencia parcial', () => {
+  const r = searchPatients(PACS, '17.752');
+  assert.equal(r[0].runStr, '17.752.753-K');
+  assert.equal(searchPatients(PACS, '17752753')[0].runStr, '17.752.753-K', 'sin puntos ni guion también');
+});
+
+test('searchPatients: exige todos los términos y prioriza inicio de palabra', () => {
+  assert.deepEqual(searchPatients(PACS, 'torres haoa').map(p => p.nombre), ['Gabriela Keisy Torres Haoa']);
+  assert.equal(searchPatients(PACS, 'gabri').length, 2, 'ambos Gabriel/Gabriela');
+  assert.deepEqual(searchPatients(PACS, 'zzz'), []);
+});
+
+test('searchPatients ignora acentos', () => {
+  assert.deepEqual(searchPatients(PACS, 'maria').map(p => p.nombre), ['María Tuki Pakomio']);
+});

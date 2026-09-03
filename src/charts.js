@@ -31,7 +31,7 @@ function barSVG({ labels, values, title, width = 300, height = 190, color = GREE
     <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
 }
 
-function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96 }) {
+function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96, filter = null }) {
   const rowH = 22, PAD = { top: 28, bottom: 8, left: labelW, right: 44 };
   const h = PAD.top + PAD.bottom + Math.max(labels.length, 1) * rowH;
   const cw = width - PAD.left - PAD.right, max = Math.max(...values, 1), total = values.reduce((a, b) => a + b, 0), barH = 12;
@@ -40,12 +40,13 @@ function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 9
     const v = values[i] || 0, bw = Math.round((v / max) * cw), y = PAD.top + i * rowH + (rowH - barH) / 2;
     const op = (0.4 + 0.6 * v / max).toFixed(2);
     const short = lbl.length > maxChars ? lbl.slice(0, maxChars - 1) + '…' : lbl;
-    return [
+    const wrap = filter ? [`<g data-f="${esc(filter)}:${esc(lbl)}" style="cursor:pointer"><rect x="0" y="${y-5}" width="${width}" height="${barH+10}" fill="transparent"/>`, '</g>'] : ['', ''];
+    return [wrap[0],
       `<text x="${PAD.left-4}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8.5" fill="${TXT2}"><title>${esc(lbl)}</title>${esc(short)}</text>`,
       `<rect x="${PAD.left}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${color}" opacity="${op}"/>`,
       `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>`,
       `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8" fill="${TXT3}">${pct(v,total)}%</text>`,
-    ].join('');
+    wrap[1]].join('');
   }).join('');
   return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
     <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
@@ -115,10 +116,10 @@ export function renderCharts(records, team, container, sics = []) {
   const mine = [
     `<h3 class="chart-h3">Mis atenciones · ${records.length} atenciones · ${unicos} pacientes</h3>`,
     `<div class="chart-section">${card(cDow)}${card(cMonth)}${card(cHour)}</div>`,
-    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4))}</div>`,
-    `<div class="chart-section">${card(hb(byEstado, 'Por estado', 6))}${card(hb(byRazon, 'Por razón', 6))}${card(hb(byGes, 'GES', 2))}</div>`,
-    `<div class="chart-section">${card(hb(byTipo, 'Tipos de atención', 15, { labelW: 130 }))}${card(hb(byDx, 'Diagnósticos más frecuentes', 15, { labelW: 140 }))}${card(hb(byCert, 'Certeza del diagnóstico principal', 5))}</div>`,
-    Object.keys(byPrest).length ? `<div class="chart-section">${card(hb(byPrest, 'Atendidas por otro prestador', 8, { labelW: 130 }))}</div>` : '',
+    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4, { filter: 'filtSexo' }))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4))}</div>`,
+    `<div class="chart-section">${card(hb(byEstado, 'Por estado', 6, { filter: 'filtEstado' }))}${card(hb(byRazon, 'Por razón', 6))}${card(hb(byGes, 'GES', 2))}</div>`,
+    `<div class="chart-section">${card(hb(byTipo, 'Tipos de atención', 15, { labelW: 130, filter: 'filtTipo' }))}${card(hb(byDx, 'Diagnósticos más frecuentes', 15, { labelW: 140, filter: 'search' }))}${card(hb(byCert, 'Certeza del diagnóstico principal', 5))}</div>`,
+    Object.keys(byPrest).length ? `<div class="chart-section">${card(hb(byPrest, 'Atendidas por otro prestador', 8, { labelW: 130, filter: 'filtPrest' }))}</div>` : '',
   ].join('');
 
   // ── Interconsultas ──
@@ -134,7 +135,7 @@ export function renderCharts(records, team, container, sics = []) {
     Object.keys(atEsp).forEach(e => { const tot = atEsp[e]; const sin = at.filter(s => s.especialidad === e && !s.contrarreferencias.length).length; if (tot >= 3) crEsp[e] = Math.round(100 * sin / tot); });
     sicHTML =
       `<h3 class="chart-h3">Interconsultas del hospital · ${sics.length}</h3>` +
-      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140 }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>` +
+      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140, filter: 'sicEsp' }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>` +
       `<div class="chart-section">${card(hb(cr, 'Atendidas: ¿volvió la contrarreferencia?', 2, { color: BLUE, labelW: 130 }))}${card(hb(crEsp, '% sin contrarreferencia por especialidad (≥3 atendidas)', 12, { color: BLUE, labelW: 140 }))}</div>`;
   }
 

@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { apiPost, chunk, session } from './http.js';
+import { apiPost, chunk, session, run } from './http.js';
 import { parseAtencion, matchKey, localDateStr } from './parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 
@@ -104,7 +104,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
     if (okDates.length) await saveStore(store, okDates, keep);
     done += batch.length;
     onProgress(Math.round((done / toFetch.length) * 100));
-    if (session.expired) break;
+    if (session.expired || run.cancelled) break;
   }
 
   const wanted = new Set(dates8);
