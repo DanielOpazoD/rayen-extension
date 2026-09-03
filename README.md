@@ -74,7 +74,15 @@ src/
 tests/        parser, sic, historial, ficha, table
 ```
 
-Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco).
+Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
+
+## Accesibilidad y apariencia
+
+- **Teclado**: pestañas (app y panel) con ←/→/Home/End; cabeceras de la tabla ordenan con Enter/Espacio y exponen `aria-sort`; nombres de paciente, líneas de IC, filas de SIC y visitas del panel son enfocables y se activan con Enter/Espacio; `Esc` cierra el panel. Los tooltips aparecen también al enfocar.
+- **Modo oscuro**: sigue al sistema (`prefers-color-scheme`); no hay toggle propio.
+- **`prefers-reduced-motion`**: desactiva transiciones.
+- Los offsets de los elementos fijos se calculan (`--w-fecha`, `--pp-head` medido con `ResizeObserver`), no están cableados en píxeles.
+- Íconos en `icons/` (PNG 16/32/48/128), generados con `python3` sin dependencias; `npm run pack` produce el .zip instalable (33 archivos, sin tests ni node_modules).
 
 ## Datos de Rayen que conviene saber
 

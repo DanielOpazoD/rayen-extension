@@ -2,53 +2,90 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="light dark">
 <title>Rayen Atenciones — Hospital Hanga Roa</title>
 <style>
+/* ── Design tokens (light) ── */
 :root{
+  color-scheme:light;
   --g-900:#14453a;--g-800:#1a6b53;--g-700:#2d8c6e;--g-100:#e6f4ee;--g-50:#f2faf6;
   --ink:#1f2933;--ink-2:#4a5568;--ink-3:#718096;--ink-4:#a0aec0;
-  --line:#e3e8ee;--line-2:#f0f3f7;--bg:#f3f6f9;--card:#fff;
-  --blue:#2f6fb5;--blue-bg:#e6effa;--amber-bg:#fff4d6;--amber:#8a5a00;--red-bg:#fde8e8;--red:#9b2c2c;
+  --line:#e3e8ee;--line-2:#f0f3f7;--bg:#f3f6f9;--card:#fff;--surface-2:#fafcfd;--surface-3:#f7fafc;
+  --blue:#2f6fb5;--blue-fg:#1e4e8c;--blue-bg:#e6effa;--blue-line:#d5e5f7;--blue-soft:#f6faff;--blue-row:#eef4fc;
+  --amber:#8a5a00;--amber-bg:#fff4d6;--red:#9b2c2c;--red-bg:#fde8e8;--red-strong:#c53030;
+  --ok-fg:#0f6b46;--ok-bg:#d7f5e6;--sky-fg:#0b5d8a;--sky-bg:#e0f1fb;--violet-fg:#5b34b5;--violet-bg:#ece5fb;
+  --neutral-bg:#eef1f5;--neutral-2:#e9edf2;--gold:#d69e2e;--orange:#b45309;--ficha-stripe:#3b9ad9;
+  --status-ok-bg:#f0fff4;--status-ok-fg:#276749;--status-ok-line:#bfe6d3;--status-ok-dot:#2f9e6d;
+  --status-err-bg:#fff5f5;--status-err-fg:#c53030;--status-err-line:#feb2b2;
+  --status-warn-bg:#fffbeb;--status-warn-fg:#92400e;--status-warn-line:#fcd34d;--status-warn-dot:#f59e0b;
+  --hdr-bg:var(--g-800);--th-bg:var(--g-700);--th-hover:var(--g-800);--th-sorted:var(--g-900);
+  --tt-bg:#1f2933;--tt-fg:#fff;--console-bg:#1a202c;--console-fg:#9ae6b4;--backdrop:rgba(15,30,25,.28);
   --shadow:0 1px 3px rgba(20,40,60,.08),0 1px 2px rgba(20,40,60,.04);
+  --shadow-menu:0 8px 24px rgba(0,0,0,.14);
   --pad-y:9px;--pad-x:10px;--fs:.78rem;
+  --w-fecha:104px;         /* sticky Fecha column; Nombre offsets from it */
+  --pp-head:64px;          /* measured by JS (ResizeObserver) */
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --g-900:#0f2f27;--g-800:#2f8a72;--g-700:#3daa8d;--g-100:#1d3329;--g-50:#17261f;
+    --ink:#e3ebe7;--ink-2:#b5c2bc;--ink-3:#8a9a93;--ink-4:#5f6f68;
+    --line:#2a3733;--line-2:#222e2a;--bg:#0f1715;--card:#16201d;--surface-2:#182320;--surface-3:#1a2622;
+    --blue:#5b9ae0;--blue-fg:#9cc3f0;--blue-bg:#1b2a3d;--blue-line:#26405c;--blue-soft:#162232;--blue-row:#1b2a3d;
+    --amber:#f0c060;--amber-bg:#3a2c0e;--red:#f39a9a;--red-bg:#3e1c1c;--red-strong:#f07070;
+    --ok-fg:#7ee2b8;--ok-bg:#153a2c;--sky-fg:#8fd0f5;--sky-bg:#132c3a;--violet-fg:#c4b0f7;--violet-bg:#2a2140;
+    --neutral-bg:#243029;--neutral-2:#2a3630;--gold:#e6b84f;--orange:#f0a050;--ficha-stripe:#4fa8e8;
+    --status-ok-bg:#122a20;--status-ok-fg:#8fe0bb;--status-ok-line:#1f4a38;--status-ok-dot:#3daa8d;
+    --status-err-bg:#3a1a1a;--status-err-fg:#f5a0a0;--status-err-line:#6a2a2a;
+    --status-warn-bg:#3a2c0e;--status-warn-fg:#f0c060;--status-warn-line:#6a4d10;--status-warn-dot:#e0a020;
+    --hdr-bg:#143c32;--th-bg:#1f5c4c;--th-hover:#2a7360;--th-sorted:#143c32;
+    --tt-bg:#e3ebe7;--tt-fg:#0f1715;--console-bg:#0b1210;--console-fg:#8fd0b0;--backdrop:rgba(0,0,0,.55);
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+    --shadow-menu:0 8px 24px rgba(0,0,0,.6);
+  }
 }
 body.dense{--pad-y:4px;--pad-x:8px;--fs:.74rem}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px}
-button,select,input{font-family:inherit}
+button,select,input,textarea{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--g-700);outline-offset:2px}
+header :focus-visible,.pp-header :focus-visible,thead :focus-visible{outline-color:#fff}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 
 /* ── Top bar ── */
 .topbar{position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-header{background:var(--g-800);color:#fff;padding:9px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header{background:var(--hdr-bg);color:#fff;padding:9px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 header h1{font-size:1.05rem;font-weight:700;letter-spacing:.01em}
 header p{font-size:.72rem;opacity:.8}
 .hdr-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .hdr-r label{font-size:.73rem;opacity:.9;display:flex;align-items:center;gap:5px;cursor:pointer}
 .hdr-r select{padding:4px 8px;border-radius:7px;font-size:.8rem;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
-.hdr-r select option{background:var(--g-800);color:#fff}
+.hdr-r select option{background:var(--hdr-bg);color:#fff}
 .btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;white-space:nowrap;transition:background .15s,opacity .15s}
 .btn-fetch{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.35)}
 .btn-fetch:hover{background:rgba(255,255,255,.3)}
 .btn-fetch:disabled{opacity:.5;cursor:default}
-.btn-csv{background:#fff;color:var(--g-800)}
+.btn-csv{background:var(--card);color:var(--g-800)}
 .btn-csv:hover{background:var(--g-100)}
 .btn-del{background:rgba(255,255,255,.1);color:#ffd7d7;border:1px solid rgba(255,215,215,.4)}
 .btn-del:hover{background:rgba(255,0,0,.18)}
-.btn-mini{padding:3px 9px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:var(--g-800);font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;line-height:1.5}
+.btn-mini{padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--g-800);font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;line-height:1.5}
 .btn-mini:hover{border-color:var(--g-700);background:var(--g-50)}
 .btn-mini:disabled{opacity:.5;cursor:default}
 .btn-mini.on{background:var(--g-100);border-color:var(--g-700)}
 
-#statusBar{padding:7px 24px;font-size:.78rem;background:var(--g-50);color:#276749;border-bottom:1px solid #bfe6d3;display:flex;align-items:center;gap:8px}
-#statusBar::before{content:'';width:8px;height:8px;border-radius:50%;background:#2f9e6d;flex-shrink:0}
-#statusBar.idle{background:#f7f9fb;color:var(--ink-3);border-color:var(--line)}
+#statusBar{padding:7px 24px;font-size:.78rem;background:var(--status-ok-bg);color:var(--status-ok-fg);border-bottom:1px solid var(--status-ok-line);display:flex;align-items:center;gap:8px}
+#statusBar::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--status-ok-dot);flex-shrink:0}
+#statusBar.idle{background:var(--surface-3);color:var(--ink-3);border-color:var(--line)}
 #statusBar.idle::before{background:var(--ink-4)}
-#statusBar.err{background:#fff5f5;color:#c53030;border-color:#feb2b2}
-#statusBar.err::before{background:#e53e3e}
-#statusBar.warn{background:#fffbeb;color:#92400e;border-color:#fcd34d}
-#statusBar.warn::before{background:#f59e0b}
+#statusBar.err{background:var(--status-err-bg);color:var(--status-err-fg);border-color:var(--status-err-line)}
+#statusBar.err::before{background:var(--red-strong)}
+#statusBar.warn{background:var(--status-warn-bg);color:var(--status-warn-fg);border-color:var(--status-warn-line)}
+#statusBar.warn::before{background:var(--status-warn-dot)}
+#statusBar .btn-mini{margin-left:6px}
 
-.tabs{display:flex;gap:2px;padding:0 24px;background:#fff;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:0 24px;background:var(--card);border-bottom:1px solid var(--line)}
 .tab-btn{padding:10px 16px;border:none;background:none;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .tab-btn.active{color:var(--g-800);border-bottom-color:var(--g-700)}
 .tab-btn:hover:not(.active){color:var(--ink)}
@@ -63,20 +100,20 @@ header p{font-size:.72rem;opacity:.8}
 
 /* ── Filter bar ── */
 .bar{padding:10px 24px 8px;display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(auto-fit,minmax(130px,1fr));gap:6px;align-items:center}
-.bar input,.bar select{padding:6px 9px;border:1px solid var(--line);border-radius:8px;font-size:.78rem;outline:none;background:#fff;min-width:0;width:100%}
+.bar input,.bar select{padding:6px 9px;border:1px solid var(--line);border-radius:8px;font-size:.78rem;outline:none;background:var(--card);min-width:0;width:100%}
 .bar input:focus,.bar select:focus{border-color:var(--g-700);box-shadow:0 0 0 2px rgba(45,140,110,.15)}
 .bar-tools{display:flex;gap:6px;padding:0 24px 10px;align-items:center;flex-wrap:wrap;position:relative}
 .bar-tools .spacer{flex:1}
 .bar .more{display:none}
 .bar.show-more .more{display:block}
-#colsMenu{display:none;position:absolute;right:24px;top:100%;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px 12px;z-index:30;columns:2;gap:14px;min-width:280px}
+#colsMenu{display:none;position:absolute;right:24px;top:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-menu);padding:10px 12px;z-index:30;columns:2;gap:14px;min-width:280px}
 #colsMenu.open{display:block}
 #colsMenu label{display:flex;gap:6px;align-items:center;font-size:.76rem;padding:3px 0;cursor:pointer;break-inside:avoid;color:var(--ink-2)}
 
 /* ── Table ── */
-.tbl-wrap{margin:0 24px 24px;border-radius:10px;box-shadow:var(--shadow);overflow:auto;max-height:calc(100vh - 230px);background:#fff;border:1px solid var(--line)}
-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;table-layout:fixed}
-col.c-fecha{width:104px}
+.tbl-wrap{margin:0 24px 24px;border-radius:10px;box-shadow:var(--shadow);overflow:auto;max-height:calc(100vh - 230px);background:var(--card);border:1px solid var(--line)}
+table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);table-layout:fixed}
+col.c-fecha{width:var(--w-fecha)}
 col.c-nombre{width:200px}
 col.c-edad{width:46px}
 col.c-sexo{width:34px}
@@ -86,110 +123,111 @@ col.c-dx{width:220px}
 col.c-estado{width:100px}
 col.c-ic{width:200px}
 col.c-nota{width:120px}
-thead th{position:sticky;top:0;z-index:3;background:var(--g-700);color:#fff;padding:9px var(--pad-x);text-align:left;font-size:.7rem;font-weight:700;cursor:pointer;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--g-800)}
-thead th:hover{background:var(--g-800)}
+thead th{position:sticky;top:0;z-index:3;background:var(--th-bg);color:#fff;padding:9px var(--pad-x);text-align:left;font-size:.7rem;font-weight:700;cursor:pointer;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--th-hover)}
+thead th:hover,thead th:focus-visible{background:var(--th-hover)}
 thead th.ns{cursor:default}
-thead th.ns:hover{background:var(--g-700)}
-thead th.sorted{background:var(--g-900)}
+thead th.ns:hover{background:var(--th-bg)}
+thead th.sorted{background:var(--th-sorted)}
 thead th.sorted::after{content:' ▾';opacity:.9}
 thead th.sorted[data-dir=asc]::after{content:' ▴'}
 thead th.sticky{z-index:5}
-td{padding:var(--pad-y) var(--pad-x);font-size:var(--fs);border-bottom:1px solid var(--line-2);vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;line-height:1.45}
+thead :focus-visible{outline-offset:-3px}
+td{padding:var(--pad-y) var(--pad-x);font-size:var(--fs);border-bottom:1px solid var(--line-2);vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--card);line-height:1.45}
 td.wrap{white-space:normal;word-break:break-word}
-tbody tr:nth-child(even) td{background:#fafcfd}
+tbody tr:nth-child(even) td{background:var(--surface-2)}
 tbody tr:hover td{background:var(--g-50)}
-tbody tr.r-ficha td:first-child{box-shadow:inset 3px 0 0 #3b9ad9}
+tbody tr.r-ficha td:first-child{box-shadow:inset 3px 0 0 var(--ficha-stripe)}
 tbody tr.r-ns td{color:var(--ink-3)}
 .sticky{position:sticky;z-index:2}
 .s1{left:0}
-.s2{left:104px;box-shadow:4px 0 6px -4px rgba(0,0,0,.18)}
+.s2{left:var(--w-fecha);box-shadow:4px 0 6px -4px rgba(0,0,0,.18)}
+thead .s2{box-shadow:none}
 td.sex{text-align:center;font-weight:600;color:var(--ink-2)}
 .fd{font-weight:700}
 .info{display:inline-flex;align-items:center;justify-content:center;width:11px;height:11px;margin-left:5px;border-radius:50%;border:1px solid var(--ink-4);color:var(--ink-4);font-size:.5rem;font-style:italic;font-family:Georgia,serif;cursor:help;vertical-align:1px;line-height:1}
-.info:hover{border-color:var(--g-700);color:var(--g-700)}
+.info:hover,.info:focus-visible{border-color:var(--g-700);color:var(--g-700)}
 .tip{cursor:help;border-bottom:1px dotted var(--ink-4)}
 [data-tip]{cursor:help}
-#tt{position:fixed;z-index:1000;background:var(--ink);color:#fff;font:400 .7rem/1.35 'Segoe UI',system-ui,sans-serif;padding:5px 9px;border-radius:6px;white-space:pre-line;max-width:340px;box-shadow:0 6px 18px rgba(0,0,0,.2);pointer-events:none}
-thead .s2{box-shadow:none}
+button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
+#tt{position:fixed;z-index:1000;background:var(--tt-bg);color:var(--tt-fg);font:400 .7rem/1.35 'Segoe UI',system-ui,sans-serif;padding:5px 9px;border-radius:6px;white-space:pre-line;max-width:340px;box-shadow:0 6px 18px rgba(0,0,0,.2);pointer-events:none}
 .pname{display:block;font-weight:600;color:var(--g-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .run{display:block;color:var(--ink-4);font-weight:400;font-size:.68rem;font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .muted{color:var(--ink-4)}
+.pat-link{cursor:pointer}
+.pat-link:hover .pname,.pat-link:focus-visible .pname{text-decoration:underline}
+td.pat-link:focus-visible{outline-offset:-2px}
+
+/* Badges & flags — every pair defined in both themes */
 .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.66rem;font-weight:700;white-space:nowrap;line-height:1.5}
-.bc{background:#d7f5e6;color:#0f6b46}
+.badge.sm{font-size:.58rem;padding:1px 6px}
+.bc{background:var(--ok-bg);color:var(--ok-fg)}
 .bi{background:var(--amber-bg);color:var(--amber)}
 .bn{background:var(--red-bg);color:var(--red)}
-.bic{background:var(--blue-bg);color:#1e4e8c}
-.bx{background:#ece5fb;color:#5b34b5}
-.bf{background:#e0f1fb;color:#0b5d8a}
-.bg{background:#e9edf2;color:var(--ink-2)}
+.bic{background:var(--blue-bg);color:var(--blue-fg)}
+.bx{background:var(--violet-bg);color:var(--violet-fg)}
+.bf{background:var(--sky-bg);color:var(--sky-fg)}
+.bg{background:var(--neutral-2);color:var(--ink-2)}
 .bges{background:var(--g-700);color:#fff;font-size:.58rem;padding:1px 5px;margin-left:4px;vertical-align:middle}
 .flag{display:inline-block;font-size:.58rem;font-weight:700;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:middle}
 .flag-urg{background:var(--red-bg);color:var(--red)}
-.flag-esp{background:#e0f1fb;color:#0b5d8a}
-.prest-other{display:block;font-size:.66rem;color:#b45309;margin-top:2px}
+.flag-esp{background:var(--sky-bg);color:var(--sky-fg)}
+.flag-adj{background:var(--neutral-bg);color:var(--ink-2);cursor:help}
+.prest-other{display:block;font-size:.66rem;color:var(--orange);margin-top:2px}
 .dx-main{font-weight:500}
 .dx-cert{font-size:.62rem;color:var(--ink-3);margin-left:4px}
 .dx-more{font-size:.62rem;color:var(--blue);margin-left:4px;font-weight:600;cursor:help}
-.dx-none{color:#cbd5e0;font-size:.72rem}
-/* IC cell */
+.dx-none{color:var(--ink-4);font-size:.72rem}
+
+/* IC cell: one line per SIC with the officer's role */
 .ic-cell{line-height:1.4}
-.ic-esp{font-size:.72rem;font-weight:600;color:#1e4e8c}
-.ic-line{font-size:.68rem;color:var(--ink-2);margin-top:2px}
-.ic-line b{font-weight:600;color:var(--ink)}
-.ic-cr{font-size:.62rem;font-weight:700;color:#0f6b46;margin-left:4px}
-.cie{font-family:'SF Mono',Menlo,monospace;font-size:.64rem;color:#1e4e8c;background:var(--blue-bg);padding:0 4px;border-radius:3px}
+.ic-cell .ic-line{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0 0 3px;font-size:.7rem;color:var(--ink-2);border-radius:4px}
+.ic-cell .ic-line.sic-link:hover{background:var(--blue-bg)}
+.ic-cell .ic-esp{font-weight:600;color:var(--ink)}
+.ic-cr{font-size:.62rem;font-weight:700;color:var(--ok-fg);margin-left:4px}
+.cie{font-family:'SF Mono',Menlo,monospace;font-size:.64rem;color:var(--blue-fg);background:var(--blue-bg);padding:0 4px;border-radius:3px}
 .ic-chip{display:inline-block;font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:9px;cursor:pointer;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sic-link{cursor:pointer}
 .sic-link:hover,.ic-chip:hover{filter:brightness(.93)}
-tfoot td{position:sticky;bottom:0;z-index:3;background:#f8fafc;font-weight:600;font-size:.74rem;padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.rol{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:4px;flex-shrink:0}
+.rol-in{background:var(--blue-bg);color:var(--blue-fg)}
+.rol-out{background:var(--g-100);color:var(--ok-fg)}
+.rol-other{background:var(--neutral-bg);color:var(--ink-3)}
+
+tfoot td{position:sticky;bottom:0;z-index:3;background:var(--surface-3);font-weight:600;font-size:.74rem;padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
 .empty{text-align:center;padding:50px;color:var(--ink-4);font-size:.9rem}
 td.num{text-align:right;padding-right:16px;font-variant-numeric:tabular-nums}
 .note-cell{cursor:pointer}
 .note-cell:hover .note-empty,.note-cell:hover .note-text{background:var(--g-100);border-radius:4px}
-.note-text{font-size:.72rem;color:#2d6a4f;white-space:normal;word-break:break-word;display:block}
-.note-empty{font-size:.74rem;color:#cbd5e0}
+.note-text{font-size:.72rem;color:var(--ok-fg);white-space:normal;word-break:break-word;display:block}
+.note-empty{font-size:.74rem;color:var(--ink-4)}
 .note-cell.editing{white-space:normal;padding:4px}
-.note-edit{width:100%;font:inherit;font-size:.74rem;line-height:1.35;border:1px solid var(--g-700);border-radius:6px;padding:4px 6px;resize:vertical;outline:none;background:#fff;box-shadow:0 0 0 2px rgba(45,140,110,.15)}
-button[data-tip],.pat-link[data-tip]{cursor:pointer}
-:focus-visible{outline:2px solid var(--g-700);outline-offset:2px}
-.pat-link{cursor:pointer}
-.pat-link:hover .pname{text-decoration:underline}
+.note-edit{width:100%;font:inherit;font-size:.74rem;line-height:1.35;border:1px solid var(--g-700);border-radius:6px;padding:4px 6px;resize:vertical;outline:none;background:var(--card);box-shadow:0 0 0 2px rgba(45,140,110,.15)}
 /* Column visibility */
 table.hide-edad [data-c=edad],table.hide-sexo [data-c=sexo],table.hide-razon [data-c=razon],table.hide-tipoAtencion [data-c=tipoAtencion],table.hide-diagnostico [data-c=diagnostico],table.hide-estado [data-c=estado],table.hide-ic [data-c=ic],table.hide-nota [data-c=nota]{display:none}
 table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-razon,table.hide-tipoAtencion col.c-tipo,table.hide-diagnostico col.c-dx,table.hide-estado col.c-estado,table.hide-ic col.c-ic,table.hide-nota col.c-nota{visibility:collapse}
-.flag-adj{background:#eef1f5;color:var(--ink-2);cursor:help}
-/* IC cell: one line per SIC with the officer's role */
-.ic-cell .ic-line{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:0 0 3px;font-size:.7rem;color:var(--ink-2);border-radius:4px}
-.ic-cell .ic-line.sic-link:hover{background:var(--blue-bg)}
-.rol{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:4px;flex-shrink:0}
-.rol-in{background:#e6effa;color:#1e4e8c}
-.rol-out{background:#e6f4ee;color:#0f6b46}
-.rol-other{background:#eef1f5;color:var(--ink-3)}
-.badge.sm{font-size:.58rem;padding:1px 6px}
-.ic-cell .ic-esp{font-weight:600;color:var(--ink)}
-/* Dropdown menus (export) */
+
+/* Dropdown menus */
 .menu-wrap{position:relative}
-.menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;z-index:40;min-width:200px}
+.menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-menu);padding:6px;z-index:40;min-width:200px}
 .menu.open{display:block}
 .menu button{display:block;width:100%;text-align:left;padding:7px 10px;border:none;background:none;border-radius:6px;font-size:.8rem;color:var(--ink);cursor:pointer}
 .menu button:hover{background:var(--g-50);color:var(--g-800)}
 .menu-note{font-size:.64rem;color:var(--ink-4);padding:6px 10px 2px;border-top:1px solid var(--line-2);margin-top:4px}
 .menu button small{display:block;font-size:.64rem;color:var(--ink-4);font-weight:400}
-.menu button.danger{color:#c53030}
-.menu button.danger:hover{background:#fff5f5;color:#c53030}
-#statusBar .btn-mini{margin-left:6px}
+.menu button.danger{color:var(--red-strong)}
+.menu button.danger:hover{background:var(--red-bg);color:var(--red-strong)}
 
 /* ── Charts ── */
 .chart-h3{font-size:.82rem;font-weight:700;color:var(--ink-2);padding:8px 24px 0}
 .chart-section{display:flex;gap:12px;padding:8px 24px 12px;flex-wrap:wrap}
-.chart-card{flex:1;min-width:240px;max-width:520px;background:var(--card);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow)}
+.chart-card{flex:1;min-width:240px;max-width:520px;background:var(--card);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);color:var(--ink)}
 
 /* ── Patient panel ── */
-#panelBackdrop{position:fixed;inset:0;background:rgba(15,30,25,.28);display:none;z-index:99}
+#panelBackdrop{position:fixed;inset:0;background:var(--backdrop);display:none;z-index:99}
 #panelBackdrop.open{display:block}
-#patientPanel{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100vh;background:#fff;box-shadow:-8px 0 28px rgba(0,0,0,.16);transform:translateX(100%);transition:transform .22s ease;z-index:100;overflow-y:auto;display:flex;flex-direction:column}
+#patientPanel{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100vh;background:var(--card);box-shadow:-8px 0 28px rgba(0,0,0,.16);transform:translateX(100%);transition:transform .22s ease;z-index:100;overflow-y:auto;display:flex;flex-direction:column}
 #patientPanel.open{transform:translateX(0)}
-.pp-header{display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(120deg,var(--g-700),var(--g-900));color:#fff;position:sticky;top:0;z-index:2}
+.pp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--hdr-bg);color:#fff;position:sticky;top:0;z-index:3}
 .pp-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0}
 .pp-info{flex:1;min-width:0}
 .pp-info h2{font-size:.95rem;font-weight:700;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -197,85 +235,78 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 #ppSector{font-size:.68rem;opacity:.7}
 #ppClose{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;flex-shrink:0}
 #ppClose:hover{background:rgba(255,255,255,.2)}
-.pp-sic{border:1px solid #d5e5f7;border-radius:8px;padding:6px 8px;margin-bottom:6px;background:#f6faff}
-.pp-sic-h{display:flex;gap:6px;align-items:center;font-size:.76rem;margin-bottom:3px}
-.pp-sic-b{font-size:.72rem;color:var(--ink-2)}
-.cr-ok{color:#0f6b46;font-size:.68rem}
-.pp-visit{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fafbfc}
-.pp-vhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.pp-date{font-size:.8rem}
-.pp-hora{font-size:.71rem;color:var(--ink-4)}
-.pp-tipo{font-size:.74rem;color:var(--ink-2)}
-.pp-razon{font-size:.7rem;color:var(--ink-3)}
-.pp-dx{display:block;font-size:.72rem;color:var(--ink-2);background:#f3f5f7;border-radius:4px;padding:2px 6px;margin-top:3px}
-.pp-dx b{color:var(--g-800)}
-.pp-note{padding:12px 14px;border-top:1px solid var(--line-2);background:#fafbfc}
-.pp-note label{display:block;font-size:.75rem;font-weight:600;color:var(--ink-2);margin-bottom:5px}
-#ppNoteText{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.8rem;resize:vertical;min-height:70px;outline:none}
-#ppNoteText:focus{border-color:var(--g-700)}
-#ppSaveNote{margin-top:8px;padding:7px 16px;background:var(--g-700);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;width:100%}
-#ppSaveNote:hover{background:var(--g-800)}
-
-/* Ficha clínica en el panel */
-.al{display:inline-block;font-size:.64rem;font-weight:600;padding:2px 7px;border-radius:9px;background:#eef1f5;color:var(--ink-2)}
-.al-ok{background:#d7f5e6;color:#0f6b46}
-.al-warn{background:var(--amber-bg);color:var(--amber)}
-.al-bad{background:var(--red-bg);color:var(--red)}
-.al-risk{background:#ede9fe;color:#5b34b5}
-.al-info{background:var(--blue-bg);color:#1e4e8c}
-.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:6px}
-.kv{display:flex;flex-direction:column;font-size:.72rem;min-width:0}
-.kv .k{font-size:.6rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.04em}
-.kv .v{color:var(--ink);overflow:hidden;text-overflow:ellipsis}
-.pp-ficha-status{display:flex;align-items:center;gap:8px;padding:8px 14px 0;font-size:.68rem;color:var(--ink-3);flex-wrap:wrap}
-.pp-visit.mine{border-left:3px solid var(--g-700)}
-.pp-who{font-size:.66rem;color:var(--ink-4);margin:1px 0 3px}
-.pp-who.me{color:var(--g-800)}
-.pp-body{display:none;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
-.pp-visit.expanded .pp-body{display:block}
-.pp-visit.expanded .pp-toggle{background:var(--g-100)}
-.pp-sec{margin-bottom:6px}
-.pp-sec-l{display:block;font-size:.6rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
-.pp-sec p{font-size:.72rem;color:var(--ink-2);white-space:pre-wrap;line-height:1.45}
-.pp-item{font-size:.72rem;color:var(--ink);padding:2px 0 2px 8px;border-left:2px solid var(--line)}
-.pp-item small{display:block;color:var(--ink-3);font-size:.64rem}
-/* Panel v1.3: tabs, datos, rows */
-.pp-header{padding:14px 16px}
 .pp-hbtn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;position:relative;flex-shrink:0}
 .pp-hbtn:hover,.pp-hbtn.on{background:rgba(255,255,255,.28)}
-.pp-hbtn.dot::after{content:'';position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:#f56565;border:2px solid var(--g-800)}
-.pp-datos{padding:10px 16px 6px;background:#f7fafc;border-bottom:1px solid var(--line)}
+.pp-hbtn.dot::after{content:'';position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:#f56565;border:2px solid var(--hdr-bg)}
+.pp-datos{padding:10px 16px 6px;background:var(--surface-3);border-bottom:1px solid var(--line)}
 .pp-datos-grp{margin-bottom:10px}
 .pp-datos h4,.pp-pane h4{font-size:.64rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 5px}
 .pp-datos h4:first-child,.pp-pane h4:first-child{margin-top:0}
 .pp-chips{display:flex;flex-wrap:wrap;gap:4px}
-.pp-tabs{display:flex;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:64px;z-index:2}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:6px}
+.kv{display:flex;flex-direction:column;font-size:.72rem;min-width:0}
+.kv .k{font-size:.6rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.04em}
+.kv .v{color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+.al{display:inline-block;font-size:.64rem;font-weight:600;padding:2px 7px;border-radius:9px;background:var(--neutral-bg);color:var(--ink-2)}
+.al-ok{background:var(--ok-bg);color:var(--ok-fg)}
+.al-warn{background:var(--amber-bg);color:var(--amber)}
+.al-bad{background:var(--red-bg);color:var(--red)}
+.al-risk{background:var(--violet-bg);color:var(--violet-fg)}
+.al-info{background:var(--blue-bg);color:var(--blue-fg)}
+.pp-tabs{display:flex;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:var(--pp-head);z-index:2}
 .pp-tab{flex:1;padding:9px 6px;border:none;background:none;font-size:.76rem;font-weight:600;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .pp-tab.active{color:var(--g-800);border-bottom-color:var(--g-700)}
 .pp-tab:hover:not(.active){color:var(--ink)}
-.pp-tab .cnt{display:inline-block;min-width:16px;padding:0 5px;border-radius:8px;background:#eef1f5;color:var(--ink-2);font-size:.62rem;line-height:16px;margin-left:3px}
+.pp-tab .cnt{display:inline-block;min-width:16px;padding:0 5px;border-radius:8px;background:var(--neutral-bg);color:var(--ink-2);font-size:.62rem;line-height:16px;margin-left:3px}
 .pp-tab .cnt:empty{display:none}
 .pp-tab.active .cnt{background:var(--g-100);color:var(--g-800)}
+.pp-ficha-status{display:flex;align-items:center;gap:8px;padding:6px 16px 0;font-size:.68rem;color:var(--ink-3);flex-wrap:wrap}
 .pp-pane{display:none;padding:10px 16px 14px;flex:1}
 .pp-pane.active{display:block}
 .pp-empty{font-size:.74rem;color:var(--ink-4);padding:8px 0}
 .pp-row{display:flex;justify-content:space-between;gap:10px;font-size:.75rem;padding:5px 0;border-bottom:1px solid var(--line-2)}
 .pp-row-t em{color:var(--ink-3);font-size:.68rem;font-style:normal}
 .pp-row-m{color:var(--ink-4);font-size:.66rem;white-space:nowrap;flex-shrink:0;text-align:right}
-.pp-ficha-status{padding:6px 16px 0}
-.pp-visit{padding:7px 10px;margin-bottom:6px}
+.pp-visit{border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-bottom:6px;background:var(--surface-2)}
+.pp-visit.mine{border-left:3px solid var(--g-700)}
+.pp-vhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;border-radius:4px}
 .pp-visit.has-body .pp-vhead{cursor:pointer}
 .pp-vhead .spacer{flex:1}
 .pp-vhead .caret{font-size:.7rem;color:var(--ink-4);transition:transform .15s}
 .pp-visit.expanded .caret{transform:rotate(180deg)}
+.pp-date{font-size:.8rem}
+.pp-hora{font-size:.71rem;color:var(--ink-4)}
+.pp-tipo{font-size:.74rem;color:var(--ink-2)}
+.pp-razon{font-size:.7rem;color:var(--ink-3)}
+.pp-who{font-size:.66rem;color:var(--ink-4);margin:1px 0 3px}
+.pp-who.me{color:var(--g-800)}
+.pp-dx{display:block;font-size:.72rem;color:var(--ink-2);background:var(--neutral-bg);border-radius:4px;padding:2px 6px;margin-top:3px}
+.pp-dx b{color:var(--g-800)}
+.pp-body{display:none;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.pp-visit.expanded .pp-body{display:block}
+.pp-sec{margin-bottom:6px}
+.pp-sec-l{display:block;font-size:.6rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pp-sec p{font-size:.72rem;color:var(--ink-2);white-space:pre-wrap;line-height:1.45}
+.pp-item{font-size:.72rem;color:var(--ink);padding:2px 0 2px 8px;border-left:2px solid var(--line)}
+.pp-item small{display:block;color:var(--ink-3);font-size:.64rem}
 .pp-item.susp span{text-decoration:line-through;color:var(--ink-4)}
+.pp-sic{border:1px solid var(--blue-line);border-radius:8px;padding:6px 8px;margin-bottom:6px;background:var(--blue-soft)}
+.pp-sic-h{display:flex;gap:6px;align-items:center;font-size:.76rem;margin-bottom:3px}
 .pp-sic .spacer{flex:1}
+.pp-sic-b{font-size:.72rem;color:var(--ink-2)}
 .pp-fund{font-size:.7rem;color:var(--ink-2);white-space:pre-wrap;margin:4px 0;max-height:4.2em;overflow:hidden}
-.pp-sic:hover .pp-fund{max-height:none}
-.pp-rx{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:6px;background:#fafbfc}
+.pp-sic:hover .pp-fund,.pp-sic:focus-within .pp-fund{max-height:none}
+.cr-ok{color:var(--ok-fg);font-size:.68rem}
+.pp-rx{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:6px;background:var(--surface-2)}
 .pp-rx-h{display:flex;justify-content:space-between;gap:8px;font-size:.74rem;margin-bottom:3px}
 .pp-rx-r{display:flex;align-items:center;gap:8px;font-size:.72rem;padding:2px 0}
 .pp-rx-r small{color:var(--ink-3);font-size:.64rem;flex:1}
+.pp-note{padding:12px 14px;border-top:1px solid var(--line-2);background:var(--surface-2)}
+.pp-note label{display:block;font-size:.75rem;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+#ppNoteText{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.8rem;resize:vertical;min-height:70px;outline:none;background:var(--card)}
+#ppNoteText:focus{border-color:var(--g-700)}
+#ppSaveNote{margin-top:8px;padding:7px 16px;background:var(--g-700);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;width:100%}
+#ppSaveNote:hover{background:var(--g-800)}
 
 /* ── Interconsultas ── */
 .sic-status{padding:4px 24px 6px;font-size:.76rem;color:var(--ink-3)}
@@ -291,14 +322,15 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .sic-table thead th{background:var(--blue)}
 .sic-table thead th.ns:hover{background:var(--blue)}
 tr.sic-row{cursor:pointer}
-tr.sic-row.open td{background:#eef4fc!important;border-bottom:none}
+tr.sic-row:focus-visible{outline-offset:-2px}
+tr.sic-row.open td{background:var(--blue-row)!important;border-bottom:none}
 .caret{color:var(--ink-4);font-size:.7rem}
-.mine{color:#d69e2e;margin-right:3px}
-.age-old{color:#c53030;font-weight:700}
-.prio{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:4px;background:#edf2f7;color:var(--ink-2)}
+.mine{color:var(--gold);margin-right:3px}
+.age-old{color:var(--red-strong);font-weight:700}
+.prio{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--neutral-bg);color:var(--ink-2)}
 .prio-1{background:var(--red-bg);color:var(--red)}
 .prio-2{background:var(--amber-bg);color:var(--amber)}
-tr.sic-detail td{background:#f6f9fd!important;white-space:normal;padding:12px 16px 14px 32px;border-bottom:2px solid #d5e5f7}
+tr.sic-detail td{background:var(--blue-soft)!important;white-space:normal;padding:12px 16px 14px 32px;border-bottom:2px solid var(--blue-line)}
 .sic-detail-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;font-size:.76rem;line-height:1.5}
 .sic-detail-grid h4{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin:8px 0 2px}
 .sic-detail-grid h4:first-child{margin-top:0}
@@ -311,18 +343,18 @@ tr.sic-detail td{background:#f6f9fd!important;white-space:normal;padding:12px 16
 /* ── Explorer ── */
 .explorer{padding:20px 24px}
 .explorer-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.explorer input[type=text]{flex:1;min-width:300px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:.82rem;font-family:'SF Mono',Menlo,monospace;outline:none}
+.explorer input[type=text]{flex:1;min-width:300px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:.82rem;font-family:'SF Mono',Menlo,monospace;outline:none;background:var(--card)}
 .explorer input:focus{border-color:var(--g-700)}
 .explorer-ql{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.ql-btn{padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:.75rem;cursor:pointer;color:var(--ink-2)}
+.ql-btn{padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:.75rem;cursor:pointer;color:var(--ink-2)}
 .ql-btn:hover{border-color:var(--g-700);color:var(--g-800)}
 .explorer-meta{font-size:.78rem;margin-bottom:6px}
-.explorer-meta.ok{color:var(--g-700)}.explorer-meta.err{color:#c53030}
-#explorerOut{width:100%;min-height:300px;background:#1a202c;color:#9ae6b4;border:none;border-radius:8px;padding:14px;font-family:'SF Mono',Menlo,monospace;font-size:.75rem;line-height:1.6;resize:vertical;white-space:pre;overflow:auto}
+.explorer-meta.ok{color:var(--g-700)}.explorer-meta.err{color:var(--red-strong)}
+#explorerOut{width:100%;min-height:300px;background:var(--console-bg);color:var(--console-fg);border:none;border-radius:8px;padding:14px;font-family:'SF Mono',Menlo,monospace;font-size:.75rem;line-height:1.6;resize:vertical;white-space:pre;overflow:auto}
 .extra-fields{margin-top:18px}
 .extra-fields h3{font-size:.82rem;font-weight:700;color:var(--ink-2);margin-bottom:8px}
-.ef-table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
-.ef-table th{background:#f0f4f8;padding:6px 10px;text-align:left;font-size:.72rem;color:var(--ink-3);font-weight:600}
+.ef-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+.ef-table th{background:var(--surface-3);padding:6px 10px;text-align:left;font-size:.72rem;color:var(--ink-3);font-weight:600}
 .ef-table td{padding:6px 10px;font-size:.75rem;border-bottom:1px solid var(--line-2);font-family:'SF Mono',Menlo,monospace}
 .ef-table tr:last-child td{border:none}
 progress{width:100%;height:3px;appearance:none;border:none;background:var(--line);display:block}
@@ -351,52 +383,52 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
     </label>
     <button class="btn btn-fetch" id="btnFetch">Cargar datos</button>
     <div class="menu-wrap" id="exportWrap" style="display:none">
-      <button class="btn btn-csv" id="btnExport">↓ Exportar ▾</button>
-      <div class="menu" id="exportMenu">
-        <button data-fmt="xls">Excel (.xls)</button>
-        <button data-fmt="csv">CSV (;)</button>
-        <button data-fmt="html">HTML</button>
-        <button data-fmt="pdf">PDF (imprimir)</button>
-        <button data-fmt="json">JSON</button>
+      <button class="btn btn-csv" id="btnExport" aria-haspopup="menu" aria-expanded="false">↓ Exportar ▾</button>
+      <div class="menu" id="exportMenu" role="menu">
+        <button role="menuitem" data-fmt="xls">Excel (.xls)</button>
+        <button role="menuitem" data-fmt="csv">CSV (;)</button>
+        <button role="menuitem" data-fmt="html">HTML</button>
+        <button role="menuitem" data-fmt="pdf">PDF (imprimir)</button>
+        <button role="menuitem" data-fmt="json">JSON</button>
         <div class="menu-note">Exporta lo que está filtrado en la tabla</div>
       </div>
     </div>
     <div class="menu-wrap" id="clearWrap" style="display:none">
-      <button class="btn btn-del" id="btnClearCache">✕ Borrar ▾</button>
-      <div class="menu" id="clearMenu">
-        <button data-clear="cache">Borrar caché <small>agenda, ficha y SIC · las notas se conservan</small></button>
-        <button data-clear="all" class="danger">Borrar todos los datos <small>incluye notas, preferencias y sesión</small></button>
+      <button class="btn btn-del" id="btnClearCache" aria-haspopup="menu" aria-expanded="false">✕ Borrar ▾</button>
+      <div class="menu" id="clearMenu" role="menu">
+        <button role="menuitem" data-clear="cache">Borrar caché <small>agenda, ficha y SIC · las notas se conservan</small></button>
+        <button role="menuitem" data-clear="all" class="danger">Borrar todos los datos <small>incluye notas, preferencias y sesión</small></button>
       </div>
     </div>
   </div>
 </header>
 <progress id="progress" value="0" max="100" style="display:none"></progress>
-<div id="statusBar" class="idle">Presiona "Cargar datos" para comenzar.</div>
-<nav class="tabs">
-  <button class="tab-btn active" data-tab="atenciones">Atenciones</button>
-  <button class="tab-btn" data-tab="estadisticas">Estadísticas</button>
-  <button class="tab-btn" data-tab="interconsultas">Interconsultas</button>
-  <button class="tab-btn" data-tab="explorador">Explorador API</button>
+<div id="statusBar" class="idle" role="status" aria-live="polite">Presiona "Cargar datos" para comenzar.</div>
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-atenciones" data-tab="atenciones">Atenciones</button>
+  <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-estadisticas" data-tab="estadisticas">Estadísticas</button>
+  <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-interconsultas" data-tab="interconsultas">Interconsultas</button>
+  <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-explorador" data-tab="explorador">Explorador API</button>
 </nav>
 </div>
 
 <!-- Tab: Estadísticas -->
-<div class="tab-pane" id="tab-estadisticas">
+<div class="tab-pane" id="tab-estadisticas" role="tabpanel">
 <div class="stats" id="statsBar" style="display:none;margin:8px 0 0"></div>
 <div id="chartsSection" style="display:none"></div>
 <div style="padding:20px 24px;color:var(--ink-4);font-size:.85rem" id="statsEmpty">Carga los datos primero para ver estadísticas.</div>
 </div>
 
 <!-- Tab: Atenciones -->
-<div class="tab-pane active" id="tab-atenciones">
+<div class="tab-pane active" id="tab-atenciones" role="tabpanel">
 <div id="barEl" style="display:none">
 <div class="bar">
-  <input type="text" id="search" placeholder="Buscar nombre, RUN, diagnóstico…">
-  <select id="filtFecha"><option value="">Todas las fechas</option></select>
-  <select id="filtEstado"><option value="">Todos los estados</option></select>
-  <select id="filtTipo"><option value="">Todos los tipos</option></select>
-  <select id="filtDx"><option value="">Dx: todos</option><option value="con">Con diagnóstico</option><option value="sin">Sin diagnóstico</option><option value="ges">GES</option><option value="urg">Urgencias</option></select>
-  <select id="filtIC">
+  <input type="text" id="search" placeholder="Buscar nombre, RUN, diagnóstico…" aria-label="Buscar">
+  <select id="filtFecha" aria-label="Fecha"><option value="">Todas las fechas</option></select>
+  <select id="filtEstado" aria-label="Estado"><option value="">Todos los estados</option></select>
+  <select id="filtTipo" aria-label="Tipo de atención"><option value="">Todos los tipos</option></select>
+  <select id="filtDx" aria-label="Diagnóstico"><option value="">Dx: todos</option><option value="con">Con diagnóstico</option><option value="sin">Sin diagnóstico</option><option value="ges">GES</option><option value="urg">Urgencias</option></select>
+  <select id="filtIC" aria-label="Interconsultas">
     <option value="">IC: todas</option>
     <option value="recibi">IC que recibí (me derivaron al paciente)</option>
     <option value="emiti">IC que emití (yo derivé)</option>
@@ -404,35 +436,35 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
     <option value="paciente">Paciente con alguna SIC</option>
     <option value="no">Sin IC ni SIC</option>
   </select>
-  <select id="filtDia" class="more"><option value="">Todos los días</option></select>
-  <select id="filtSexo" class="more"><option value="">Todos los sexos</option></select>
-  <select id="filtPrev" class="more"><option value="">Todas las previsiones</option></select>
-  <select id="filtPrest" class="more"><option value="">Todos los prestadores</option></select>
+  <select id="filtDia" class="more" aria-label="Día de la semana"><option value="">Todos los días</option></select>
+  <select id="filtSexo" class="more" aria-label="Sexo"><option value="">Todos los sexos</option></select>
+  <select id="filtPrev" class="more" aria-label="Previsión"><option value="">Todas las previsiones</option></select>
+  <select id="filtPrest" class="more" aria-label="Prestador"><option value="">Todos los prestadores</option></select>
 </div>
 <div class="bar-tools">
   <button class="btn-mini" id="btnClearFilters" data-tip="Limpiar filtros">✕ Filtros</button>
-  <button class="btn-mini" id="btnMoreFilters" data-tip="Día, sexo, previsión, prestador">+ Más filtros</button>
+  <button class="btn-mini" id="btnMoreFilters" data-tip="Día, sexo, previsión, prestador" aria-expanded="false">+ Más filtros</button>
   <span class="spacer"></span>
   <button class="btn-mini" id="btnDensity" data-tip="Alternar densidad de filas">☰ Compacto</button>
-  <button class="btn-mini" id="btnCols" data-tip="Mostrar / ocultar columnas">▥ Columnas</button>
+  <button class="btn-mini" id="btnCols" data-tip="Mostrar / ocultar columnas" aria-haspopup="true" aria-expanded="false">▥ Columnas</button>
   <div id="colsMenu"></div>
 </div>
 </div>
 <div class="tbl-wrap" id="tblWrap" style="display:none">
-<table id="mainTable">
+<table id="mainTable" aria-label="Atenciones">
   <colgroup>
     <col class="c-fecha"><col class="c-nombre"><col class="c-edad"><col class="c-sexo">
     <col class="c-razon"><col class="c-tipo"><col class="c-dx"><col class="c-estado"><col class="c-ic"><col class="c-nota">
   </colgroup>
   <thead><tr>
-    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" data-tip="Pasa el cursor por la ⓘ para ver día y hora">Fecha</th>
-    <th data-col="nombre" data-c="nombre" class="sticky s2">Nombre</th>
-    <th data-col="edad" data-c="edad" data-tip="Pasa el cursor para ver la fecha de nacimiento">Edad</th>
-    <th data-col="sexo" data-c="sexo" data-tip="M = mujer · H = hombre">Sx</th>
-    <th data-col="razon" data-c="razon">Razón</th>
-    <th data-col="tipoAtencion" data-c="tipoAtencion">Tipo de atención</th>
-    <th data-col="diagnostico" data-c="diagnostico" data-tip="Desde FichaClinica/HistorialAtencion">Diagnóstico</th>
-    <th data-col="estado" data-c="estado">Estado</th>
+    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" tabindex="0" aria-sort="descending" data-tip="Ordenar · la ⓘ muestra día y hora">Fecha</th>
+    <th data-col="nombre" data-c="nombre" class="sticky s2" tabindex="0" aria-sort="none">Nombre</th>
+    <th data-col="edad" data-c="edad" tabindex="0" aria-sort="none" data-tip="Ordenar · al pasar el cursor se ve la fecha de nacimiento">Edad</th>
+    <th data-col="sexo" data-c="sexo" tabindex="0" aria-sort="none" data-tip="M = mujer · H = hombre">Sx</th>
+    <th data-col="razon" data-c="razon" tabindex="0" aria-sort="none">Razón</th>
+    <th data-col="tipoAtencion" data-c="tipoAtencion" tabindex="0" aria-sort="none">Tipo de atención</th>
+    <th data-col="diagnostico" data-c="diagnostico" tabindex="0" aria-sort="none" data-tip="Desde FichaClinica/HistorialAtencion">Diagnóstico</th>
+    <th data-col="estado" data-c="estado" tabindex="0" aria-sort="none">Estado</th>
     <th class="ns" data-c="ic" data-tip="SIC que originó la cita (solicitante real, especialidad, estado) y otras SIC del paciente">Interconsulta</th>
     <th class="ns" data-c="nota" data-tip="Clic en una celda para editar">Notas</th>
   </tr></thead>
@@ -443,11 +475,11 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
 </div>
 
 <!-- Tab: Interconsultas -->
-<div class="tab-pane" id="tab-interconsultas">
+<div class="tab-pane" id="tab-interconsultas" role="tabpanel">
   <div class="stats" id="sicSummary"></div>
   <div class="bar">
-    <input type="text" id="sicSearch" placeholder="Buscar paciente, RUN, N° SIC, diagnóstico, CIE-10, fundamentos…">
-    <select id="sicGrupo">
+    <input type="text" id="sicSearch" placeholder="Buscar paciente, RUN, N° SIC, diagnóstico, CIE-10, fundamentos…" aria-label="Buscar interconsultas">
+    <select id="sicGrupo" aria-label="Estado">
       <option value="">Todos los estados</option>
       <option value="pendiente">Pendientes (nueva / revisión / observada)</option>
       <option value="enviada">En curso (enviada / aceptada / con cita)</option>
@@ -455,24 +487,24 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
       <option value="cerrada">Cerradas (alta / egresada)</option>
       <option value="fallida">Fallidas (rechazada / cancelada / no asiste)</option>
     </select>
-    <select id="sicEsp"><option value="">Todas las especialidades</option></select>
-    <select id="sicQuien">
+    <select id="sicEsp" aria-label="Especialidad"><option value="">Todas las especialidades</option></select>
+    <select id="sicQuien" aria-label="Rol">
       <option value="">Todas las SIC del hospital</option>
       <option value="emitidas">Emitidas por mí (yo derivé)</option>
       <option value="recibidas">Recibidas por mí (me derivaron)</option>
       <option value="mias">Mías (emitidas o recibidas)</option>
     </select>
-    <select id="sicContra"><option value="">Contrarreferencia: todas</option><option value="si">Con contrarreferencia</option><option value="no">Sin contrarreferencia</option></select>
+    <select id="sicContra" aria-label="Contrarreferencia"><option value="">Contrarreferencia: todas</option><option value="si">Con contrarreferencia</option><option value="no">Sin contrarreferencia</option></select>
   </div>
   <div class="bar-tools">
     <button class="btn-mini" id="btnSicClear" data-tip="Limpiar filtros">✕ Filtros</button>
-    <span class="sic-status" id="sicStatus" style="padding:0 8px">Carga los datos para ver las interconsultas.</span>
+    <span class="sic-status" id="sicStatus" style="padding:0 8px" role="status">Carga los datos para ver las interconsultas.</span>
     <span class="spacer"></span>
     <button class="btn-mini" id="btnSicRefresh" data-tip="Volver a pedir las interconsultas a Eloisa">↻ Actualizar IC</button>
     <button class="btn-mini" id="btnSicExport" style="display:none">↓ CSV</button>
   </div>
   <div class="tbl-wrap">
-    <table class="sic-table">
+    <table class="sic-table" aria-label="Interconsultas">
       <colgroup>
         <col class="s-fecha"><col class="s-dias"><col class="s-pac"><col class="s-esp"><col class="s-dx">
         <col class="s-prio"><col class="s-est"><col class="s-flags"><col class="s-sol">
@@ -495,18 +527,18 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
 </div>
 
 <!-- Tab: Explorador API -->
-<div class="tab-pane" id="tab-explorador">
+<div class="tab-pane" id="tab-explorador" role="tabpanel">
   <div class="explorer">
     <p style="font-size:.8rem;color:var(--ink-3);margin-bottom:10px">
       Consulta endpoints de la API Rayen con tu sesión activa. Solo se permite el origen clinicohangaroa.eloisa.cl. Los enlaces rápidos ya usan la fecha de hoy; reemplaza <code>{ids}</code> donde corresponda.
     </p>
     <div class="explorer-row">
-      <input type="text" id="explorerUrl" placeholder="/API/api/rayen/…" spellcheck="false">
+      <input type="text" id="explorerUrl" placeholder="/API/api/rayen/…" spellcheck="false" aria-label="URL del endpoint">
       <button class="btn btn-fetch" id="btnExplorerFetch" style="background:var(--g-700)">Consultar</button>
     </div>
     <div class="explorer-ql" id="explorerQl"></div>
-    <div class="explorer-meta" id="explorerMeta"></div>
-    <textarea id="explorerOut" readonly placeholder="La respuesta JSON aparecerá aquí…"></textarea>
+    <div class="explorer-meta" id="explorerMeta" role="status"></div>
+    <textarea id="explorerOut" readonly placeholder="La respuesta JSON aparecerá aquí…" aria-label="Respuesta"></textarea>
     <div class="extra-fields" id="extraFields" style="display:none">
       <h3>Campos de cita no mapeados (muestra de las últimas citas descargadas)</h3>
       <table class="ef-table">
@@ -518,35 +550,35 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
 </div>
 
 <div id="panelBackdrop"></div>
-<div id="patientPanel">
-  <div class="pp-header">
-    <div class="pp-avatar" id="ppAvatar"></div>
+<aside id="patientPanel" role="dialog" aria-modal="true" aria-labelledby="ppName">
+  <div class="pp-header" id="ppHeader">
+    <div class="pp-avatar" id="ppAvatar" aria-hidden="true"></div>
     <div class="pp-info">
       <h2 id="ppName"></h2>
       <p id="ppMeta"></p>
       <span id="ppSector"></span>
     </div>
-    <button id="ppDatosBtn" class="pp-hbtn" data-tip="Contacto, inscripción, alertas y vigencias">Datos</button>
-    <button id="ppClose" data-tip="Cerrar (Esc)">✕</button>
+    <button id="ppDatosBtn" class="pp-hbtn" data-tip="Contacto, inscripción, alertas y vigencias" aria-expanded="false" aria-controls="ppDatos">Datos</button>
+    <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>
   </div>
   <div class="pp-datos" id="ppDatos" hidden></div>
-  <nav class="pp-tabs">
-    <button class="pp-tab active" data-pt="dx">Diagnósticos <span class="cnt"></span></button>
-    <button class="pp-tab" data-pt="at">Atenciones <span class="cnt"></span></button>
-    <button class="pp-tab" data-pt="ic">Interconsultas <span class="cnt"></span></button>
-    <button class="pp-tab" data-pt="rx">Recetas <span class="cnt"></span></button>
+  <nav class="pp-tabs" role="tablist" aria-label="Ficha del paciente">
+    <button class="pp-tab active" role="tab" aria-selected="true" data-pt="dx" aria-controls="ppPaneDx">Diagnósticos <span class="cnt"></span></button>
+    <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="at" aria-controls="ppPaneAt">Atenciones <span class="cnt"></span></button>
+    <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="ic" aria-controls="ppPaneIc">Interconsultas <span class="cnt"></span></button>
+    <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="rx" aria-controls="ppPaneRx">Recetas <span class="cnt"></span></button>
   </nav>
-  <div class="pp-ficha-status" id="ppFichaStatus"></div>
-  <div class="pp-pane active" data-pt="dx" id="ppPaneDx"></div>
-  <div class="pp-pane" data-pt="at" id="ppPaneAt"></div>
-  <div class="pp-pane" data-pt="ic" id="ppPaneIc"></div>
-  <div class="pp-pane" data-pt="rx" id="ppPaneRx"></div>
+  <div class="pp-ficha-status" id="ppFichaStatus" role="status"></div>
+  <div class="pp-pane active" data-pt="dx" id="ppPaneDx" role="tabpanel"></div>
+  <div class="pp-pane" data-pt="at" id="ppPaneAt" role="tabpanel"></div>
+  <div class="pp-pane" data-pt="ic" id="ppPaneIc" role="tabpanel"></div>
+  <div class="pp-pane" data-pt="rx" id="ppPaneRx" role="tabpanel"></div>
   <div class="pp-note">
-    <label>Nota clínica</label>
+    <label for="ppNoteText">Nota clínica</label>
     <textarea id="ppNoteText" placeholder="Escribe aquí notas sobre este paciente…"></textarea>
     <button id="ppSaveNote">Guardar nota</button>
   </div>
-</div>
+</aside>
 <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import { saveNote, patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
-import { esc, stateClass, sicClass, $ } from './dom.js';
+import { esc, stateClass, sicClass, $, initTablist, activateOnKey } from './dom.js';
 import { certificadoPath, sicPdfPath, recetaPdfPath, openPDF } from './pdf.js';
 import { getToken } from './auth.js';
 import { loadFicha, SECTION_LABELS } from './ficha.js';
@@ -42,14 +42,26 @@ export function initPanel() {
   });
 
   $('ppDatosBtn').addEventListener('click', () => {
-    const open = $('ppDatos').toggleAttribute('hidden');
-    $('ppDatosBtn').classList.toggle('on', !open);
+    const hidden = $('ppDatos').toggleAttribute('hidden');
+    $('ppDatosBtn').classList.toggle('on', !hidden);
+    $('ppDatosBtn').setAttribute('aria-expanded', String(!hidden));
   });
 
-  $('patientPanel').addEventListener('click', async e => {
-    const tab = e.target.closest('.pp-tab');
-    if (tab) { showTab(tab.dataset.pt); return; }
+  // Tabs: click or ←/→; remembered across patients
+  showTab = initTablist(document.querySelector('.pp-tabs'), id => {
+    activeTab = id;
+    document.querySelectorAll('.pp-pane').forEach(p => p.classList.toggle('active', p.dataset.pt === id));
+  }, 'pt');
 
+  // Sticky tab strip sits right under the header, whatever its height
+  const head = $('ppHeader');
+  const setHead = () => $('patientPanel').style.setProperty('--pp-head', `${head.offsetHeight}px`);
+  if ('ResizeObserver' in window) new ResizeObserver(setHead).observe(head);
+  setHead();
+
+  activateOnKey($('patientPanel')); // Enter/Space on visit headers
+
+  $('patientPanel').addEventListener('click', async e => {
     const pdf = e.target.closest('button[data-pdf]');
     if (pdf) {
       pdf.disabled = true;
@@ -60,7 +72,8 @@ export function initPanel() {
     }
     const tog = e.target.closest('.pp-vhead');
     if (tog && tog.closest('.pp-visit.has-body') && !e.target.closest('button')) {
-      tog.closest('.pp-visit').classList.toggle('expanded');
+      const open = tog.closest('.pp-visit').classList.toggle('expanded');
+      tog.setAttribute('aria-expanded', String(open));
       return;
     }
     if (e.target.closest('#ppReload') && cur) loadAndRenderFicha(true);
@@ -69,11 +82,7 @@ export function initPanel() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 }
 
-function showTab(id) {
-  activeTab = id;
-  document.querySelectorAll('.pp-tab').forEach(b => b.classList.toggle('active', b.dataset.pt === id));
-  document.querySelectorAll('.pp-pane').forEach(p => p.classList.toggle('active', p.dataset.pt === id));
-}
+let showTab = () => {}; // assigned in initPanel (WAI-ARIA tablist with roving tabindex)
 
 function setTabCount(id, n) {
   const b = document.querySelector(`.pp-tab[data-pt="${id}"] .cnt`);
@@ -186,7 +195,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
   const hasBody = v.anamnesis.motivo || v.anamnesis.historia || secs.length || v.actividades.length || v.adjuntos.length;
   return `
     <div class="pp-visit ${mine ? 'mine' : ''} ${hasBody ? 'has-body' : ''}">
-      <div class="pp-vhead">
+      <div class="pp-vhead" ${hasBody ? 'role="button" tabindex="0" aria-expanded="false"' : ''}>
         <strong class="pp-date">${v.fechaAtencion}</strong>
         <span class="pp-hora">${esc(whenLabel(v))}</span>
         <span class="pp-tipo">${esc(v.tipoAtencion)}</span>

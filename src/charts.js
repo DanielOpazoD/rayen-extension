@@ -2,8 +2,14 @@ import { esc } from './dom.js';
 
 const DOW_SORTED  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 const MONTHS_ES   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const GREEN       = '#2d8c6e';
-const BLUE        = '#3b82c4';
+
+// Colours come from the page's CSS tokens so the SVGs follow light/dark mode.
+const GREEN = 'var(--g-700)';
+const BLUE  = 'var(--blue)';
+const TXT   = 'var(--ink)';
+const TXT2  = 'var(--ink-3)';
+const TXT3  = 'var(--ink-4)';
+const VAL   = 'var(--g-800)';
 
 // ── Primitives ────────────────────────────────────────────────
 
@@ -24,13 +30,13 @@ function barSVG({ labels, values, title, width = 300, height = 175, color = GREE
     const lbl8 = lbl.length > 5 ? lbl.slice(0, 4) : lbl;
     return [
       `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${color}" opacity="${op}"/>`,
-      v > 0 ? `<text x="${x+bw/2}" y="${y-3}" text-anchor="middle" font-size="8.5" fill="#2d6b52" font-weight="600">${v}</text>` : '',
-      `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="#718096">${esc(lbl8)}</text>`,
+      v > 0 ? `<text x="${x+bw/2}" y="${y-3}" text-anchor="middle" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>` : '',
+      `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="${TXT2}">${esc(lbl8)}</text>`,
     ].join('');
   }).join('');
 
-  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${esc(title)}</text>
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
+    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>
     ${bars}
   </svg>`;
 }
@@ -53,15 +59,15 @@ function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 9
     const op  = (0.4 + 0.6 * v / max).toFixed(2);
     const short = lbl.length > maxChars ? lbl.slice(0, maxChars - 1) + '…' : lbl;
     return [
-      `<text x="${PAD.left-4}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8.5" fill="#718096"><title>${esc(lbl)}</title>${esc(short)}</text>`,
+      `<text x="${PAD.left-4}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8.5" fill="${TXT2}"><title>${esc(lbl)}</title>${esc(short)}</text>`,
       `<rect x="${PAD.left}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${color}" opacity="${op}"/>`,
-      `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="#2d6b52" font-weight="600">${v}</text>`,
-      `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="7.5" fill="#a0aec0">${pct}%</text>`,
+      `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>`,
+      `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="7.5" fill="${TXT3}">${pct}%</text>`,
     ].join('');
   }).join('');
 
-  return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${esc(title)}</text>
+  return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
+    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>
     ${bars}
   </svg>`;
 }

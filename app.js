@@ -13,7 +13,7 @@ import { loadSICs, contactsFromSICs }     from './src/sic.js';
 import { renderSICTab, filterSICs, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
 import { certificadoPath, sicPdfPath, openPDF } from './src/pdf.js';
 import { localDateStr } from './src/parser.js';
-import { esc, $, initTooltips } from './src/dom.js';
+import { esc, $, initTooltips, initTablist, activateOnKey } from './src/dom.js';
 import { CONFIG } from './src/config.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -77,16 +77,12 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && expired && !$('btnFetch').disabled) handleFetch();
 });
 
-function showTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+// Tabs: click or ←/→ (WAI-ARIA tablist, roving tabindex)
+const showTab = initTablist(document.querySelector('.tabs'), name => {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
   if (name === 'interconsultas') ensureSICs();
   if (name === 'explorador')     renderExplorerExtras();
-}
-
-document.querySelectorAll('.tab-btn').forEach(btn =>
-  btn.addEventListener('click', () => showTab(btn.dataset.tab))
-);
+}, 'tab');
 
 // ── Atenciones ────────────────────────────────────────────────
 function tableCtx() { return { sicsById, sicsByRun, officerId: CONFIG.officerId }; }
@@ -292,7 +288,8 @@ function buildColumnsMenu() {
 }
 $('btnCols').addEventListener('click', e => {
   e.stopPropagation();
-  $('colsMenu').classList.toggle('open');
+  const open = $('colsMenu').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
 });
 document.addEventListener('click', e => {
   if (!e.target.closest('#colsMenu') && !e.target.closest('#btnCols')) $('colsMenu').classList.remove('open');
@@ -337,7 +334,7 @@ $('btnExplorerFetch').addEventListener('click', async () => {
 // ── Events ────────────────────────────────────────────────────
 $('btnFetch').addEventListener('click', handleFetch);
 const EXPORTERS = { csv: exportCSV, xls: exportXLS, html: exportHTML, json: exportJSON, pdf: exportPDF };
-$('btnExport').addEventListener('click', e => { e.stopPropagation(); $('exportMenu').classList.toggle('open'); });
+$('btnExport').addEventListener('click', e => { e.stopPropagation(); const open = $('exportMenu').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(open)); });
 $('exportMenu').addEventListener('click', async e => {
   const b = e.target.closest('button[data-fmt]');
   if (!b) return;
@@ -346,7 +343,7 @@ $('exportMenu').addEventListener('click', async e => {
   catch (err) { setStatus(`No se pudo exportar: ${err.message}`, 'err'); }
 });
 document.addEventListener('click', e => { if (!e.target.closest('#exportWrap')) $('exportMenu').classList.remove('open'); });
-$('btnClearCache').addEventListener('click', e => { e.stopPropagation(); $('clearMenu').classList.toggle('open'); });
+$('btnClearCache').addEventListener('click', e => { e.stopPropagation(); const open = $('clearMenu').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(open)); });
 $('clearMenu').addEventListener('click', async e => {
   const b = e.target.closest('button[data-clear]');
   if (!b) return;
@@ -383,6 +380,7 @@ $('btnMoreFilters').addEventListener('click', () => {
   const open = bar.classList.toggle('show-more');
   $('btnMoreFilters').textContent = open ? '− Menos filtros' : '+ Más filtros';
   $('btnMoreFilters').classList.toggle('on', open);
+  $('btnMoreFilters').setAttribute('aria-expanded', String(open));
 });
 
 document.querySelectorAll('th[data-col]').forEach(th => {
@@ -390,9 +388,10 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     const col = th.dataset.col;
     sortDir = col === sortCol ? sortDir * -1 : 1;
     sortCol = col;
-    document.querySelectorAll('th[data-col]').forEach(t => { t.classList.remove('sorted'); t.removeAttribute('data-dir'); });
+    document.querySelectorAll('th[data-col]').forEach(t => { t.classList.remove('sorted'); t.removeAttribute('data-dir'); t.setAttribute('aria-sort', 'none'); });
     th.classList.add('sorted');
     th.dataset.dir = sortDir > 0 ? 'asc' : 'desc';
+    th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
     render();
   });
 });
@@ -464,6 +463,8 @@ function startNoteEdit(cell) {
 // ── Init ──────────────────────────────────────────────────────
 initPanel();
 initTooltips();
+activateOnKey($('mainTable')); // Enter/Space on sortable headers, patient names, SIC lines
+activateOnKey($('sicBody'));   // Enter/Space expands a SIC row
 loadPrefs().then(p => {
   $('months').value = String(p.months);
   $('optHistorial').checked = p.historial;

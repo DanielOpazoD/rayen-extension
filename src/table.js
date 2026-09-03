@@ -72,7 +72,7 @@ function sicLine(s, role, extra = '') {
             : (s.ejecutor.nombre ? `a ${s.ejecutor.nombre}` : '');
   const cr  = s.contrarreferencias.length ? ` · CR ✓` : '';
   const tip = `SIC #${s.id} · ${s.fecha} · ${s.estado}${who ? ` · ${who}` : ''}${s.cie10 ? ` · ${s.cie10}` : ''}${s.diagnostico ? ` · ${s.diagnostico}` : ''}${cr}${extra ? `\n${extra}` : ''}`;
-  return `<div class="ic-line sic-link" data-sic="${s.id}" data-tip="${esc(tip)}">` +
+  return `<div class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="0" data-tip="${esc(tip)}">` +
     `<span class="rol rol-${role}">${ROLE_LABEL[role]}</span>` +
     `<span class="ic-esp">${esc(s.especialidad)}</span>` +
     `<span class="badge ${sicClass(s.grupo)} sm">${esc(s.estado)}</span>` +
@@ -122,7 +122,7 @@ function row(p, ctx) {
 
   return `<tr data-id="${esc(p.id)}" class="${rowCls}">
     <td data-c="fechaAtencion" class="sticky s1"><span class="fd">${p.fechaAtencion}</span><span class="info" tabindex="0" data-tip="${esc(whenLabel(p))}">i</span></td>
-    <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run">${p.runStr}</span>` : ''}</td>
+    <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="0" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run">${p.runStr}</span>` : ''}</td>
     <td data-c="edad" class="num"><span class="tip" data-tip="${esc(edadTip)}">${p.edad ?? ''}</span></td>
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>
     <td data-c="razon">${esc(p.razon)}</td>

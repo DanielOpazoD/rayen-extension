@@ -66,6 +66,54 @@ export function initTooltips() {
   document.addEventListener('click', hide, true);
 }
 
+/**
+ * WAI-ARIA tablist: click or ←/→/Home/End select a tab; roving tabindex.
+ * @param {HTMLElement} nav  element with role="tablist" containing [role="tab"] buttons
+ * @param {(id: string) => void} onSelect  receives the tab's `data-*` id (dataset[key])
+ * @param {string} key  dataset key holding the tab id (e.g. 'tab' or 'pt')
+ * @returns {(id: string) => void} function to select a tab programmatically
+ */
+export function initTablist(nav, onSelect, key) {
+  const tabs = () => [...nav.querySelectorAll('[role="tab"]')];
+  const select = (id, focus = false) => {
+    for (const t of tabs()) {
+      const on = t.dataset[key] === id;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    }
+    onSelect(id);
+  };
+  nav.addEventListener('click', e => {
+    const t = e.target.closest('[role="tab"]');
+    if (t) select(t.dataset[key]);
+  });
+  nav.addEventListener('keydown', e => {
+    const list = tabs();
+    const i = list.findIndex(t => t === document.activeElement);
+    if (i < 0) return;
+    const next = e.key === 'ArrowRight' ? (i + 1) % list.length
+               : e.key === 'ArrowLeft'  ? (i - 1 + list.length) % list.length
+               : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    select(list[next].dataset[key], true);
+  });
+  return select;
+}
+
+/** Enter/Space on a focused role="button" element behaves like a click. */
+export function activateOnKey(container) {
+  container.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target.closest('[role="button"],[data-col],tr[tabindex]');
+    if (!el || el.tagName === 'BUTTON' || el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') return;
+    e.preventDefault();
+    el.click();
+  });
+}
+
 /** Refills a <select> keeping its first (placeholder) option and, if possible, the current value. */
 export function fillSelect(el, values, keep = true) {
   const cur = el.value;
