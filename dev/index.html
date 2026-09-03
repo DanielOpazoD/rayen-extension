@@ -12,6 +12,10 @@
   const html = await (await fetch('../app.html')).text();
   const doc  = new DOMParser().parseFromString(html, 'text/html');
   doc.querySelectorAll('script').forEach(s => s.remove());
+  const appRoot = new URL('../', import.meta.url);
+  doc.querySelectorAll('link[href]').forEach(link => {
+    link.href = new URL(link.getAttribute('href'), appRoot).href;
+  });
   document.title = `${doc.title} · dev`;
   document.head.append(...doc.head.querySelectorAll('style, link, meta[name=viewport]'));
   document.body.innerHTML = doc.body.innerHTML;

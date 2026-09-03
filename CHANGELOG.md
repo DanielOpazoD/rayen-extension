@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 2.5.0 — 2026-09-03
+
+- Separa las 569 líneas del sistema visual de `app.html` hacia `styles/app.css`, sin cambiar su resultado renderizado.
+- Añade acceso «Saltar al contenido» para navegación por teclado.
+- Protege automáticamente la hoja visual empaquetada, las referencias ARIA y los contratos de foco, modo oscuro, movimiento reducido y pantallas estrechas.
+
 ## 2.4.0 — 2026-09-03
 
 - Añade un mapa arquitectónico canónico, una ruta de lectura para futuras contribuciones y una verificación automática contra la estructura real de `src/`.

@@ -16,6 +16,7 @@ assert.deepEqual(manifest.host_permissions, ['https://clinicohangaroa.eloisa.cl/
 
 const required = [
   'app.html', 'app.js', 'popup.html', 'popup-init.js', 'report.html', 'report.js',
+  'styles/app.css',
   ...Object.values(manifest.icons ?? {}),
   ...Object.values(manifest.action?.default_icon ?? {}),
 ];
