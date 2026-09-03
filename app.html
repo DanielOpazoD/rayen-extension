@@ -251,6 +251,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 #ppClose:hover{background:var(--surface-2);color:var(--ink)}
 .pp-hbtn{background:var(--card);border:1px solid var(--rule);color:var(--ink-2);font-size:var(--t-sm);font-weight:500;padding:4px 10px;border-radius:var(--r-sm);cursor:pointer;position:relative;flex-shrink:0}
 .pp-hbtn:hover,.pp-hbtn.on{background:var(--surface-2);color:var(--ink)}
+.pp-header .menu{top:calc(100% + 4px);min-width:290px}
 .pp-hbtn.dot::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--bad);border:2px solid var(--card)}
 .pp-datos{padding:var(--sp-3) var(--sp-4) var(--sp-2);background:var(--surface-3);border-bottom:1px solid var(--rule)}
 .pp-datos-grp{margin-bottom:var(--sp-3)}
@@ -629,6 +630,17 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <h2 id="ppName"></h2>
       <p id="ppMeta"></p>
       <span id="ppSector"></span>
+    </div>
+    <div class="menu-wrap" id="ppPdfWrap">
+      <button id="ppPdfBtn" class="pp-hbtn" data-tip="Imprimir o guardar en PDF la historia de este paciente" aria-haspopup="menu" aria-expanded="false">PDF ▾</button>
+      <div class="menu" id="ppPdfMenu" role="menu">
+        <button role="menuitem" data-scope="todos">Atenciones · todos los profesionales</button>
+        <button role="menuitem" data-scope="medicos">Atenciones · solo médicos</button>
+        <button role="menuitem" data-scope="yo">Atenciones · solo mías</button>
+        <button role="menuitem" data-scope="ic">Interconsultas del paciente</button>
+        <button role="menuitem" data-scope="completo">Historia completa <small>atenciones + interconsultas + recetas</small></button>
+        <div class="menu-note">Se abre en una pestaña con el diálogo de impresión: elige «Guardar como PDF».</div>
+      </div>
     </div>
     <button id="ppDatosBtn" class="pp-hbtn" data-tip="Contacto, inscripción, alertas y vigencias" aria-expanded="false" aria-controls="ppDatos">Datos</button>
     <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>

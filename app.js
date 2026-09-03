@@ -120,7 +120,7 @@ async function applyResult(result) {
   buildFilters(allData);
   buildStats(allData, team);
   render();
-  renderCharts(allData, team, $('chartsSection'));
+  renderCharts(allData, team, $('chartsSection'), sics);
   refreshBrief();
   ['statsBar','chartsSection','barEl','tblWrap','exportWrap','clearWrap'].forEach(id => { $(id).style.display = ''; });
   $('statsEmpty').style.display = 'none';
@@ -230,8 +230,8 @@ async function ensureSICs(force = false) {
     // Change memory: what moved in the watched streams since the last load
     try { novedades = await diffWatched(sics, watchEsp); }
     catch { novedades = null; }
-    // The agenda's IC column and the Hoy brief both depend on the SICs
-    if (allData.length) render();
+    // The agenda's IC column, the charts and the Hoy brief all depend on the SICs
+    if (allData.length) { render(); renderCharts(allData, team, $('chartsSection'), sics); }
     refreshBrief();
     const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
     $('sicStatus').textContent = `${sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
@@ -521,7 +521,15 @@ function startNoteEdit(cell) {
 }
 
 // ── Init ──────────────────────────────────────────────────────
-initPanel();
+initPanel({
+  // A note saved in the panel must show up in every row of that patient and in the brief
+  onNoteSaved(record, text) {
+    const key = record.run ?? record.nombre;
+    allData.forEach(p => { if ((p.run ?? p.nombre) === key) p.note = text; });
+    render();
+    refreshBrief();
+  },
+});
 initTooltips();
 initLock({ minutes: 15 }); // patient data on screen; blur it when idle
 activateOnKey($('mainTable'));    // Enter/Space on sortable headers, patient names, SIC lines

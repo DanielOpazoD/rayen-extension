@@ -1,154 +1,154 @@
 import { esc } from './dom.js';
 
-const DOW_SORTED  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-const MONTHS_ES   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DOW_SORTED = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const MONTHS_ES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 // Colours come from the page's CSS tokens so the SVGs follow light/dark mode.
-const GREEN = 'var(--g-700)';
-const BLUE  = 'var(--blue)';
-const TXT   = 'var(--ink)';
-const TXT2  = 'var(--ink-3)';
-const TXT3  = 'var(--ink-4)';
-const VAL   = 'var(--g-800)';
+const GREEN = 'var(--brand)', BLUE = 'var(--info)', TXT = 'var(--ink)', TXT2 = 'var(--ink-3)', TXT3 = 'var(--ink-4)', VAL = 'var(--brand-2)';
 
-// ── Primitives ────────────────────────────────────────────────
+const pct = (v, total) => total > 0 ? Math.round(v / total * 100) : 0;
 
-function barSVG({ labels, values, title, width = 300, height = 175, color = GREEN }) {
-  const P = { top: 28, bottom: 34, left: 8, right: 8 };
-  const cw = width - P.left - P.right;
-  const ch = height - P.top - P.bottom;
-  const max = Math.max(...values, 1);
-  const n   = labels.length;
-  const bw  = Math.max(4, Math.floor(cw / n) - 3);
+// ── Primitives: every mark carries value and percentage ───────
 
+function barSVG({ labels, values, title, width = 300, height = 190, color = GREEN }) {
+  const P = { top: 30, bottom: 34, left: 8, right: 8 };
+  const cw = width - P.left - P.right, ch = height - P.top - P.bottom;
+  const max = Math.max(...values, 1), n = labels.length, total = values.reduce((a, b) => a + b, 0);
+  const bw = Math.max(4, Math.floor(cw / n) - 3);
   const bars = labels.map((lbl, i) => {
-    const v   = values[i] || 0;
-    const bh  = Math.max(v > 0 ? 3 : 0, Math.round((v / max) * ch));
-    const x   = P.left + i * (cw / n) + 1;
-    const y   = P.top + ch - bh;
-    const op  = (0.4 + 0.6 * v / max).toFixed(2);
-    const lbl8 = lbl.length > 5 ? lbl.slice(0, 4) : lbl;
+    const v = values[i] || 0;
+    const bh = Math.max(v > 0 ? 3 : 0, Math.round((v / max) * ch));
+    const x = P.left + i * (cw / n) + 1, y = P.top + ch - bh;
+    const op = (0.4 + 0.6 * v / max).toFixed(2);
     return [
       `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${color}" opacity="${op}"/>`,
-      v > 0 ? `<text x="${x+bw/2}" y="${y-3}" text-anchor="middle" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>` : '',
-      `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="${TXT2}">${esc(lbl8)}</text>`,
+      v > 0 ? `<text x="${x+bw/2}" y="${y-11}" text-anchor="middle" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>` +
+              `<text x="${x+bw/2}" y="${y-2}" text-anchor="middle" font-size="7" fill="${TXT3}">${pct(v,total)}%</text>` : '',
+      `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="${TXT2}">${esc(lbl.length > 5 ? lbl.slice(0, 4) : lbl)}</text>`,
     ].join('');
   }).join('');
-
   return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>
-    ${bars}
-  </svg>`;
+    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
 }
 
 function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96 }) {
-  const rowH  = 24;
-  const PAD   = { top: 28, bottom: 10, left: labelW, right: 36 };
-  const h     = PAD.top + PAD.bottom + Math.max(labels.length, 1) * rowH;
-  const cw    = width - PAD.left - PAD.right;
-  const max   = Math.max(...values, 1);
-  const total = values.reduce((a, b) => a + b, 0);
-  const barH  = 13;
+  const rowH = 22, PAD = { top: 28, bottom: 8, left: labelW, right: 44 };
+  const h = PAD.top + PAD.bottom + Math.max(labels.length, 1) * rowH;
+  const cw = width - PAD.left - PAD.right, max = Math.max(...values, 1), total = values.reduce((a, b) => a + b, 0), barH = 12;
   const maxChars = Math.floor(labelW / 5.2);
-
   const bars = labels.map((lbl, i) => {
-    const v   = values[i] || 0;
-    const bw  = Math.round((v / max) * cw);
-    const y   = PAD.top + i * rowH + (rowH - barH) / 2;
-    const pct = total > 0 ? Math.round(v / total * 100) : 0;
-    const op  = (0.4 + 0.6 * v / max).toFixed(2);
+    const v = values[i] || 0, bw = Math.round((v / max) * cw), y = PAD.top + i * rowH + (rowH - barH) / 2;
+    const op = (0.4 + 0.6 * v / max).toFixed(2);
     const short = lbl.length > maxChars ? lbl.slice(0, maxChars - 1) + '…' : lbl;
     return [
       `<text x="${PAD.left-4}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8.5" fill="${TXT2}"><title>${esc(lbl)}</title>${esc(short)}</text>`,
       `<rect x="${PAD.left}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${color}" opacity="${op}"/>`,
       `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>`,
-      `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="7.5" fill="${TXT3}">${pct}%</text>`,
+      `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8" fill="${TXT3}">${pct(v,total)}%</text>`,
     ].join('');
   }).join('');
-
   return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>
-    ${bars}
-  </svg>`;
+    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
 }
 
-function topEntries(counts, n) {
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);
+const topEntries = (counts, n) => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);
+const count = (records, keyFn) => records.reduce((acc, r) => { const k = keyFn(r); if (k) acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+const card = svg => svg ? `<div class="chart-card">${svg}</div>` : '';
+const hb = (counts, title, n = 10, opts = {}) => {
+  const e = topEntries(counts, n);
+  return e.length ? hBarSVG({ labels: e.map(([k]) => k), values: e.map(([, v]) => v), title, ...opts }) : '';
+};
+
+/** Age → clinical bracket (MINSAL-style). Exported for tests. */
+export function ageBucket(edad) {
+  if (edad == null || !Number.isFinite(+edad)) return null;
+  const e = +edad;
+  return e < 1 ? '<1' : e < 5 ? '1–4' : e < 10 ? '5–9' : e < 15 ? '10–14' : e < 20 ? '15–19' : e < 45 ? '20–44' : e < 65 ? '45–64' : '65+';
 }
-
-function card(svg) { return `<div class="chart-card">${svg}</div>`; }
-
-// ── Public ────────────────────────────────────────────────────
+const AGE_ORDER = ['<1','1–4','5–9','10–14','15–19','20–44','45–64','65+'];
 
 /**
- * Renders the officer's charts and, when available, the team charts built from
- * HistorialAtencion daily aggregates.
+ * Renders the officer's charts, the SIC charts, and the team charts.
  * @param {object[]} records
  * @param {Record<string, object>} team  date8 → aggregate (may be empty)
  * @param {HTMLElement} container
+ * @param {object[]} [sics]
  */
-export function renderCharts(records, team, container) {
+export function renderCharts(records, team, container, sics = []) {
   if (!records.length) { container.style.display = 'none'; return; }
 
+  // ── Mis atenciones: cuándo ──
   const byDow = Object.fromEntries(DOW_SORTED.map(d => [d, 0]));
   records.forEach(r => { if (r.diaSemana) byDow[r.diaSemana]++; });
-  const chart1 = barSVG({ labels: DOW_SORTED, values: DOW_SORTED.map(d => byDow[d]), title: 'Por día de semana' });
+  const cDow = barSVG({ labels: DOW_SORTED, values: DOW_SORTED.map(d => byDow[d]), title: 'Por día de semana' });
 
-  const byMonth = {};
-  records.forEach(r => {
-    const p = (r.fechaAtencion || '').split('-');
-    if (p.length < 3) return;
-    const key = `${p[2]}-${p[1]}`;
-    byMonth[key] = (byMonth[key] || 0) + 1;
-  });
-  const monthKeys = Object.keys(byMonth).sort().slice(-7);
-  const chart2 = barSVG({
-    labels: monthKeys.map(k => MONTHS_ES[parseInt(k.split('-')[1]) - 1]),
-    values: monthKeys.map(k => byMonth[k]),
-    title: 'Por mes',
-  });
+  const byMonth = count(records, r => { const p = (r.fechaAtencion || '').split('-'); return p.length === 3 ? `${p[2]}-${p[1]}` : ''; });
+  const mk = Object.keys(byMonth).sort().slice(-12);
+  const cMonth = barSVG({ labels: mk.map(k => MONTHS_ES[+k.split('-')[1] - 1]), values: mk.map(k => byMonth[k]), title: 'Por mes' });
 
-  const byPrev = {};
-  records.forEach(r => { const k = r.prevision || 'Sin datos'; byPrev[k] = (byPrev[k] || 0) + 1; });
-  const prev = topEntries(byPrev, 6);
-  const chart3 = hBarSVG({ labels: prev.map(([k]) => k), values: prev.map(([, v]) => v), title: 'Por previsión' });
+  const byHour = {};
+  records.forEach(r => { const h = parseInt(String(r.hora).slice(0, 2)); if (Number.isFinite(h)) byHour[h] = (byHour[h] || 0) + 1; });
+  const hours = Object.keys(byHour).map(Number).sort((a, b) => a - b);
+  const cHour = hours.length ? barSVG({ labels: hours.map(h => `${h}h`), values: hours.map(h => byHour[h]), title: 'Por hora del día' }) : '';
 
-  const byTipo = {};
-  records.forEach(r => { const k = r.tipoAtencion || 'Sin tipo'; byTipo[k] = (byTipo[k] || 0) + 1; });
-  const tipo = topEntries(byTipo, 10);
-  const chart4 = hBarSVG({ labels: tipo.map(([k]) => k), values: tipo.map(([, v]) => v), title: 'Mis tipos de atención', labelW: 120 });
+  // ── Mis atenciones: quién ──
+  const bySex = count(records, r => r.sexo || 'Sin dato');
+  const byAge = count(records, r => ageBucket(r.edad));
+  const ages = AGE_ORDER.filter(k => byAge[k]);
+  const cAge = ages.length ? barSVG({ labels: ages, values: ages.map(k => byAge[k]), title: 'Por grupo etario' }) : '';
+  const unicos = new Set(records.map(r => r.run || r.nombre)).size;
+  const porPac = count(records, r => r.run || r.nombre);
+  const freq = { '1 visita': 0, '2 visitas': 0, '3–4 visitas': 0, '5+ visitas': 0 };
+  Object.values(porPac).forEach(n => { freq[n === 1 ? '1 visita' : n === 2 ? '2 visitas' : n <= 4 ? '3–4 visitas' : '5+ visitas']++; });
 
-  const byDx = {};
+  // ── Mis atenciones: qué ──
+  const byEstado = count(records, r => r.estado || 'Sin estado');
+  const byTipo   = count(records, r => r.tipoAtencion || 'Sin tipo');
+  const byDx     = {};
   records.forEach(r => (r.diagnosticos ?? []).forEach(d => { const k = d.clasificacion || d.nombre; if (k) byDx[k] = (byDx[k] || 0) + 1; }));
-  const dx = topEntries(byDx, 10);
-  const chart5 = dx.length
-    ? hBarSVG({ labels: dx.map(([k]) => k), values: dx.map(([, v]) => v), title: 'Mis diagnósticos más frecuentes', labelW: 130 })
-    : '';
+  const byCert = count(records, r => r.diagnosticos?.[0]?.certeza || (r.diagnosticos?.length ? 'Sin certeza' : 'Sin diagnóstico'));
+  const byGes  = { 'GES': records.filter(r => r.diagnosticos?.some(d => d.esAuge)).length };
+  byGes['No GES'] = records.length - byGes.GES;
+  const byRazon = count(records, r => r.razon || 'Sin razón');
+  const byPrest = count(records, r => r.prestador && !/opazo/i.test(r.prestador) ? r.prestador : '');
 
+  const mine = [
+    `<h3 class="chart-h3">Mis atenciones · ${records.length} atenciones · ${unicos} pacientes</h3>`,
+    `<div class="chart-section">${card(cDow)}${card(cMonth)}${card(cHour)}</div>`,
+    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4))}</div>`,
+    `<div class="chart-section">${card(hb(byEstado, 'Por estado', 6))}${card(hb(byRazon, 'Por razón', 6))}${card(hb(byGes, 'GES', 2))}</div>`,
+    `<div class="chart-section">${card(hb(byTipo, 'Tipos de atención', 15, { labelW: 130 }))}${card(hb(byDx, 'Diagnósticos más frecuentes', 15, { labelW: 140 }))}${card(hb(byCert, 'Certeza del diagnóstico principal', 5))}</div>`,
+    Object.keys(byPrest).length ? `<div class="chart-section">${card(hb(byPrest, 'Atendidas por otro prestador', 8, { labelW: 130 }))}</div>` : '',
+  ].join('');
+
+  // ── Interconsultas ──
+  let sicHTML = '';
+  if (sics.length) {
+    const byEsp = count(sics, s => s.especialidad);
+    const byGrp = count(sics, s => ({ pendiente: 'Pendiente', enviada: 'En curso', atendida: 'Atendida', cerrada: 'Cerrada', fallida: 'Fallida' })[s.grupo] || s.grupo);
+    const at = sics.filter(s => ['atendida', 'cerrada'].includes(s.grupo));
+    const cr = { 'Con contrarreferencia': at.filter(s => s.contrarreferencias.length).length };
+    cr['Sin contrarreferencia'] = at.length - cr['Con contrarreferencia'];
+    const byPrio = count(sics, s => `P${s.prioridad}`);
+    const crEsp = {}; const atEsp = count(at, s => s.especialidad);
+    Object.keys(atEsp).forEach(e => { const tot = atEsp[e]; const sin = at.filter(s => s.especialidad === e && !s.contrarreferencias.length).length; if (tot >= 3) crEsp[e] = Math.round(100 * sin / tot); });
+    sicHTML =
+      `<h3 class="chart-h3">Interconsultas del hospital · ${sics.length}</h3>` +
+      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140 }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>` +
+      `<div class="chart-section">${card(hb(cr, 'Atendidas: ¿volvió la contrarreferencia?', 2, { color: BLUE, labelW: 130 }))}${card(hb(crEsp, '% sin contrarreferencia por especialidad (≥3 atendidas)', 12, { color: BLUE, labelW: 140 }))}</div>`;
+  }
+
+  // ── Equipo ──
   let teamHTML = '';
   const days = Object.values(team ?? {});
   if (days.length) {
-    const sum = key => days.reduce((acc, d) => {
-      for (const [k, v] of Object.entries(d[key] ?? {})) acc[k] = (acc[k] || 0) + v;
-      return acc;
-    }, {});
-    const inst = topEntries(sum('byInstrumento'), 10);
-    const pres = topEntries(sum('byPrestador'), 12);
-    const tipoT = topEntries(sum('byTipo'), 12);
+    const sum = key => days.reduce((acc, d) => { for (const [k, v] of Object.entries(d[key] ?? {})) acc[k] = (acc[k] || 0) + v; return acc; }, {});
     const total = days.reduce((a, d) => a + d.total, 0);
     teamHTML =
-      `<h3 class="chart-h3">Equipo Hospital Hanga Roa · ${total.toLocaleString('es-CL')} atenciones en ${days.length} días (ficha clínica)</h3>` +
-      `<div class="chart-section">` +
-      card(hBarSVG({ labels: inst.map(([k]) => k), values: inst.map(([, v]) => v), title: 'Por profesión', color: BLUE, labelW: 110 })) +
-      card(hBarSVG({ labels: pres.map(([k]) => k), values: pres.map(([, v]) => v), title: 'Por profesional', color: BLUE, labelW: 130 })) +
-      card(hBarSVG({ labels: tipoT.map(([k]) => k), values: tipoT.map(([, v]) => v), title: 'Por tipo de atención', color: BLUE, labelW: 130 })) +
-      `</div>`;
+      `<h3 class="chart-h3">Equipo Hospital Hanga Roa · ${total.toLocaleString('es-CL')} atenciones en ${days.length} días</h3>` +
+      `<div class="chart-section">${card(hb(sum('byInstrumento'), 'Por profesión', 10, { color: BLUE, labelW: 110 }))}${card(hb(sum('byPrestador'), 'Por profesional', 15, { color: BLUE, labelW: 130 }))}${card(hb(sum('byTipo'), 'Por tipo de atención', 15, { color: BLUE, labelW: 130 }))}</div>`;
   }
 
-  container.innerHTML =
-    `<h3 class="chart-h3">Mis atenciones</h3>` +
-    `<div class="chart-section">${card(chart1)}${card(chart2)}${card(chart3)}</div>` +
-    `<div class="chart-section">${card(chart4)}${chart5 ? card(chart5) : ''}</div>` +
-    teamHTML;
+  container.innerHTML = mine + sicHTML + teamHTML;
   container.style.display = '';
 }

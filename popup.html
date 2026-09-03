@@ -2,28 +2,50 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="light dark">
 <title>Rayen Atenciones</title>
 <style>
+:root{
+  color-scheme:light;
+  --brand:#1a7f5f;--brand-2:#14614a;--bg:#f7f8f8;--card:#fff;--rule:#e4e7e7;
+  --ink:#16191b;--ink-2:#4b5358;--ink-3:#666f74;--ink-4:#98a1a6;
+  --good:#0f6b46;--bad:#a02a2a;--warn:#7d5200;
+  --t-xs:12px;--t-sm:13px;--t-base:15px;--r-sm:4px;--r-md:8px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  color-scheme:dark;
+  --brand:#4cbb96;--brand-2:#4cbb96;--bg:#131617;--card:#1b1e20;--rule:#2c3134;
+  --ink:#e9ecec;--ink-2:#b3bbbe;--ink-3:#8d9599;--ink-4:#666e72;
+  --good:#5cc198;--bad:#e88b83;--warn:#d6a94e;
+}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{width:340px;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#2d3748}
-.logo{background:linear-gradient(135deg,#2d8c6e,#1a6b53);color:white;border-radius:10px;padding:16px;margin-bottom:14px}
-.logo h1{font-size:1rem;font-weight:700}
-.logo p{font-size:.75rem;opacity:.8;margin-top:2px}
-#status{font-size:.78rem;color:#718096;margin-bottom:12px;padding:8px 10px;border-radius:7px;background:white;border:1px solid #e2e8f0}
-#status.ok{color:#276749;background:#f0fff4;border-color:#9ae6b4}
-#status.err{color:#c53030;background:#fff5f5;border-color:#feb2b2}
-.btn{display:block;width:100%;padding:10px;border:none;border-radius:9px;cursor:pointer;font-size:.9rem;font-weight:600;text-align:center;margin-bottom:8px}
-.btn-main{background:linear-gradient(135deg,#2d8c6e,#1a6b53);color:white}
-.btn-main:hover{opacity:.9}
+body{width:320px;padding:16px;font-family:var(--font);font-size:var(--t-base);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.mark{width:26px;height:26px;border-radius:7px;background:var(--brand);flex-shrink:0;position:relative}
+.mark::before,.mark::after{content:'';position:absolute;background:#fff;border-radius:1px}
+.mark::before{left:11.5px;top:6px;width:3px;height:14px}
+.mark::after{left:6px;top:11.5px;width:14px;height:3px}
+h1{font-size:var(--t-base);font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.brand p{font-size:var(--t-xs);color:var(--ink-3)}
+#status{display:flex;align-items:center;gap:8px;font-size:var(--t-sm);color:var(--ink-2);padding:9px 12px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--rule);margin-bottom:10px;line-height:1.4}
+#status::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ink-4);flex-shrink:0}
+#status.ok{color:var(--good)}#status.ok::before{background:var(--good)}
+#status.err{color:var(--bad)}#status.err::before{background:var(--bad)}
+.btn{display:block;width:100%;padding:9px;border:none;border-radius:var(--r-sm);cursor:pointer;font-size:var(--t-sm);font-weight:600;background:var(--brand);color:#fff}
+.btn:hover{background:var(--brand-2)}
+.btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hint{font-size:var(--t-xs);color:var(--ink-3);margin-top:10px;line-height:1.45}
 </style>
 </head>
 <body>
-<div class="logo">
-  <h1>Rayen Atenciones</h1>
-  <p>Hospital Hanga Roa — Dr. Daniel Opazo Damiani</p>
+<div class="brand">
+  <span class="mark" aria-hidden="true"></span>
+  <div><h1>Rayen Atenciones</h1><p>Hospital Hanga Roa · Dr. Daniel Opazo Damiani</p></div>
 </div>
-<div id="status">Verificando sesión...</div>
-<button class="btn btn-main" id="btnOpen">Abrir en pestaña completa</button>
+<div id="status" role="status">Verificando sesión…</div>
+<button class="btn" id="btnOpen">Abrir en pestaña completa</button>
+<p class="hint">Requiere una pestaña de clinicohangaroa.eloisa.cl con sesión iniciada.</p>
 <script src="popup-init.js"></script>
 </body>
 </html>

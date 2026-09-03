@@ -6,6 +6,8 @@ import { getToken } from './auth.js';
 import { loadFicha, SECTION_LABELS } from './ficha.js';
 import { CONFIG } from './config.js';
 import { whenLabel } from './table.js';
+import { buildPatientReport, SCOPE_LABEL } from './patient-report.js';
+import { openReport } from './export.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
@@ -22,8 +24,13 @@ const kv = (label, value) => value ? `<div class="kv"><span class="k">${esc(labe
 const h4 = t => `<h4>${esc(t)}</h4>`;
 const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
 
-/** Call once at app startup to wire up static panel controls. */
-export function initPanel() {
+/**
+ * Call once at app startup to wire up static panel controls.
+ * @param {{ onNoteSaved?: (record: object, text: string) => void }} hooks
+ *   onNoteSaved lets the host refresh the table/brief: the same patient can
+ *   appear in many rows and they must all show the new note.
+ */
+export function initPanel({ onNoteSaved } = {}) {
   $('ppClose').addEventListener('click', close);
   $('panelBackdrop').addEventListener('click', close);
 
@@ -34,11 +41,36 @@ export function initPanel() {
     try {
       await saveNote(cur.record, text);
       cur.record.note = text.trim();
+      for (const v of cur.visits) v.note = text.trim();
+      onNoteSaved?.(cur.record, text.trim());
       btn.textContent = '✓ Guardado';
     } catch (err) {
       btn.textContent = `✗ ${err.message}`;
     }
     setTimeout(() => { btn.textContent = 'Guardar nota'; }, 1800);
+  });
+
+  // PDF menu: the patient's clinical history, by scope
+  $('ppPdfBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const open = $('ppPdfMenu').classList.toggle('open');
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#ppPdfWrap')) $('ppPdfMenu').classList.remove('open');
+  });
+  $('ppPdfMenu').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-scope]');
+    if (!b || !cur) return;
+    $('ppPdfMenu').classList.remove('open');
+    const scope = b.dataset.scope;
+    b.disabled = true;
+    try {
+      const { fragment, css } = buildPatientReport(cur, scope);
+      await openReport(fragment, css);
+    } catch (err) {
+      $('ppFichaStatus').innerHTML = `<span class="al al-bad">No se pudo generar el informe: ${esc(err.message)}</span>`;
+    } finally { b.disabled = false; }
   });
 
   $('ppDatosBtn').addEventListener('click', () => {
@@ -357,6 +389,8 @@ export function openPanel(record, { allData, sics = [], contacts = new Map() }) 
   };
   $('ppDatos').setAttribute('hidden', '');
   $('ppDatosBtn').classList.remove('on');
+  $('ppPdfMenu').classList.remove('open');
+  $('ppPdfMenu').querySelectorAll('button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
   $('ppNoteText').value = record.note ?? '';
   renderAll();
   showTab(activeTab);

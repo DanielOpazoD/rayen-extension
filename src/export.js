@@ -150,12 +150,18 @@ export function exportHTML(records) {
 }
 
 /**
- * PDF without libraries: stores the report fragment in chrome.storage.session
- * and opens report.html?print=1, which renders it and calls window.print()
- * (the user picks "Guardar como PDF" in the dialog).
+ * PDF without libraries: stores an HTML fragment in chrome.storage.local and
+ * opens report.html?print=1, which renders it, deletes it, and calls
+ * window.print() (the user picks "Guardar como PDF" in the dialog).
+ * @param {string} fragment  body HTML, already escaped
+ * @param {string} [extraCss]  appended to the base report stylesheet
  */
-export async function exportPDF(records) {
-  await storageSet('rayen_report', { fragment: reportFragment(records), css: REPORT_CSS, at: Date.now() });
+export async function openReport(fragment, extraCss = '') {
+  await storageSet('rayen_report', { fragment, css: REPORT_CSS + extraCss, at: Date.now() });
   const url = chrome.runtime.getURL('report.html?print=1');
   try { await chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
+}
+
+export async function exportPDF(records) {
+  await openReport(reportFragment(records));
 }

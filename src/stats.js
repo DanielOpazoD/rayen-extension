@@ -15,21 +15,26 @@ export function buildStats(allData, team = {}) {
   const avgE = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
   const fem  = allData.filter(p => /mujer|femen/i.test(p.sexo)).length;
   const teamTotal = Object.values(team).reduce((a, d) => a + d.total, 0);
+  const unicos = new Set(allData.map(p => p.run || p.nombre)).size;
+  const citas  = allData.filter(p => p.origen === 'cita').length;
+  const pc = (n, d) => d ? `${Math.round(100 * n / d)}%` : '—';
 
   $('statsBar').innerHTML = [
-    [t,         'Total'],
-    [cp,        'Completadas'],
-    [ns,        'Inasistentes'],
-    [esp,       'Sin cita / espontáneas'],
-    [ic,        'Interconsultas'],
-    [dx,        'Con diagnóstico'],
-    [ges,       'GES'],
-    [urg,       'Urgencias'],
-    [dias,      'Días'],
-    [avgE+' a', 'Edad prom.'],
-    [fem,       'Mujeres'],
-    [t - fem,   'Hombres'],
-    ...(teamTotal ? [[teamTotal.toLocaleString('es-CL'), 'Equipo HHR']] : []),
+    [t,               'Atenciones'],
+    [unicos,          'Pacientes únicos'],
+    [dias,            'Días con atención'],
+    [dias ? (t / dias).toFixed(1) : '—', 'Atenciones / día'],
+    [cp,              `Completadas · ${pc(cp, citas)}`],
+    [ns,              `Inasistencias · ${pc(ns, citas)}`],
+    [esp,             `Espontáneas · ${pc(esp, t)}`],
+    [urg,             `Urgencias · ${pc(urg, t)}`],
+    [dx,              `Con diagnóstico · ${pc(dx, t)}`],
+    [ges,             `GES · ${pc(ges, t)}`],
+    [ic,              `Citas por IC · ${pc(ic, citas)}`],
+    [avgE + ' a',     'Edad promedio'],
+    [fem,             `Mujeres · ${pc(fem, t)}`],
+    [t - fem,         `Hombres · ${pc(t - fem, t)}`],
+    ...(teamTotal ? [[teamTotal.toLocaleString('es-CL'), `Equipo HHR · yo ${pc(t, teamTotal)}`]] : []),
   ].map(([n, l]) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`)
    .join('');
 }
