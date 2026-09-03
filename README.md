@@ -4,6 +4,8 @@ Extensión Chrome (Manifest V3) de uso personal para ver, cruzar y exportar la i
 
 No usa librerías ni servicios externos. Todo el código corre en el navegador y habla únicamente con la API de Eloisa usando la sesión ya iniciada.
 
+Para continuar el desarrollo, comienza por el [`mapa de documentación`](DOCUMENTATION_MAP.md) y la [`arquitectura canónica`](ARCHITECTURE.md). Ahí están los flujos, invariantes, responsables y puertas de calidad vigentes.
+
 ## Instalación
 
 1. `chrome://extensions` → activar **Modo de desarrollador**.
@@ -101,42 +103,12 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 npm install        # solo ESLint (dev)
 npm run lint       # eslint .
 npm test           # node --test, sin dependencias
-npm run check      # lint + test
+npm run docs:check # verifica que el mapa cubra todos los módulos
+npm run check      # lint + test + documentación + release
 npm run pack       # genera rayen-extension-<versión>.zip
 ```
 
-Estructura:
-
-```
-app.html / app.js        pestaña principal (orquestador)
-popup.html / popup-init.js
-report.html / report.js  reporte imprimible (exportar → PDF)
-src/
-  config.js   constantes, estados SIC, catálogos inferidos
-  http.js     apiGet/apiPost/apiBlob con guardia de origen
-  auth.js     token desde la pestaña de Eloisa
-  parser.js   fechas, RUN (DV módulo 11), EdadExacta, parseCita, parseAtencion
-  api.js      agenda por día, caché incremental y refresco de estados mutables
-  historial.js HistorialAtencion por día + cruce con la agenda (RUN + día)
-  ficha.js    ficha por paciente (10 años, todas las secciones) + antecedentes + programas
-  sic.js      interconsultas: ids, detalle, contrarreferencias
-  patients.js vista Pacientes: agregación por persona (pura, testeada)
-  today.js    parte matinal: novedades + pendientes + agenda con antecedentes
-  pendientes.js  motor de reglas explicables sobre datos ya descargados
-  watch.js    memoria de cambio de las interconsultas vigiladas
-  lock.js     bloqueo por inactividad (pantalla de privacidad)
-  period.js   períodos rápidos y rangos (puro, testeado)
-  palette.js  buscador de pacientes ⌘K (ranking puro, testeado)
-  toast.js    confirmaciones efímeras y copia al portapapeles
-  cache.js    chrome.storage con runtime.lastError, stores por fecha y preferencias
-  state.js / actions.js  estado único y acciones compartidas
-  loader.js / ajustes.js / ui.js  carga, preferencias y patrones de interfaz
-  tabs/       controladores de Hoy, Atenciones, Pacientes, Estadísticas, SIC y Explorador
-  table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  presentación
-  export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF
-  notes.js / pdf.js / dom.js / explorer.js
-tests/        parser, sic, historial, ficha, table, stats, export, pendientes, period, patient-report, ui-contract
-```
+La estructura completa y la responsabilidad de cada archivo viven en [`ARCHITECTURE.md`](ARCHITECTURE.md); el CI exige que su mapa incluya cada módulo de `src/` exactamente una vez.
 
 Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
 
@@ -148,7 +120,7 @@ Toda la hoja de estilos se construye sobre tokens; no hay valores sueltos que re
 |---|---|
 | **Tipografía** | 5 pasos: `--t-xs 12` · `--t-sm 13` (celdas de tabla) · `--t-base 15` (cuerpo) · `--t-lg 18` · `--t-xl 24` |
 | **Espaciado** | Escala de 4 px: `--sp-1` … `--sp-6` |
-| **Radios** | 3: `--r-sm 4` · `--r-md 8` · `--r-full` |
+| **Radios** | 3: `--r-sm 6` · `--r-md 10` · `--r-full` |
 | **Color** | Semántico. Cada color de texto es ≥4.5:1 sobre su superficie; **`--ink-4` nunca se usa para texto**, solo bordes e iconos. |
 
 Criterios visuales: la jerarquía la llevan el tamaño y el peso, no el color. Los estados se leen como punto de color + palabra (`.st`), no como píldoras rellenas — solo GES y las banderas U/E/📎 conservan fondo, porque son alertas genuinas. Separación por filetes de 1 px en lugar de cajas; sin cebra en las tablas. El verde de marca queda reservado a la acción primaria y al estado activo.

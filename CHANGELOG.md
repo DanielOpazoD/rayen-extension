@@ -2,6 +2,7 @@
 
 ## 2.4.0 — 2026-09-03
 
+- Añade un mapa arquitectónico canónico, una ruta de lectura para futuras contribuciones y una verificación automática contra la estructura real de `src/`.
 - Reorganiza la cabecera con una jerarquía clara entre opciones de carga, actualización y acciones secundarias.
 - Convierte Ficha clínica en un interruptor visual y adapta las acciones a pantallas estrechas sin desbordar la página.
 - Mueve el borrado de caché y datos fuera de la barra principal hacia una sección explícita de Datos locales dentro de Preferencias.
