@@ -109,6 +109,10 @@ export function exportXLS(records) {
   download(toXLS(ATENCION_COLS, records, 'Atenciones'), `atenciones_dr_opazo_${stamp()}.xls`);
 }
 
+export function exportSICsXLS(sics) {
+  download(toXLS(SIC_COLS, sics, 'Interconsultas'), `interconsultas_hhr_${stamp()}.xls`);
+}
+
 // ── JSON ───────────────────────────────────────────────────────
 
 export function exportJSON(records) {

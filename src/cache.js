@@ -99,7 +99,14 @@ export async function clearEverything() {
 // ── Prefs ──────────────────────────────────────────────────────
 
 export async function loadPrefs() {
-  return { historial: true, months: 6, dense: false, hiddenCols: [], ...((await storageGet(CONFIG.prefsKey)) ?? {}) };
+  return {
+    historial: true, months: 6, dense: false, hiddenCols: [],
+    refreshMin: 15, lockMin: 15, startTab: 'hoy',
+    watchEsp: null,      // null = CONFIG.watchEspecialidades
+    umbrales: null,      // null = CONFIG.pendientes
+    sortCol: 'fechaAtencion', sortDir: -1,
+    ...((await storageGet(CONFIG.prefsKey)) ?? {}),
+  };
 }
 
 export async function savePrefs(patch) {

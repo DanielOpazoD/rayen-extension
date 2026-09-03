@@ -112,6 +112,34 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 #colsMenu.open{display:block}
 #colsMenu label{display:flex;gap:6px;align-items:center;font-size:var(--t-sm);padding:3px 0;cursor:pointer;break-inside:avoid;color:var(--ink-2)}
 
+/* Período: chips + rango explícito */
+.bar-period{display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--gutter) var(--sp-2);flex-wrap:wrap}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{padding:3px 10px;border:1px solid var(--rule);border-radius:var(--r-full);background:var(--card);color:var(--ink-2);font-size:var(--t-xs);font-weight:500;cursor:pointer;line-height:1.6}
+.chip:hover{border-color:var(--brand);color:var(--brand-2)}
+.chip.on{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-2);font-weight:600}
+.range{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);color:var(--ink-3)}
+.range input[type=date]{padding:3px 6px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-xs);color:var(--ink-2)}
+.range input[type=date]:focus{border-color:var(--brand);outline:none}
+/* Hoy: navegación por día */
+.day-nav{display:flex;align-items:center;gap:6px;padding:var(--sp-3) var(--gutter) 0;flex-wrap:wrap}
+.day-nav input[type=date]{padding:3px 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm)}
+.day-nav .muted{font-size:var(--t-xs);margin-left:4px}
+/* Ajustes */
+.menu.settings{min-width:420px;padding:var(--sp-3) var(--sp-4)}
+.set-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-2) var(--sp-3)}
+.set-grid.set-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.set-grid label{display:flex;flex-direction:column;gap:3px;font-size:var(--t-xs);color:var(--ink-3)}
+.set-grid select,.set-grid input{padding:4px 7px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm);color:var(--ink);width:100%}
+.set-h{font-size:var(--t-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:var(--sp-3) 0 6px}
+.set-h small{text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px}
+.set-list{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;max-height:200px;overflow:auto;font-size:var(--t-sm)}
+.set-list label{display:flex;gap:6px;align-items:center;padding:2px 0;cursor:pointer;color:var(--ink-2)}
+.set-list label.on{color:var(--ink);font-weight:500}
+.sic-table thead th[data-sort]{cursor:pointer}
+.sic-table thead th.sorted::after{content:'↓';margin-left:4px;color:var(--brand-2);font-size:11px}
+.sic-table thead th.sorted[data-dir=asc]::after{content:'↑'}
+
 /* ═══ Tables — hairlines, no zebra, quiet header ═══ */
 .tbl-wrap{margin:0 var(--gutter) var(--sp-5);border-radius:var(--r-md);overflow:auto;max-height:calc(100vh - 232px);background:var(--card);border:1px solid var(--rule)}
 table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);table-layout:fixed}
@@ -455,6 +483,29 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
         <div class="menu-note">Exporta lo que está filtrado en la tabla</div>
       </div>
     </div>
+    <div class="menu-wrap" id="settingsWrap">
+      <button class="btn" id="btnSettings" aria-haspopup="true" aria-expanded="false" data-tip="Refresco, bloqueo, especialidades vigiladas, umbrales">Ajustes</button>
+      <div class="menu settings" id="settingsMenu">
+        <div class="set-grid">
+          <label>Refresco automático
+            <select id="setRefresh"><option value="0">Apagado</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
+          <label>Bloqueo por inactividad
+            <select id="setLock"><option value="0">Apagado</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
+          <label>Pestaña inicial
+            <select id="setStartTab"><option value="hoy">Hoy</option><option value="atenciones">Atenciones</option><option value="interconsultas">Interconsultas</option><option value="estadisticas">Estadísticas</option></select></label>
+        </div>
+        <div class="set-h">Umbrales de pendientes <small>días</small></div>
+        <div class="set-grid set-4">
+          <label>Sin contrarreferencia<input type="number" id="setCr" min="1" max="365"></label>
+          <label>Sin cursar («Nueva»)<input type="number" id="setNueva" min="1" max="365"></label>
+          <label>Cita pasada<input type="number" id="setCita" min="0" max="365"></label>
+          <label>Control vencido<input type="number" id="setControl" min="0" max="365"></label>
+        </div>
+        <div class="set-h">Especialidades vigiladas <small>Novedades en Hoy</small></div>
+        <div class="set-list" id="watchList"><span class="muted">Carga las interconsultas para elegir.</span></div>
+        <div class="menu-note">Los cambios se guardan al instante.</div>
+      </div>
+    </div>
     <div class="menu-wrap" id="clearWrap" style="display:none">
       <button class="btn btn-danger" id="btnClearCache" aria-haspopup="menu" aria-expanded="false">Borrar ▾</button>
       <div class="menu" id="clearMenu" role="menu">
@@ -477,6 +528,13 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 
 <!-- Tab: Hoy -->
 <div class="tab-pane active" id="tab-hoy" role="tabpanel">
+  <div class="day-nav" id="dayNav" style="display:none">
+    <button class="btn-mini" id="dayPrev" aria-label="Día anterior">◀</button>
+    <input type="date" id="dayPick" aria-label="Elegir día">
+    <button class="btn-mini" id="dayNext" aria-label="Día siguiente">▶</button>
+    <button class="btn-mini" id="dayToday">Hoy</button>
+    <span class="muted" id="dayHint"></span>
+  </div>
   <div class="today" id="todayContent">
     <div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy con los antecedentes de cada paciente.</div>
   </div>
@@ -510,6 +568,11 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
   <select id="filtSexo" class="more" aria-label="Sexo"><option value="">Todos los sexos</option></select>
   <select id="filtPrev" class="more" aria-label="Previsión"><option value="">Todas las previsiones</option></select>
   <select id="filtPrest" class="more" aria-label="Prestador"><option value="">Todos los prestadores</option></select>
+</div>
+<div class="bar-period" role="group" aria-label="Período">
+  <input type="hidden" id="filtPer" value="todo">
+  <div class="chips" id="perChips"></div>
+  <span class="range"><input type="date" id="filtDesde" aria-label="Desde"><span>–</span><input type="date" id="filtHasta" aria-label="Hasta"></span>
 </div>
 <div class="bar-tools">
   <button class="btn-mini" id="btnClearFilters" data-tip="Limpiar filtros">Filtros</button>
@@ -564,6 +627,8 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <option value="recibidas">Recibidas por mí (me derivaron)</option>
       <option value="mias">Mías (emitidas o recibidas)</option>
     </select>
+    <select id="sicGes" aria-label="GES"><option value="">GES: todas</option><option value="si">Solo GES</option><option value="no">Sin GES</option></select>
+    <select id="sicPrio" aria-label="Prioridad"><option value="">Prioridad: todas</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option></select>
     <select id="sicContra" aria-label="Contrarreferencia">
       <option value="">Contrarreferencia: todas</option>
       <option value="si">Con contrarreferencia</option>
@@ -571,12 +636,18 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <option value="no">Sin contrarreferencia (cualquier estado)</option>
     </select>
   </div>
+  <div class="bar-period" role="group" aria-label="Período">
+    <input type="hidden" id="sicPer" value="todo">
+    <div class="chips" id="sicPerChips"></div>
+    <span class="range"><input type="date" id="sicDesde" aria-label="Desde"><span>–</span><input type="date" id="sicHasta" aria-label="Hasta"></span>
+  </div>
   <div class="bar-tools">
     <button class="btn-mini" id="btnSicClear" data-tip="Limpiar filtros">Filtros</button>
     <span class="sic-status" id="sicStatus" role="status">Carga los datos para ver las interconsultas.</span>
     <span class="spacer"></span>
     <button class="btn-mini" id="btnSicRefresh" data-tip="Volver a pedir las interconsultas a Eloisa">Actualizar IC</button>
     <button class="btn-mini" id="btnSicExport" style="display:none">CSV</button>
+    <button class="btn-mini" id="btnSicExportXls" style="display:none">Excel</button>
   </div>
   <div class="tbl-wrap">
     <table class="sic-table" aria-label="Interconsultas">
@@ -585,15 +656,15 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
         <col class="s-prio"><col class="s-est"><col class="s-flags"><col class="s-sol">
       </colgroup>
       <thead><tr>
-        <th class="ns">Fecha / N°</th>
-        <th class="ns" data-tip="Antigüedad en días">Días</th>
-        <th class="ns">Paciente</th>
-        <th class="ns">Especialidad · motivo</th>
+        <th data-sort="fecha8" class="sorted" data-dir="desc" tabindex="0" aria-sort="descending">Fecha / N°</th>
+        <th data-sort="dias" tabindex="0" aria-sort="none" data-tip="Antigüedad en días">Días</th>
+        <th data-sort="paciente" tabindex="0" aria-sort="none">Paciente</th>
+        <th data-sort="especialidad" tabindex="0" aria-sort="none">Especialidad · motivo</th>
         <th class="ns">Diagnóstico (CIE-10)</th>
-        <th class="ns" data-tip="Código de prioridad tal como lo entrega Rayen. La API no envía etiqueta; pasa el cursor sobre cada código.">Prior.</th>
-        <th class="ns">Estado</th>
-        <th class="ns" data-tip="Quién contrarrefirió y cuándo. Rayen guarda el metadato, no el texto: el contenido va en el PDF de la solicitud.">Contrarreferencia</th>
-        <th class="ns">Solicitante</th>
+        <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Código de prioridad tal como lo entrega Rayen. La API no envía etiqueta; pasa el cursor sobre cada código.">Prior.</th>
+        <th data-sort="estado" tabindex="0" aria-sort="none">Estado</th>
+        <th data-sort="cr" tabindex="0" aria-sort="none" data-tip="Quién contrarrefirió y cuándo. Rayen guarda el metadato, no el texto: el contenido va en el PDF de la solicitud.">Contrarreferencia</th>
+        <th data-sort="solicitante" tabindex="0" aria-sort="none">Solicitante</th>
       </tr></thead>
       <tbody id="sicBody"><tr><td colspan="9" class="empty">Sin datos todavía.</td></tr></tbody>
       <tfoot><tr><td colspan="9" id="sicCount"></td></tr></tfoot>

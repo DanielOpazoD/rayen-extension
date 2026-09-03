@@ -126,7 +126,9 @@ function card(rec, allData, sics) {
  *
  * @param {object[]} allData
  * @param {object[]} sics
- * @param {{ pendientes?: object[], novedades?: object, especialidades?: string[] }} extra
+ * @param {{ pendientes?: object[], novedades?: object, especialidades?: string[], dia8?: string }} extra
+ *   dia8 shows a chosen day instead of today (no fallback to the last day with data).
+ * @returns {string} the day actually shown (YYYYMMDD)
  */
 export function renderToday(allData, sics = [], extra = {}) {
   const el = $('todayContent');
@@ -136,9 +138,9 @@ export function renderToday(allData, sics = [], extra = {}) {
   }
 
   const hoy = localDateStr(new Date());
-  let dia = hoy;
-  let rows = allData.filter(r => r.fecha8 === hoy);
-  if (!rows.length) {
+  let dia = extra.dia8 || hoy;
+  let rows = allData.filter(r => r.fecha8 === dia);
+  if (!rows.length && !extra.dia8) {
     const past = [...new Set(allData.map(r => r.fecha8).filter(d => d && d < hoy))].sort().pop();
     if (past) { dia = past; rows = allData.filter(r => r.fecha8 === past); }
   }
@@ -153,12 +155,13 @@ export function renderToday(allData, sics = [], extra = {}) {
 
   const agenda = rows.length
     ? `<div class="today-h">
-         <h2>${esHoy ? 'Hoy' : 'Última jornada'} · ${longDate(dia)}</h2>
-         <span>${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy ? '' : ' · hoy no hay agenda cargada'}</span>
+         <h2>${esHoy ? 'Hoy' : extra.dia8 ? 'Jornada' : 'Última jornada'} · ${longDate(dia)}</h2>
+         <span>${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy || extra.dia8 ? '' : ' · hoy no hay agenda cargada'}</span>
        </div>` + rows.map(r => card(r, allData, sics)).join('')
-    : `<div class="today-empty"><b>Sin atenciones registradas</b>No hay citas ni atenciones en el período cargado.</div>`;
+    : `<div class="today-empty"><b>Sin atenciones el ${longDate(dia)}</b>${extra.dia8 ? 'Usa las flechas para moverte de día.' : 'No hay citas ni atenciones en el período cargado.'}</div>`;
 
   el.innerHTML = brief + agenda;
+  return dia;
 }
 
 export { TIPO_LABEL };

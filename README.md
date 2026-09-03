@@ -26,6 +26,14 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 
 El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MAPA_API.html`](MAPA_API.html).
 
+## Filtros, períodos y ajustes
+
+- **Período** en Atenciones e Interconsultas: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año* más un rango explícito desde–hasta (las fechas explícitas mandan sobre el chip). El botón «Filtros» muestra cuántos hay activos y los limpia.
+- **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
+- **Hoy**: flechas ◀ ▶, selector de fecha y botón «Hoy» para ver cualquier jornada.
+- **Ajustes** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, y las especialidades vigiladas para Novedades (lista construida con las especialidades reales de las SIC cargadas). Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
+- La búsqueda de Atenciones también cubre las notas propias.
+
 ## Pendientes: las reglas
 
 Las interconsultas del hospital son **internas** (origen y destino son el nodo 5576): el especialista está en el mismo edificio. Por eso una contrarreferencia que falta es una brecha de registro, no de logística. En el trimestre analizado, **131 de 174** solicitudes atendidas no tenían contrarreferencia en Rayen.
@@ -92,11 +100,12 @@ src/
   pendientes.js  motor de reglas explicables sobre datos ya descargados
   watch.js    memoria de cambio de las interconsultas vigiladas
   lock.js     bloqueo por inactividad (pantalla de privacidad)
+  period.js   períodos rápidos y rangos (puro, testeado)
   cache.js    chrome.storage con runtime.lastError, stores por fecha, prefs
   table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  UI
   export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF
   notes.js / pdf.js / dom.js / explorer.js
-tests/        parser, sic, historial, ficha, table, stats, export, pendientes (reglas + memoria de cambio), ui-contract
+tests/        parser, sic, historial, ficha, table, stats, export, pendientes, period, patient-report, ui-contract
 ```
 
 Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.

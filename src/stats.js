@@ -1,5 +1,6 @@
 import { fillSelect, $ } from './dom.js';
 import { dateToInt } from './parser.js';
+import { resolveRange, inRange } from './period.js';
 
 export function buildStats(allData, team = {}) {
   const t    = allData.length;
@@ -71,6 +72,9 @@ export function readFilters() {
     prest:  $('filtPrest').value,
     ic:     $('filtIC').value,
     dx:     $('filtDx').value,
+    periodo: $('filtPer').value || 'todo',
+    desde:  $('filtDesde').value,
+    hasta:  $('filtHasta').value,
   };
 }
 
@@ -83,6 +87,7 @@ const EMPTY_CTX = { sicsByRun: new Map(), officerId: 0 };
  * @param {{ sicsByRun: Map<string, object[]>, officerId: number }} ctx
  */
 export function applyFilters(allData, f, ctx = EMPTY_CTX) {
+  const { from8, to8 } = resolveRange(f, ctx.hoy);
   const sicsOf = p => (p.run ? ctx.sicsByRun.get(p.run) : null) ?? [];
   const icMatch = p => {
     switch (f.ic) {
@@ -107,8 +112,9 @@ export function applyFilters(allData, f, ctx = EMPTY_CTX) {
   };
 
   return allData.filter(p =>
-    (!f.q      || [p.nombre, p.ap, p.am, p.runStr, p.run, ...(p.diagnosticos ?? []).map(x => x.nombre)]
+    (!f.q      || [p.nombre, p.ap, p.am, p.runStr, p.run, p.note, ...(p.diagnosticos ?? []).map(x => x.nombre)]
                     .some(v => String(v ?? '').toLowerCase().includes(f.q))) &&
+    inRange(p.fecha8, from8, to8) &&
     (!f.fecha  || p.fechaAtencion === f.fecha) &&
     (!f.dia    || p.diaSemana === f.dia) &&
     (!f.sexo   || p.sexo === f.sexo) &&

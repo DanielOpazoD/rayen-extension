@@ -1,7 +1,8 @@
 import { loadData, getRawSamples }        from './src/api.js';
 import { getToken }                       from './src/auth.js';
 import { attachNotes, saveNote }          from './src/notes.js';
-import { exportCSV, exportSICsCSV, exportXLS, exportHTML, exportJSON, exportPDF } from './src/export.js';
+import { exportCSV, exportSICsCSV, exportSICsXLS, exportXLS, exportHTML, exportJSON, exportPDF } from './src/export.js';
+import { PERIODS, date8ToIso, isoToDate8 } from './src/period.js';
 import { clearAllCaches, clearEverything, loadPrefs, savePrefs } from './src/cache.js';
 import { AuthError } from './src/http.js';
 import { renderCharts }                   from './src/charts.js';
@@ -14,7 +15,7 @@ import { computePendientes } from './src/pendientes.js';
 import { diffWatched }       from './src/watch.js';
 import { buildStats, buildFilters, filterRecords } from './src/stats.js';
 import { loadSICs, contactsFromSICs }     from './src/sic.js';
-import { renderSICTab, filterSICs, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
+import { renderSICTab, filterSICs, sortSICs, setSICSort, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
 import { certificadoPath, sicPdfPath, openPDF } from './src/pdf.js';
 import { localDateStr } from './src/parser.js';
 import { esc, $, initTooltips, initTablist, activateOnKey } from './src/dom.js';
@@ -35,11 +36,29 @@ let sicLoading   = false;
 let sicLoadedFor = 0;
 let pendientes   = [];
 let novedades    = null;
-const watchEsp   = [...CONFIG.watchEspecialidades];
+let watchEsp     = [...CONFIG.watchEspecialidades];
+let umbrales     = { ...CONFIG.pendientes };
+let refreshMin   = 15;
+let lockCtl      = null;
+let todayDate    = '';   // '' = hoy (con fallback a la última jornada)
 let hiddenCols   = new Set();
 
-const FILTER_IDS = ['search','filtFecha','filtDia','filtSexo','filtEstado','filtPrev','filtTipo','filtPrest','filtIC','filtDx'];
-const SIC_FILTER_IDS = ['sicSearch','sicGrupo','sicEsp','sicQuien','sicContra'];
+const FILTER_IDS = ['search','filtFecha','filtDia','filtSexo','filtEstado','filtPrev','filtTipo','filtPrest','filtIC','filtDx','filtDesde','filtHasta'];
+const SIC_FILTER_IDS = ['sicSearch','sicGrupo','sicEsp','sicQuien','sicContra','sicGes','sicPrio','sicDesde','sicHasta'];
+
+/** Period chips: one group per tab, writing into a hidden input the filters read. */
+function initChips(containerId, hiddenId, onChange) {
+  const box = $(containerId), hidden = $(hiddenId);
+  box.innerHTML = Object.entries(PERIODS).map(([k, l]) =>
+    `<button type="button" class="chip ${k === hidden.value ? 'on' : ''}" data-per="${k}" aria-pressed="${k === hidden.value}">${l}</button>`).join('');
+  box.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    hidden.value = b.dataset.per;
+    box.querySelectorAll('.chip').forEach(c => { const on = c === b; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
+    onChange();
+  });
+  return { reset() { hidden.value = 'todo'; box.querySelectorAll('.chip').forEach(c => { const on = c.dataset.per === 'todo'; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); }); } };
+}
 
 // ── Utils ─────────────────────────────────────────────────────
 function setStatus(msg, cls = 'idle') {
@@ -63,10 +82,25 @@ function updateBadge() {
 
 /** Recomputes the morning brief. Cheap: pure functions over data already in memory. */
 function refreshBrief() {
-  pendientes = allData.length ? computePendientes(allData, sics) : [];
-  renderToday(allData, sics, { pendientes, novedades, especialidades: watchEsp });
+  pendientes = allData.length ? computePendientes(allData, sics, { umbrales }) : [];
+  const shown = renderToday(allData, sics, { pendientes, novedades, especialidades: watchEsp, dia8: todayDate || undefined });
+  $('dayNav').style.display = allData.length ? '' : 'none';
+  if (shown) $('dayPick').value = date8ToIso(shown);
+  $('dayHint').textContent = todayDate ? '' : 'Hoy (o la última jornada con datos)';
   updateBadge();
 }
+
+function shiftDay(n) {
+  const base = isoToDate8($('dayPick').value) || localDateStr(new Date());
+  const d = new Date(+base.slice(0, 4), +base.slice(4, 6) - 1, +base.slice(6, 8));
+  d.setDate(d.getDate() + n);
+  todayDate = localDateStr(d);
+  refreshBrief();
+}
+$('dayPrev').addEventListener('click', () => shiftDay(-1));
+$('dayNext').addEventListener('click', () => shiftDay(1));
+$('dayToday').addEventListener('click', () => { todayDate = ''; refreshBrief(); });
+$('dayPick').addEventListener('change', () => { todayDate = isoToDate8($('dayPick').value); refreshBrief(); });
 
 // ── Session expiry ────────────────────────────────────────────
 let expired = false;
@@ -109,7 +143,7 @@ function tableCtx() { return { sicsById, sicsByRun, officerId: CONFIG.officerId 
 function render() {
   const data = sortRecords(filterRecords(allData, tableCtx()), sortCol, sortDir);
   renderTable(data, allData.length, tableCtx());
-  const active = FILTER_IDS.filter(id => $(id).value).length;
+  const active = FILTER_IDS.filter(id => $(id).value).length + ($('filtPer').value !== 'todo' ? 1 : 0);
   $('btnClearFilters').textContent = active ? `✕ ${active} filtro${active > 1 ? 's' : ''}` : '✕ Filtros';
   $('btnClearFilters').classList.toggle('on', active > 0);
 }
@@ -175,10 +209,13 @@ async function handleFetch() {
   const s = summarize(result);
   setStatus(s.text, s.cls);
 
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(silentRefresh, 15 * 60 * 1000);
-
+  armRefresh();
   ensureSICs();
+}
+
+function armRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = refreshMin > 0 ? setInterval(silentRefresh, refreshMin * 60 * 1000) : null;
 }
 
 async function silentRefresh() {
@@ -207,8 +244,19 @@ function indexSICs() {
 }
 
 function renderSICs() {
-  renderSICTab(sics, filterSICs(sics));
+  renderSICTab(sics, sortSICs(filterSICs(sics)));
 }
+
+document.querySelectorAll('.sic-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const { key, dir } = setSICSort(th.dataset.sort);
+    document.querySelectorAll('.sic-table th[data-sort]').forEach(t => { t.classList.remove('sorted'); t.removeAttribute('data-dir'); t.setAttribute('aria-sort', 'none'); });
+    th.classList.add('sorted'); th.dataset.dir = dir > 0 ? 'asc' : 'desc';
+    th.setAttribute('aria-sort', dir > 0 ? 'ascending' : 'descending');
+    void key;
+    renderSICs();
+  });
+});
 
 async function ensureSICs(force = false) {
   if (sicLoading) return;
@@ -226,6 +274,7 @@ async function ensureSICs(force = false) {
     sicLoadedFor = loadedMonths;
     indexSICs();
     buildSICFilters(sics);
+    buildWatchList();
     renderSICs();
     // Change memory: what moved in the watched streams since the last load
     try { novedades = await diffWatched(sics, watchEsp); }
@@ -236,6 +285,7 @@ async function ensureSICs(force = false) {
     const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
     $('sicStatus').textContent = `${sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
     $('btnSicExport').style.display = '';
+    $('btnSicExportXls').style.display = '';
   } catch (err) {
     $('sicStatus').textContent = err instanceof AuthError ? 'Sesión de Eloisa vencida.' : `Error: ${err.message}`;
     if (err instanceof AuthError) showExpired();
@@ -250,8 +300,10 @@ SIC_FILTER_IDS.forEach(id => {
   $(id).addEventListener('change', renderSICs);
 });
 $('btnSicRefresh').addEventListener('click', () => ensureSICs(true));
-$('btnSicExport').addEventListener('click', () => exportSICsCSV(filterSICs(sics)));
-$('btnSicClear').addEventListener('click', () => { SIC_FILTER_IDS.forEach(i => { $(i).value = ''; }); renderSICs(); });
+$('btnSicExport').addEventListener('click', () => exportSICsCSV(sortSICs(filterSICs(sics))));
+$('btnSicExportXls').addEventListener('click', () => exportSICsXLS(sortSICs(filterSICs(sics))));
+const sicChips = initChips('sicPerChips', 'sicPer', renderSICs);
+$('btnSicClear').addEventListener('click', () => { SIC_FILTER_IDS.forEach(i => { $(i).value = ''; }); sicChips.reset(); renderSICs(); });
 
 $('sicBody').addEventListener('click', async e => {
   const pdf = e.target.closest('.pdf-sic');
@@ -318,6 +370,51 @@ $('btnCols').addEventListener('click', e => {
 });
 document.addEventListener('click', e => {
   if (!e.target.closest('#colsMenu') && !e.target.closest('#btnCols')) $('colsMenu').classList.remove('open');
+});
+
+// ── Ajustes ───────────────────────────────────────────────────
+function buildWatchList() {
+  const esp = [...new Set([...sics.map(s => s.especialidad), ...watchEsp])].filter(Boolean).sort();
+  if (!esp.length) return;
+  $('watchList').innerHTML = esp.map(e =>
+    `<label class="${watchEsp.includes(e) ? 'on' : ''}"><input type="checkbox" data-esp="${esc(e)}" ${watchEsp.includes(e) ? 'checked' : ''}> ${esc(e)}</label>`).join('');
+}
+
+function fillSettings() {
+  $('setRefresh').value = String(refreshMin);
+  $('setLock').value = String(lockCtl?.minutes ?? 15);
+  $('setCr').value = umbrales.crDias; $('setNueva').value = umbrales.nuevaDias;
+  $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
+}
+
+$('btnSettings').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = $('settingsMenu').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+  if (open) { fillSettings(); buildWatchList(); }
+});
+$('settingsMenu').addEventListener('click', e => e.stopPropagation());
+document.addEventListener('click', e => { if (!e.target.closest('#settingsWrap')) $('settingsMenu').classList.remove('open'); });
+
+$('settingsMenu').addEventListener('change', async e => {
+  const t = e.target;
+  if (t.id === 'setRefresh') { refreshMin = Number(t.value); if (allData.length) armRefresh(); await savePrefs({ refreshMin }); }
+  if (t.id === 'setLock')    { const m = Number(t.value); lockCtl?.setMinutes(m); if (lockCtl) lockCtl.minutes = m; await savePrefs({ lockMin: m }); }
+  if (t.id === 'setStartTab') await savePrefs({ startTab: t.value });
+  if (['setCr','setNueva','setCita','setControl'].includes(t.id)) {
+    umbrales = { crDias: +$('setCr').value || 1, nuevaDias: +$('setNueva').value || 1, citaDias: +$('setCita').value || 0, controlDias: +$('setControl').value || 0 };
+    await savePrefs({ umbrales });
+    refreshBrief();
+  }
+  const cb = t.closest('input[data-esp]');
+  if (cb) {
+    const esp = cb.dataset.esp;
+    watchEsp = cb.checked ? [...new Set([...watchEsp, esp])] : watchEsp.filter(x => x !== esp);
+    cb.closest('label').classList.toggle('on', cb.checked);
+    await savePrefs({ watchEsp });
+    try { novedades = await diffWatched(sics, watchEsp); } catch { novedades = null; }
+    refreshBrief();
+  }
 });
 
 // ── Explorer ──────────────────────────────────────────────────
@@ -431,8 +528,10 @@ $('sicSummary').addEventListener('click', e => {
   renderSICs();
 });
 
+const perChips = initChips('perChips', 'filtPer', render);
 $('btnClearFilters').addEventListener('click', () => {
   FILTER_IDS.forEach(id => { $(id).value = ''; });
+  perChips.reset();
   render();
 });
 $('btnMoreFilters').addEventListener('click', () => {
@@ -452,6 +551,7 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     th.classList.add('sorted');
     th.dataset.dir = sortDir > 0 ? 'asc' : 'desc';
     th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
+    savePrefs({ sortCol, sortDir }).catch(() => {});
     render();
   });
 });
@@ -531,7 +631,8 @@ initPanel({
   },
 });
 initTooltips();
-initLock({ minutes: 15 }); // patient data on screen; blur it when idle
+lockCtl = initLock({ minutes: 15 }); // patient data on screen; blur it when idle
+lockCtl.minutes = 15;
 activateOnKey($('mainTable'));    // Enter/Space on sortable headers, patient names, SIC lines
 activateOnKey($('sicBody'));      // Enter/Space expands a SIC row
 activateOnKey($('todayContent')); // Enter/Space opens a patient from Hoy
@@ -542,4 +643,12 @@ loadPrefs().then(p => {
   applyDensity(!!p.dense);
   buildColumnsMenu();
   applyColumnVisibility($('mainTable'), hiddenCols);
+  refreshMin = Number.isFinite(+p.refreshMin) ? +p.refreshMin : 15;
+  if (Number.isFinite(+p.lockMin)) { lockCtl.setMinutes(+p.lockMin); lockCtl.minutes = +p.lockMin; }
+  if (Array.isArray(p.watchEsp) && p.watchEsp.length) watchEsp = p.watchEsp;
+  if (p.umbrales && typeof p.umbrales === 'object') umbrales = { ...CONFIG.pendientes, ...p.umbrales };
+  if (p.sortCol) { sortCol = p.sortCol; sortDir = p.sortDir === 1 ? 1 : -1;
+    document.querySelectorAll('th[data-col]').forEach(t => { const on = t.dataset.col === sortCol; t.classList.toggle('sorted', on);
+      if (on) { t.dataset.dir = sortDir > 0 ? 'asc' : 'desc'; t.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending'); } else { t.removeAttribute('data-dir'); t.setAttribute('aria-sort', 'none'); } }); }
+  if (p.startTab && p.startTab !== 'hoy') showTab(p.startTab);
 }).catch(() => { applyDensity(false); buildColumnsMenu(); });

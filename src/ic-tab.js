@@ -1,8 +1,39 @@
 import { esc, sicTone, stateDot, fillSelect, $ } from './dom.js';
 import { CONFIG, SIC_GRUPO, prioridadInfo } from './config.js';
 import { isMine } from './sic.js';
+import { resolveRange, inRange } from './period.js';
 
 let expanded = new Set();
+let sortKey = 'fecha8', sortDir = -1;
+
+const GRUPO_ORDER = { pendiente: 0, enviada: 1, atendida: 2, cerrada: 3, fallida: 4 };
+const SORT_VALUE = {
+  fecha8:       s => s.fecha8 || '',
+  dias:         s => s.antiguedadDias ?? 0,
+  paciente:     s => s.paciente.nombre.toLowerCase(),
+  especialidad: s => s.especialidad.toLowerCase(),
+  prioridad:    s => s.prioridad ?? 9,
+  estado:       s => (GRUPO_ORDER[s.grupo] ?? 9) * 100 + (s.estadoId ?? 0),
+  cr:           s => s.contrarreferencias.length ? 1 : (['atendida', 'cerrada'].includes(s.grupo) ? -1 : 0),
+  solicitante:  s => (s.registrador.nombre || '').toLowerCase(),
+};
+
+/** Sets the sort column; clicking the same column flips direction. @returns {{key, dir}} */
+export function setSICSort(key) {
+  if (!SORT_VALUE[key]) return { key: sortKey, dir: sortDir };
+  sortDir = key === sortKey ? -sortDir : (key === 'fecha8' || key === 'dias' ? -1 : 1);
+  sortKey = key;
+  return { key: sortKey, dir: sortDir };
+}
+export function getSICSort() { return { key: sortKey, dir: sortDir }; }
+
+export function sortSICs(list) {
+  const get = SORT_VALUE[sortKey];
+  return list.slice().sort((a, b) => {
+    const va = get(a), vb = get(b);
+    return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir || b.id - a.id;
+  });
+}
 
 /** Applies the IC tab filter controls to the SIC list. */
 export function filterSICs(sics) {
@@ -11,8 +42,14 @@ export function filterSICs(sics) {
   const esp   = $('sicEsp').value;
   const quien = $('sicQuien').value;
   const cr    = $('sicContra').value;
+  const ges   = $('sicGes').value;
+  const prio  = $('sicPrio').value;
+  const { from8, to8 } = resolveRange({ periodo: $('sicPer').value || 'todo', desde: $('sicDesde').value, hasta: $('sicHasta').value });
 
   return sics.filter(s =>
+    inRange(s.fecha8, from8, to8) &&
+    (!ges   || (ges === 'si' ? s.esAuge : !s.esAuge)) &&
+    (!prio  || String(s.prioridad) === prio) &&
     (!grupo || s.grupo === grupo) &&
     (!esp   || s.especialidad === esp) &&
     (!quien || (quien === 'mias'     ? isMine(s)

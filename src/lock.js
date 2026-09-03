@@ -18,7 +18,7 @@ export function initLock({ minutes = 15 } = {}) {
     <div class="lock-box">
       <span class="mark" aria-hidden="true"></span>
       <h2>Pantalla bloqueada</h2>
-      <p>Se ocultaron los datos de pacientes tras ${minutes} minutos sin actividad.</p>
+      <p>Se ocultaron los datos de pacientes por inactividad.</p>
       <button class="btn btn-primary" id="lockBtn">Continuar</button>
     </div>`;
   document.body.appendChild(el);
@@ -34,7 +34,7 @@ export function initLock({ minutes = 15 } = {}) {
 
   const arm = () => {
     clearTimeout(timer);
-    timer = setTimeout(lock, minutes * 60_000);
+    if (minutes > 0) timer = setTimeout(lock, minutes * 60_000);
   };
 
   const unlock = () => {
@@ -53,5 +53,7 @@ export function initLock({ minutes = 15 } = {}) {
   });
 
   arm();
-  return { lock, unlock, isLocked: locked };
+  /** 0 disables the lock; any other value re-arms with the new timeout. */
+  const setMinutes = m => { minutes = Number(m) || 0; clearTimeout(timer); if (minutes > 0) arm(); };
+  return { lock, unlock, isLocked: locked, setMinutes };
 }
