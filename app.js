@@ -10,6 +10,8 @@ import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer
 import { renderTable, sortRecords, appendChunk, hasMoreRows, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from './src/table.js';
 import { renderToday } from './src/today.js';
 import { initLock }    from './src/lock.js';
+import { computePendientes } from './src/pendientes.js';
+import { diffWatched }       from './src/watch.js';
 import { buildStats, buildFilters, filterRecords } from './src/stats.js';
 import { loadSICs, contactsFromSICs }     from './src/sic.js';
 import { renderSICTab, filterSICs, buildSICFilters, toggleSIC, expandOnly } from './src/ic-tab.js';
@@ -31,6 +33,9 @@ let refreshTimer = null;
 let loadedMonths = 6;
 let sicLoading   = false;
 let sicLoadedFor = 0;
+let pendientes   = [];
+let novedades    = null;
+const watchEsp   = [...CONFIG.watchEspecialidades];
 let hiddenCols   = new Set();
 
 const FILTER_IDS = ['search','filtFecha','filtDia','filtSexo','filtEstado','filtPrev','filtTipo','filtPrest','filtIC','filtDx'];
@@ -43,13 +48,24 @@ function setStatus(msg, cls = 'idle') {
   el.className = cls;
 }
 
+/**
+ * The badge counts things that need attention, not appointments. An agenda is
+ * something you already know about; an overdue loop is not.
+ */
 function updateBadge() {
   try {
-    const today = localDateStr(new Date());
-    const count = allData.filter(p => p.fecha8 === today).length;
-    chrome.action.setBadgeText({ text: count > 0 ? String(count) : '' });
-    chrome.action.setBadgeBackgroundColor({ color: '#2d8c6e' });
+    const n = pendientes.length;
+    chrome.action.setBadgeText({ text: n > 0 ? String(n) : '' });
+    chrome.action.setBadgeBackgroundColor({ color: n > 0 ? '#a02a2a' : '#1a7f5f' });
+    chrome.action.setTitle({ title: n > 0 ? `${n} pendiente${n > 1 ? 's' : ''} · Rayen Atenciones` : 'Rayen Atenciones' });
   } catch { /* not in extension context */ }
+}
+
+/** Recomputes the morning brief. Cheap: pure functions over data already in memory. */
+function refreshBrief() {
+  pendientes = allData.length ? computePendientes(allData, sics) : [];
+  renderToday(allData, sics, { pendientes, novedades, especialidades: watchEsp });
+  updateBadge();
 }
 
 // ── Session expiry ────────────────────────────────────────────
@@ -84,7 +100,7 @@ const showTab = initTablist(document.querySelector('.tabs'), name => {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
   if (name === 'interconsultas') ensureSICs();
   if (name === 'explorador')     renderExplorerExtras();
-  if (name === 'hoy')            renderToday(allData, sics);
+  if (name === 'hoy')            refreshBrief();
 }, 'tab');
 
 // ── Atenciones ────────────────────────────────────────────────
@@ -104,9 +120,8 @@ async function applyResult(result) {
   buildFilters(allData);
   buildStats(allData, team);
   render();
-  renderToday(allData, sics);
   renderCharts(allData, team, $('chartsSection'));
-  updateBadge();
+  refreshBrief();
   ['statsBar','chartsSection','barEl','tblWrap','exportWrap','clearWrap'].forEach(id => { $(id).style.display = ''; });
   $('statsEmpty').style.display = 'none';
 }
@@ -212,8 +227,12 @@ async function ensureSICs(force = false) {
     indexSICs();
     buildSICFilters(sics);
     renderSICs();
-    // The agenda's IC column and the Hoy tab both depend on the SICs
-    if (allData.length) { render(); renderToday(allData, sics); }
+    // Change memory: what moved in the watched streams since the last load
+    try { novedades = await diffWatched(sics, watchEsp); }
+    catch { novedades = null; }
+    // The agenda's IC column and the Hoy brief both depend on the SICs
+    if (allData.length) render();
+    refreshBrief();
     const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
     $('sicStatus').textContent = `${sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
     $('btnSicExport').style.display = '';
@@ -386,10 +405,30 @@ $('tblWrap').addEventListener('scroll', e => {
 
 // Patient cards in the Hoy tab open the same panel as the table
 $('todayContent').addEventListener('click', e => {
+  const sic = e.target.closest('[data-sic]');
+  if (sic) { jumpToSIC({ id: sic.dataset.sic }); return; }
+  const byRun = e.target.closest('.pat-run[data-run]');
+  if (byRun) {
+    const record = allData.find(p => p.run === byRun.dataset.run);
+    if (record) openPanel(record, { allData, sics, contacts });
+    return;
+  }
   const card = e.target.closest('.pat-link[data-id]');
   if (!card) return;
   const record = allData.find(p => String(p.id) === card.dataset.id);
   if (record) openPanel(record, { allData, sics, contacts });
+});
+
+// Summary tiles in the IC tab double as filters
+$('sicSummary').addEventListener('click', e => {
+  const tile = e.target.closest('[data-filter]');
+  if (!tile) return;
+  const [campo, valor] = tile.dataset.filter.split(':');
+  SIC_FILTER_IDS.forEach(i => { $(i).value = ''; });
+  if (campo === 'grupo')  $('sicGrupo').value  = valor;
+  if (campo === 'quien')  $('sicQuien').value  = valor;
+  if (campo === 'cr')     $('sicContra').value = valor;
+  renderSICs();
 });
 
 $('btnClearFilters').addEventListener('click', () => {

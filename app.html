@@ -325,7 +325,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .sic-status{padding:0 var(--sp-2);font-size:var(--t-xs);color:var(--ink-3)}
 .sic-table col.s-fecha{width:104px} .sic-table col.s-dias{width:52px}
 .sic-table col.s-pac{width:206px} .sic-table col.s-esp{width:172px} .sic-table col.s-dx{width:222px}
-.sic-table col.s-prio{width:56px} .sic-table col.s-est{width:150px} .sic-table col.s-flags{width:74px} .sic-table col.s-sol{width:140px}
+.sic-table col.s-prio{width:52px} .sic-table col.s-est{width:146px} .sic-table col.s-flags{width:150px} .sic-table col.s-sol{width:128px}
 tr.sic-row{cursor:pointer}
 tr.sic-row:focus-visible{outline-offset:-2px}
 tr.sic-row.open td{background:var(--surface-2)!important;border-bottom:none}
@@ -343,6 +343,50 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .cr-list li{padding:2px 0}
 .sic-actions{display:flex;gap:6px;margin-top:var(--sp-3)}
 @media (max-width:900px){.sic-detail-grid{grid-template-columns:1fr}}
+
+/* Contrarreferencia — la respuesta, su ausencia, o que aún no toca */
+.cr-cell{white-space:normal}
+.cr-yes{display:block;font-size:var(--t-xs);color:var(--good);line-height:1.35}
+.cr-yes b{font-variant-numeric:tabular-nums}
+.cr-yes span{display:block;color:var(--ink-3)}
+.cr-missing{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);font-weight:600;color:var(--warn);cursor:help}
+.cr-missing::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.cr-box{border:1px solid var(--rule);border-radius:var(--r-md);padding:10px 12px;margin-bottom:var(--sp-3)}
+.cr-box.ok{border-color:var(--brand-line);background:var(--brand-soft)}
+.cr-box.miss{border-color:var(--warn);background:var(--warn-soft)}
+.cr-box h4{margin:0 0 5px!important}
+.cr-box p{font-size:var(--t-sm);color:var(--ink-2);margin:0}
+.cr-item{font-size:var(--t-sm);padding:2px 0}
+.cr-item span{display:block;color:var(--ink-3);font-size:var(--t-xs)}
+.cr-note{margin-top:6px!important;font-size:var(--t-xs)!important;color:var(--ink-3)!important}
+.stat-click{cursor:pointer}
+.stat-click:hover{border-color:var(--brand)}
+.stat-alert .stat-n{color:var(--warn)}
+
+/* ═══ Parte matinal: novedades y pendientes ═══ */
+.brief{max-width:900px;margin:0 0 var(--sp-5)}
+.brief-h{font-size:var(--t-xs);font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);margin-bottom:var(--sp-2);display:flex;align-items:baseline;gap:8px}
+.brief-h span{font-family:var(--mono);letter-spacing:0;text-transform:none;font-weight:400}
+.brief-empty{font-size:var(--t-sm);color:var(--ink-3);padding:10px 0 4px;border-top:1px solid var(--rule-2)}
+.nov{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-md);margin-bottom:5px;background:var(--card);cursor:pointer}
+.nov:hover{border-color:var(--brand)}
+.nov-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);flex-shrink:0}
+.nov-contrarreferencia .nov-tag{color:var(--good)}
+.nov-nueva .nov-tag{color:var(--info)}
+.nov-pac{font-weight:500;font-size:var(--t-sm)}
+.nov-esp{font-size:var(--t-sm);color:var(--ink-2)}
+.nov-mov{font-size:var(--t-xs);color:var(--ink-3);margin-left:auto;font-family:var(--mono)}
+.nov-mov b{color:var(--ink);font-weight:600}
+.pgrp{margin-bottom:var(--sp-3)}
+.pgrp-h{font-size:var(--t-sm);font-weight:600;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--rule-2);display:flex;gap:8px;align-items:baseline}
+.pgrp-h span{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3)}
+.pend{display:flex;align-items:baseline;gap:12px;padding:7px 4px;border-bottom:1px solid var(--rule-2);cursor:pointer;border-radius:var(--r-sm)}
+.pend:hover{background:var(--surface-2)}
+.pend-d{font-family:var(--mono);font-size:var(--t-sm);font-weight:600;color:var(--warn);min-width:44px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0}
+.pend-d small{font-weight:400;color:var(--ink-3);margin-left:1px}
+.pend-t{font-size:var(--t-sm);color:var(--ink-2);min-width:0}
+.pend-t b{color:var(--ink);font-weight:500;margin-right:8px}
+.pgrp-more{font-size:var(--t-xs);color:var(--ink-3);padding:6px 4px}
 
 /* ═══ Explorer ═══ */
 .explorer{padding:var(--sp-5) var(--gutter);max-width:1000px}
@@ -519,7 +563,12 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
       <option value="recibidas">Recibidas por mí (me derivaron)</option>
       <option value="mias">Mías (emitidas o recibidas)</option>
     </select>
-    <select id="sicContra" aria-label="Contrarreferencia"><option value="">Contrarreferencia: todas</option><option value="si">Con contrarreferencia</option><option value="no">Sin contrarreferencia</option></select>
+    <select id="sicContra" aria-label="Contrarreferencia">
+      <option value="">Contrarreferencia: todas</option>
+      <option value="si">Con contrarreferencia</option>
+      <option value="falta">Falta — atendida y sin contrarreferencia</option>
+      <option value="no">Sin contrarreferencia (cualquier estado)</option>
+    </select>
   </div>
   <div class="bar-tools">
     <button class="btn-mini" id="btnSicClear" data-tip="Limpiar filtros">Filtros</button>
@@ -542,7 +591,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
         <th class="ns">Diagnóstico (CIE-10)</th>
         <th class="ns" data-tip="Código de prioridad tal como lo entrega Rayen. La API no envía etiqueta; pasa el cursor sobre cada código.">Prior.</th>
         <th class="ns">Estado</th>
-        <th class="ns">GES / CR</th>
+        <th class="ns" data-tip="Quién contrarrefirió y cuándo. Rayen guarda el metadato, no el texto: el contenido va en el PDF de la solicitud.">Contrarreferencia</th>
         <th class="ns">Solicitante</th>
       </tr></thead>
       <tbody id="sicBody"><tr><td colspan="9" class="empty">Sin datos todavía.</td></tr></tbody>

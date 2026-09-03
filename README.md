@@ -16,7 +16,7 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 
 | Pestaña | Contenido |
 |---|---|
-| **Hoy** | Pantalla de entrada: la agenda del día y, por paciente, sus diagnósticos previos, las interconsultas que siguen abiertas (con antigüedad en días) y la última nota. Si hoy no hay agenda cargada, muestra la última jornada. |
+| **Hoy** | El parte de la mañana, en tres bloques: **Novedades** (qué cambió desde la última carga en las interconsultas vigiladas), **Pendientes** (bucles vencidos según reglas explicables) y la **agenda del día** con los antecedentes de cada paciente. El contador del ícono muestra pendientes, no citas: una alerta que hay que ir a buscar es una alerta que no existe. |
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
 | **Estadísticas** | Tiles y gráficos SVG: día, mes, previsión, tipo, diagnósticos; equipo del hospital por profesión/profesional. |
 | **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos, contrarreferencias, PDF. Rol explícito: **Emití / Recibí / Otra**. |
@@ -25,6 +25,25 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 | **Exportar** | Excel (.xls), CSV, HTML, PDF (vía diálogo de impresión), JSON — siempre lo filtrado en la tabla. |
 
 El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MAPA_API.html`](MAPA_API.html).
+
+## Pendientes: las reglas
+
+Las interconsultas del hospital son **internas** (origen y destino son el nodo 5576): el especialista está en el mismo edificio. Por eso una contrarreferencia que falta es una brecha de registro, no de logística. En el trimestre analizado, **131 de 174** solicitudes atendidas no tenían contrarreferencia en Rayen.
+
+Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `config.js → pendientes`.
+
+| Regla | Dato | Umbral |
+|---|---|---|
+| Atendida sin contrarreferencia | `contrarreferencias.length === 0` en SIC atendida/egresada | 30 días |
+| Interconsulta sin cursar | SIC en estado «Nueva» (13) | 21 días |
+| Cita pasada sin resolver | `fechaCita` anterior a hoy y estado agendada/confirmada | 7 días |
+| Control vencido sin agendar | `OrdenAtencionInterna.FechaSugerida` pasada, sin atención posterior del paciente | 1 día |
+
+**Honestidad incorporada**: «sin contrarreferencia en Rayen» no es «no llegó información». Pudo llegar por correo, en papel o de palabra. La interfaz lo dice en cada lugar donde aparece.
+
+**Memoria de cambio** (`src/watch.js`): guarda una huella de las SIC de las especialidades vigiladas (`config.js → watchEspecialidades`, por defecto Gastroenterología Adulto y Reumatología) y en cada carga reporta qué cambió: contrarreferencia que llegó, cambio de estado, cita confirmada, solicitud nueva. La primera lectura solo registra.
+
+**Contrarreferencia**: columna propia en Interconsultas (fecha y profesional, o «Falta» si la solicitud está atendida), bloque destacado al expandir la fila, y filtro «Falta — atendida y sin contrarreferencia». Los tiles del resumen filtran al hacer clic. Rayen guarda quién y cuándo contrarrefirió, no el texto: el contenido está en el PDF de la solicitud.
 
 ## Permisos y por qué
 
@@ -69,13 +88,15 @@ src/
   historial.js HistorialAtencion por día + cruce con la agenda (RUN + día)
   ficha.js    ficha por paciente (10 años, todas las secciones) + antecedentes + programas
   sic.js      interconsultas: ids, detalle, contrarreferencias
-  today.js    vista Hoy: agenda del día + antecedentes de cada paciente
+  today.js    parte matinal: novedades + pendientes + agenda con antecedentes
+  pendientes.js  motor de reglas explicables sobre datos ya descargados
+  watch.js    memoria de cambio de las interconsultas vigiladas
   lock.js     bloqueo por inactividad (pantalla de privacidad)
   cache.js    chrome.storage con runtime.lastError, stores por fecha, prefs
   table.js / stats.js / ic-tab.js / charts.js / patient-panel.js  UI
   export.js   CSV, XLS (SpreadsheetML), HTML, JSON, PDF
   notes.js / pdf.js / dom.js / explorer.js
-tests/        parser, sic, historial, ficha, table
+tests/        parser, sic, historial, ficha, table, stats, export, pendientes (reglas + memoria de cambio), ui-contract
 ```
 
 Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); colores solo vía tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.

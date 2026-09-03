@@ -19,8 +19,13 @@ export function filterSICs(sics) {
               : quien === 'emitidas' ? s.registrador.id === CONFIG.officerId
               : quien === 'recibidas' ? s.ejecutor.id === CONFIG.officerId
               : true)) &&
-    (!cr    || (cr === 'si' ? s.contrarreferencias.length > 0 : s.contrarreferencias.length === 0)) &&
-    (!q || [s.paciente.nombre, s.paciente.runStr, s.especialidad, s.diagnostico, s.cie10, s.fundamentos, s.registrador.nombre, s.ejecutor.nombre, String(s.id)]
+    (!cr    || (cr === 'si'    ? s.contrarreferencias.length > 0
+              : cr === 'no'    ? s.contrarreferencias.length === 0
+              : cr === 'falta' ? s.contrarreferencias.length === 0 && ['atendida','cerrada'].includes(s.grupo)
+              : true)) &&
+    (!q || [s.paciente.nombre, s.paciente.runStr, s.especialidad, s.diagnostico, s.cie10, s.fundamentos,
+            s.registrador.nombre, s.ejecutor.nombre, String(s.id),
+            ...s.contrarreferencias.map(c => c.profesional)]
       .some(v => String(v ?? '').toLowerCase().includes(q)))
   );
 }
@@ -29,25 +34,28 @@ export function buildSICFilters(sics) {
   fillSelect($('sicEsp'), [...new Set(sics.map(s => s.especialidad).filter(Boolean))].sort());
 }
 
+/** Tiles double as filters: clicking one applies it. */
 function summary(all, shown) {
   const counts = Object.fromEntries(Object.keys(SIC_GRUPO).map(k => [k, 0]));
   for (const s of all) counts[s.grupo] = (counts[s.grupo] ?? 0) + 1;
-  const mine = all.filter(isMine).length;
-  const withCR = all.filter(s => s.contrarreferencias.length).length;
-  const ges = all.filter(s => s.esAuge).length;
-  const oldPending = all.filter(s => ['pendiente', 'enviada'].includes(s.grupo) && s.antiguedadDias > 60).length;
+  const atendidas = all.filter(s => ['atendida', 'cerrada'].includes(s.grupo));
+  const conCR  = all.filter(s => s.contrarreferencias.length).length;
+  const faltaCR = atendidas.filter(s => !s.contrarreferencias.length).length;
+  const pct = atendidas.length ? Math.round(100 * faltaCR / atendidas.length) : 0;
+
+  const tile = (n, l, filtro = null, cls = '') =>
+    `<div class="stat ${cls} ${filtro ? 'stat-click' : ''}"${filtro ? ` data-filter="${esc(filtro)}" role="button" tabindex="0" data-tip="Filtrar por esto"` : ''}>` +
+    `<div class="stat-n">${n}</div><div class="stat-l">${esc(l)}</div></div>`;
+
   return [
-    [all.length, 'Total SIC'],
-    [mine, 'Mías'],
-    [counts.pendiente, 'Pendientes'],
-    [counts.enviada, 'En curso'],
-    [counts.atendida, 'Atendidas'],
-    [counts.cerrada, 'Cerradas'],
-    [counts.fallida, 'Fallidas'],
-    [withCR, 'Con contrarref.'],
-    [ges, 'GES'],
-    [oldPending, '> 60 días sin resolver'],
-  ].map(([n, l]) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join('')
+    tile(all.length, 'Total SIC', 'reset'),
+    tile(all.filter(isMine).length, 'Mías', 'quien:mias'),
+    tile(counts.pendiente, 'Pendientes', 'grupo:pendiente'),
+    tile(counts.enviada, 'En curso', 'grupo:enviada'),
+    tile(counts.atendida + counts.cerrada, 'Atendidas', 'grupo:atendida'),
+    tile(conCR, 'Con contrarref.', 'cr:si'),
+    tile(`${faltaCR}`, `Falta contrarref. · ${pct}%`, 'cr:falta', 'stat-alert'),
+  ].join('')
   + (shown !== all.length ? `<div class="stat stat-muted"><div class="stat-n">${shown}</div><div class="stat-l">Filtradas</div></div>` : '');
 }
 
@@ -57,10 +65,40 @@ function prioBadge(p) {
   return `<span class="prio prio-${p}" data-tip="${esc(hint)}">${esc(code)}</span>`;
 }
 
+/** The contrarreferencia cell: the answer, its absence, or "not yet due". */
+function crCell(s) {
+  const c = s.contrarreferencias[0];
+  if (c) {
+    const extra = s.contrarreferencias.length > 1 ? ` +${s.contrarreferencias.length - 1}` : '';
+    return `<span class="cr-yes" data-tip="${esc(`${c.profesional}\n${c.especialidad}\n${c.establecimiento}`)}">` +
+      `<b>${esc(c.fecha)}</b>${extra}<span>${esc(c.profesional)}</span></span>`;
+  }
+  if (['atendida', 'cerrada'].includes(s.grupo)) {
+    return `<span class="cr-missing" data-tip="La solicitud figura atendida y Rayen no registra contrarreferencia. Puede haber llegado por otra vía.">Falta</span>`;
+  }
+  return `<span class="muted">—</span>`;
+}
+
+function crBlock(s) {
+  if (!s.contrarreferencias.length) {
+    const falta = ['atendida', 'cerrada'].includes(s.grupo);
+    return `<div class="cr-box ${falta ? 'miss' : ''}">
+      <h4>Contrarreferencia</h4>
+      <p>${falta
+        ? 'La solicitud figura atendida y <b>Rayen no registra contrarreferencia</b>. Puede haber llegado por correo, en papel o de palabra: la herramienta mide el registro, no la conversación.'
+        : 'Todavía no corresponde: la solicitud no está atendida.'}</p></div>`;
+  }
+  return `<div class="cr-box ok">
+    <h4>Contrarreferencia</h4>
+    ${s.contrarreferencias.map(c => `<div class="cr-item">
+        <b>${esc(c.fecha)}</b> · ${esc(c.profesional)}
+        <span>${esc(c.especialidad)} · ${esc(c.establecimiento)}</span>
+      </div>`).join('')}
+    <p class="cr-note">Rayen guarda quién y cuándo contrarrefirió, no el texto. El contenido está en el PDF de la solicitud.</p>
+  </div>`;
+}
+
 function detailRow(s) {
-  const cr = s.contrarreferencias.length
-    ? s.contrarreferencias.map(c => `<li>${c.fecha} · ${esc(c.profesional)} (${esc(c.especialidad)}) · ${esc(c.establecimiento)}</li>`).join('')
-    : '<li class="muted">Sin contrarreferencia registrada</li>';
   const p = s.paciente;
   return `<tr class="sic-detail" data-for="${s.id}"><td colspan="9">
     <div class="sic-detail-grid">
@@ -74,20 +112,17 @@ function detailRow(s) {
         ${s.motivoCancelacion ? `<h4>Motivo cancelación</h4><p>${esc(s.motivoCancelacion)}</p>` : ''}
       </div>
       <div>
+        ${crBlock(s)}
         <h4>Paciente</h4>
         <p>${esc(p.nombre)}${p.runStr ? ` · ${p.runStr}` : ''}<br>
            ${[p.sexo, p.edad, p.prevision].filter(Boolean).map(esc).join(' · ')}<br>
-           ${p.telefono ? `☎ ${esc(p.telefono)}` : ''} ${p.direccion ? `· ${esc(p.direccion)}` : ''}<br>
-           <span class="muted">${esc(p.tipoUsuario)}</span></p>
+           ${p.telefono ? `☎ ${esc(p.telefono)}` : ''} ${p.direccion ? `· ${esc(p.direccion)}` : ''}</p>
         <h4>Derivación</h4>
         <p>Motivo: ${esc(s.motivo) || '—'}<br>
-           Problema de salud: ${esc(s.problemaSalud) || '—'}<br>
-           ${esc(s.origen)} (${esc(s.especialidadOrigen)}) → ${esc(s.destino)} (${esc(s.especialidad)})<br>
+           ${esc(s.especialidadOrigen)} → ${esc(s.especialidad)}<br>
            Solicitante: ${esc(s.registrador.nombre) || '—'}<br>
            Ejecutor: ${esc(s.ejecutor.nombre) || '—'}<br>
-           Creada: ${esc(s.fechaCreacion)}${s.fechaEnvio ? ` · Enviada: ${esc(s.fechaEnvio)}` : ''}${s.fechaCita ? ` · Cita: ${esc(s.fechaCita)}` : ''}</p>
-        <h4>Contrarreferencia</h4>
-        <ul class="cr-list">${cr}</ul>
+           Creada: ${esc(s.fechaCreacion)}${s.fechaCita ? ` · Cita: ${esc(s.fechaCita)}` : ''}</p>
         <div class="sic-actions">
           <button class="btn-mini pdf-sic" data-id="${s.id}">Solicitud PDF</button>
           ${p.run ? `<button class="btn-mini pat-open" data-run="${esc(p.run)}">Ver paciente</button>` : ''}
@@ -99,7 +134,6 @@ function detailRow(s) {
 
 function mainRow(s) {
   const open = expanded.has(s.id);
-  const cr   = s.contrarreferencias.length ? `<span class="ic-cr" data-tip="Contrarreferencia recibida">CR</span>` : '';
   const ges  = s.esAuge ? `<span class="bges">GES</span>` : '';
   const mine = isMine(s) ? `<span class="mine" data-tip="Registrada o ejecutada por ti">★</span>` : '';
   const age  = s.antiguedadDias > 60 && ['pendiente', 'enviada'].includes(s.grupo) ? 'age-old' : '';
@@ -108,10 +142,10 @@ function mainRow(s) {
     <td class="num ${age}">${s.antiguedadDias}</td>
     <td>${mine}${esc(s.paciente.nombre)}${s.paciente.runStr ? `<br><small class="run">${s.paciente.runStr}</small>` : ''}</td>
     <td class="wrap">${esc(s.especialidad)}<br><small class="muted">${esc(s.motivo)}</small></td>
-    <td class="wrap">${s.cie10 ? `<b class="cie">${esc(s.cie10)}</b> ` : ''}${esc(s.diagnostico)}</td>
+    <td class="wrap">${s.cie10 ? `<b class="cie">${esc(s.cie10)}</b> ` : ''}${esc(s.diagnostico)}${ges}</td>
     <td>${prioBadge(s.prioridad)}</td>
     <td>${stateDot(s.estado, { tone: sicTone(s.grupo) })}</td>
-    <td>${ges} ${cr}</td>
+    <td class="cr-cell">${crCell(s)}</td>
     <td class="wrap"><small>${esc(s.registrador.nombre)}</small></td>
   </tr>` + (open ? detailRow(s) : '');
 }

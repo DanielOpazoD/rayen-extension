@@ -17,7 +17,7 @@ const FLAGS = Object.freeze({
   TraerItemsExamenesSegmentarios: false,
   TraerIndicaciones: false,
   TraerPrescripcionesExtraConsultorio: false,
-  TraerOrdenesAtencionInterna: false,
+  TraerOrdenesAtencionInterna: true,  // próximo control sugerido — alimenta pendientes
   TraerAnamnesis: false,
   TraerRecetas: false,
   TraerOrdenAtencionPruebaDiagnostica: false,
@@ -150,6 +150,7 @@ export function mergeHistorial(citas, atenciones) {
       tipoAtencion: c.tipoAtencion || a.tipoAtencion,
       edadLabel:    a.edadLabel,
       sexo:         c.sexo || a.sexo,
+      proximoControl: a.proximoControl ?? [],
     };
   });
 

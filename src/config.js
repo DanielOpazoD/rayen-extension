@@ -13,6 +13,7 @@ export const CONFIG = Object.freeze({
   cacheKey:     'rayen_citas_v2',
   historialKey: 'rayen_historial_v1',
   sicKey:       'rayen_sic_v1',
+  watchKey:     'rayen_watch_v1',
   notesKey:     'rayen_notes_v1',
   prefsKey:     'rayen_prefs_v1',
 
@@ -22,6 +23,21 @@ export const CONFIG = Object.freeze({
   retentionMonths: 13,
   // Per-patient ficha window (years back). The API accepts any range.
   fichaYears: 10,
+
+  /**
+   * Interconsulta streams whose changes are worth remembering between loads.
+   * These are the telemedicine specialties the doctor resolves himself, so a
+   * change here is a change in his own queue. Editable from the IC tab.
+   */
+  watchEspecialidades: ['Gastroenterología Adulto', 'Reumatología'],
+
+  /** Day thresholds at which each rule stops being noise. Clinical judgement. */
+  pendientes: {
+    crDias:      30,  // atendida sin contrarreferencia registrada
+    nuevaDias:   21,  // SIC que nunca salió del estado "Nueva"
+    citaDias:     7,  // cita ya pasada y la SIC sigue abierta
+    controlDias:  1,  // control sugerido vencido
+  },
 });
 
 export const DOW_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];

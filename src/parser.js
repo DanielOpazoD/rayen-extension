@@ -268,5 +268,18 @@ export function parseAtencion(a) {
       instrumento: f.NombreInstrumento ?? '',
     })),
     adjuntos: (a.ArchivosAdjunto ?? []).map(x => ({ nombre: x.NombreArchivo ?? '', path: x.PathAzure ?? '' })),
+    // "Orden de atención interna" = the next control the professional asked for.
+    // Comes free with the day-level ficha and feeds the pendientes rules.
+    proximoControl: (a.OrdenAtencionInterna ?? a.OrdenesAtencionInterna ?? [])
+      .filter(o => !o.EsBorrado)
+      .map(o => ({
+        id:        o.Id,
+        motivo:    String(o.Motivo ?? '').replace(/\s+/g, ' ').trim(),
+        fecha8:    String(o.FechaSugerida ?? '').slice(0, 8).replace(/^00010101$/, ''),
+        fecha:     fmtDate(o.FechaSugerida ?? ''),
+        dias:      o.CuantosDiasMas ?? 0,
+        prioritario: !!o.PrioridadAlta,
+        descartada: !!(o.FechaDescarte && !String(o.FechaDescarte).startsWith('00010101')),
+      })),
   };
 }

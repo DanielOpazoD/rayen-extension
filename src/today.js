@@ -2,12 +2,13 @@ import { esc, stateDot, sicTone, $ } from './dom.js';
 import { localDateStr, dateToInt } from './parser.js';
 import { patientKey } from './notes.js';
 import { sicRole } from './table.js';
+import { TIPO_LABEL, resumirPendientes } from './pendientes.js';
 
 /** SIC groups that still need someone to act on them. */
 const OPEN_GROUPS = new Set(['pendiente', 'enviada']);
-
-const DOW = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DOW = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const MONTH = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const ROL_LABEL = { out: 'Emití', in: 'Recibí', other: 'Otra' };
 
 /** "martes 2 de septiembre" */
 function longDate(d8) {
@@ -16,10 +17,61 @@ function longDate(d8) {
   return `${DOW[d.getDay()]} ${d.getDate()} de ${MONTH[d.getMonth()]}`;
 }
 
-/**
- * Everything worth knowing before seeing this patient: the diagnoses they
- * already carry, the interconsultas still open, and the last note written.
- */
+// ── Novedades: what moved in the watched streams ───────────────
+
+function novedadesHTML({ cambios, firstRun, desde, vigiladas }, especialidades) {
+  const esp = especialidades.join(' · ');
+  if (firstRun) {
+    return `<section class="brief">
+      <h3 class="brief-h">Novedades <span>${esc(esp)}</span></h3>
+      <div class="brief-empty">Primera lectura: quedaron registradas ${vigiladas} interconsultas vigiladas.
+        Desde la próxima carga se avisa aquí lo que cambie.</div></section>`;
+  }
+  if (!cambios.length) {
+    const cuando = desde ? new Date(desde).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<section class="brief">
+      <h3 class="brief-h">Novedades <span>${esc(esp)}</span></h3>
+      <div class="brief-empty">Sin cambios en ${vigiladas} interconsultas vigiladas${cuando ? ` desde el ${cuando}` : ''}.</div></section>`;
+  }
+  return `<section class="brief">
+    <h3 class="brief-h">Novedades <span>${esc(esp)} · ${cambios.length}</span></h3>
+    ${cambios.map(c => `
+      <div class="nov nov-${c.tipo} sic-link" data-sic="${c.id}" role="button" tabindex="0" data-tip="Abrir en Interconsultas">
+        <span class="nov-tag">${esc(c.label)}</span>
+        <span class="nov-pac">${esc(c.paciente)}</span>
+        <span class="nov-esp">${esc(c.especialidad)}</span>
+        <span class="nov-mov">${c.antes ? `${esc(c.antes)} → ` : ''}<b>${esc(c.ahora)}</b></span>
+      </div>`).join('')}
+  </section>`;
+}
+
+// ── Pendientes: open loops, grouped and explainable ────────────
+
+function pendientesHTML(pendientes) {
+  if (!pendientes.length) {
+    return `<section class="brief">
+      <h3 class="brief-h">Pendientes</h3>
+      <div class="brief-empty">Nada vencido según las reglas activas.</div></section>`;
+  }
+  const grupos = resumirPendientes(pendientes);
+  return `<section class="brief">
+    <h3 class="brief-h">Pendientes <span>${pendientes.length}</span></h3>
+    ${grupos.map(g => `
+      <div class="pgrp">
+        <div class="pgrp-h">${esc(g.titulo)} <span>${g.items.length}</span></div>
+        ${g.items.slice(0, 5).map(p => `
+          <div class="pend ${p.sicId ? 'sic-link' : 'pat-run'}" ${p.sicId ? `data-sic="${p.sicId}"` : `data-run="${esc(p.run ?? '')}"`} role="button" tabindex="0"
+               data-tip="${esc(p.nota ? `${p.detalle}\n${p.nota}` : p.detalle)}">
+            <span class="pend-d">${p.dias}<small>d</small></span>
+            <span class="pend-t"><b>${esc(p.paciente)}</b>${esc(p.titulo)}</span>
+          </div>`).join('')}
+        ${g.items.length > 5 ? `<div class="pgrp-more">y ${g.items.length - 5} más</div>` : ''}
+      </div>`).join('')}
+  </section>`;
+}
+
+// ── Agenda ─────────────────────────────────────────────────────
+
 function context(rec, allData, sics) {
   const key = patientKey(rec);
   const past = allData
@@ -32,12 +84,11 @@ function context(rec, allData, sics) {
     if (!k || /no informado/i.test(k)) continue;
     if (!dx.has(k)) dx.set(k, { ...d, fecha: v.fechaAtencion });
   }
-
   const open = (rec.run ? sics.filter(s => s.paciente.run === rec.run) : [])
     .filter(s => OPEN_GROUPS.has(s.grupo))
     .sort((a, b) => b.antiguedadDias - a.antiguedadDias);
 
-  return { past, dx: [...dx.values()].slice(0, 6), open: open.slice(0, 4), visitas: past.length };
+  return { dx: [...dx.values()].slice(0, 6), open: open.slice(0, 4), visitas: past.length };
 }
 
 function card(rec, allData, sics) {
@@ -49,7 +100,7 @@ function card(rec, allData, sics) {
     : `<div class="none">${visitas ? 'Sin diagnósticos registrados' : 'Primera atención contigo'}</div>`;
 
   const icHTML = open.length
-    ? open.map(s => `<div><span class="rol rol-${sicRole(s)}">${sicRole(s) === 'out' ? 'Emití' : sicRole(s) === 'in' ? 'Recibí' : 'Otra'}</span> ${esc(s.especialidad)} ` +
+    ? open.map(s => `<div><span class="rol rol-${sicRole(s)}">${ROL_LABEL[sicRole(s)]}</span> ${esc(s.especialidad)} ` +
         `${stateDot(s.estado, { tone: sicTone(s.grupo), small: true })} <span class="muted">· ${s.antiguedadDias} d</span></div>`).join('')
     : `<div class="none">Sin interconsultas abiertas</div>`;
 
@@ -70,40 +121,44 @@ function card(rec, allData, sics) {
 }
 
 /**
- * Renders the "Hoy" tab: today's agenda with each patient's background.
- * If today has no appointments, falls back to the most recent day that had any.
+ * The morning brief: what changed in the watched streams, what is overdue, and
+ * who is on today's agenda with their background.
+ *
  * @param {object[]} allData
  * @param {object[]} sics
+ * @param {{ pendientes?: object[], novedades?: object, especialidades?: string[] }} extra
  */
-export function renderToday(allData, sics = []) {
+export function renderToday(allData, sics = [], extra = {}) {
   const el = $('todayContent');
   if (!allData.length) {
-    el.innerHTML = `<div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy con los antecedentes de cada paciente.</div>`;
+    el.innerHTML = `<div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy, lo que venció y lo que cambió en tus interconsultas.</div>`;
     return;
   }
 
   const hoy = localDateStr(new Date());
   let dia = hoy;
   let rows = allData.filter(r => r.fecha8 === hoy);
-
   if (!rows.length) {
     const past = [...new Set(allData.map(r => r.fecha8).filter(d => d && d < hoy))].sort().pop();
     if (past) { dia = past; rows = allData.filter(r => r.fecha8 === past); }
   }
-
-  if (!rows.length) {
-    el.innerHTML = `<div class="today-empty"><b>Sin atenciones registradas</b>No hay citas ni atenciones en el período cargado.</div>`;
-    return;
-  }
-
   rows.sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+
   const pend = rows.filter(r => !/Completado|presentó/i.test(r.estado)).length;
   const esHoy = dia === hoy;
 
-  el.innerHTML =
-    `<div class="today-h">
-       <h2>${esHoy ? 'Hoy' : 'Última jornada'} · ${longDate(dia)}</h2>
-       <span>${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy ? '' : ' · hoy no hay agenda cargada'}</span>
-     </div>` +
-    rows.map(r => card(r, allData, sics)).join('');
+  const brief =
+    (extra.novedades ? novedadesHTML(extra.novedades, extra.especialidades ?? []) : '') +
+    (extra.pendientes ? pendientesHTML(extra.pendientes) : '');
+
+  const agenda = rows.length
+    ? `<div class="today-h">
+         <h2>${esHoy ? 'Hoy' : 'Última jornada'} · ${longDate(dia)}</h2>
+         <span>${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy ? '' : ' · hoy no hay agenda cargada'}</span>
+       </div>` + rows.map(r => card(r, allData, sics)).join('')
+    : `<div class="today-empty"><b>Sin atenciones registradas</b>No hay citas ni atenciones en el período cargado.</div>`;
+
+  el.innerHTML = brief + agenda;
 }
+
+export { TIPO_LABEL };
