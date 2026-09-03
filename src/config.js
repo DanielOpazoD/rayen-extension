@@ -1,0 +1,78 @@
+export const CONFIG = Object.freeze({
+  nodeId:    5576,
+  officerId: 439550,
+  base:      'https://clinicohangaroa.eloisa.cl',
+
+  // Concurrency
+  batchSize:      15, // ListaPacientesCitados (small responses)
+  historialBatch: 3,  // HistorialAtencion (~1 MB per day for the whole node)
+  sicBatch:       4,  // SIC detail calls in flight
+  sicIdsPerCall:  10, // ids per SolicitudInterconsultaDerivacionPorIds call (as Eloisa does)
+
+  // Storage keys
+  cacheKey:     'rayen_citas_v2',
+  historialKey: 'rayen_historial_v1',
+  sicKey:       'rayen_sic_v1',
+  notesKey:     'rayen_notes_v1',
+  prefsKey:     'rayen_prefs_v1',
+
+  // SIC list is re-fetched when older than this (states change over time)
+  sicTtlMs: 30 * 60 * 1000,
+  // Cached days older than this are pruned on load
+  retentionMonths: 13,
+  // Per-patient ficha window (years back). The API accepts any range.
+  fichaYears: 10,
+});
+
+export const DOW_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+/** HistorialAtencion.IdSexo → label (verified against UsuarioAps.Sexo.Id in the HAR). */
+export const SEXO_BY_ID = Object.freeze({ 1: 'Desconocido', 2: 'Mujer', 3: 'Hombre', 4: 'Indeterminado' });
+
+/** SIC state ids → label, from EstadosDerivacion/{SOLICITUD_INTERCONSULTA,RECEPCION_CONTRALOR}. */
+export const SIC_ESTADOS = Object.freeze({
+  2:  'Enviada',
+  3:  'Cita Agendada',
+  4:  'Con Cita Confirmada',
+  5:  'Atendido',
+  6:  'No Atendido',
+  7:  'Rechazada por est. destino',
+  9:  'Cita Cancelada',
+  12: 'No se presentó a la cita',
+  13: 'Nueva',
+  15: 'Aceptada por est. destino',
+  18: 'Diagnóstico confirmado',
+  19: 'Alta',
+  20: 'Egresada',
+  25: 'En Revisión',
+  26: 'Re Emitida',
+  27: 'Rechazada por paciente',
+  28: 'Observada por est. destino',
+  29: 'Cancelada',
+  30: 'Rechazada por sistema',
+  32: 'Postergada',
+});
+
+/** Coarse lifecycle group for badges/filters. */
+export const SIC_GRUPO = Object.freeze({
+  pendiente: { label: 'Pendiente',  ids: [13, 25, 26, 28, 32] },
+  enviada:   { label: 'En curso',   ids: [2, 15, 3, 4] },
+  atendida:  { label: 'Atendida',   ids: [5, 18] },
+  cerrada:   { label: 'Cerrada',    ids: [19, 20] },
+  fallida:   { label: 'Fallida',    ids: [6, 7, 9, 12, 27, 29, 30] },
+});
+
+export function sicGrupo(estadoId) {
+  for (const [k, g] of Object.entries(SIC_GRUPO)) if (g.ids.includes(estadoId)) return k;
+  return 'otro';
+}
+
+/** States used when listing SICs. Origin-side (pre-envío) and destination-side (post-envío). */
+export const SIC_ESTADOS_ORIGEN  = [13, 25, 26, 28, 30, 32];
+export const SIC_ESTADOS_DESTINO = [2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 19, 20, 27, 28, 29, 30, 31, 32];
+
+/**
+ * SIC priority. Inferred from distribution in the HAR (1 rarest = 33, 2 = 720, 3 = 230);
+ * Rayen does not expose the labels through the API captured.
+ */
+export const SIC_PRIORIDAD = Object.freeze({ 1: 'Alta', 2: 'Media', 3: 'Baja' });

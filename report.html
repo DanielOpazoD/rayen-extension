@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de atenciones — Rayen</title>
+<style id="reportCss"></style>
+<style>
+.toolbar{position:sticky;top:0;background:#fff;border-bottom:1px solid #e3e8ee;padding:8px 0;margin:-24px -24px 14px;padding-left:24px;display:flex;gap:8px;align-items:center}
+.toolbar button{padding:6px 14px;border:1px solid #2d8c6e;border-radius:7px;background:#2d8c6e;color:#fff;font-weight:600;cursor:pointer;font-size:12px}
+.toolbar span{color:#718096;font-size:11px}
+@media print{.toolbar{display:none}}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button id="btnPrint">Imprimir / Guardar como PDF</button>
+  <span>En el diálogo de impresión elige «Guardar como PDF». Orientación horizontal recomendada.</span>
+</div>
+<div id="report"><p style="color:#718096">Cargando reporte…</p></div>
+<script src="report.js"></script>
+</body>
+</html>

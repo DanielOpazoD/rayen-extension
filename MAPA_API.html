@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MAPA API — Rayen Extension v1.1</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:28px 32px;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.55;color:#2d3748;background:#f7fafc;max-width:1100px}
+h1{font-size:1.5rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:32px 0 10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;color:#1a6b53}
+h3{font-size:.95rem;margin:20px 0 6px}
+p.lead{color:#718096;margin:0 0 18px}
+code{font-family:'SF Mono',Menlo,monospace;font-size:12px;background:#edf2f7;padding:1px 5px;border-radius:4px}
+pre{background:#1a202c;color:#c6f6d5;padding:12px 14px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.5}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;margin:8px 0 16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+th{background:#edf2f7;text-align:left;padding:7px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#718096}
+td{padding:7px 10px;border-top:1px solid #edf2f7;vertical-align:top}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px}
+.ok{background:#d1fae5;color:#065f46}.new{background:#dbeafe;color:#1e40af}.todo{background:#fef3c7;color:#92400e}.warn{background:#fee2e2;color:#991b1b}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:#fff;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card h3{margin-top:0}
+ul{margin:4px 0 10px 18px;padding:0}
+li{margin:3px 0}
+.tree{font-family:'SF Mono',Menlo,monospace;font-size:12px;white-space:pre;background:#fff;padding:12px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+</style>
+</head>
+<body>
+<h1>MAPA API — Rayen Extension v1.1</h1>
+<p class="lead">Hospital Hanga Roa · nodo <code>5576</code> · Dr. Opazo <code>officerId 439550</code> · base <code>https://clinicohangaroa.eloisa.cl</code>. Actualizado 02-09-2026 tras el análisis del HAR de Ficha Clínica (318 requests, 36 endpoints).</p>
+
+<h2>Convenciones de la API</h2>
+<ul>
+  <li><b>Auth:</b> <code>Authorization: Bearer &lt;accessToken&gt;</code>, token leído de <code>localStorage.userSession</code> en la pestaña de Eloisa (world MAIN vía <code>chrome.scripting</code>). La extensión solo envía el token al origen <code>clinicohangaroa.eloisa.cl</code> (<code>src/http.js → resolveUrl</code>).</li>
+  <li><b>Parámetros en el path:</b> <code>/endpoint/clave=valor;clave=valor</code>. Espacios como <code>%20</code>, comas como <code>%2C</code>.</li>
+  <li><b>Fechas:</b> <code>YYYYMMDD HHmmss</code> (espacio, no <code>T</code>). Sentinel «sin fecha»: <code>00010101 000000</code>. Fechas ya formateadas en algunas SIC: <code>DD-MM-YYYY HH:mm</code>. Zona horaria local (Rapa Nui, UTC-6): usar siempre funciones <em>locales</em> de Date.</li>
+  <li><b>RUN:</b> dígitos + DV pegado, sin puntos ni guion, DV puede ser <code>k</code> minúscula (<code>25106217k</code>). <code>formatRun()</code> separa el último carácter como DV y valida módulo 11.</li>
+  <li><b>Sexo:</b> <code>IdSexo</code> 2 = Mujer, 3 = Hombre (coincide con <code>Sexo.Id</code> en UsuarioAps).</li>
+  <li><b>EdadExacta:</b> entero empaquetado <code>YY…MMDDHH</code> (<code>54010817</code> = 54 a 1 m 8 d 17 h).</li>
+</ul>
+
+<h2>Endpoints en uso</h2>
+<table>
+<tr><th>Estado</th><th>Método · endpoint</th><th>Módulo</th><th>Para qué</th></tr>
+<tr><td><span class="tag ok">en uso</span></td><td><code>GET Citas/ListaPacientesCitados/{nodo}/FechaHoraInicio=…;FechaHoraTermino=…;IdsDeRecursos=439550;EsAnulado=2;EsGrupal=2;TraerLlamadosPaciente=true;TraerTeleconsulta=true</code></td><td>api.js</td><td>Agenda del profesional por día. Paciente en <code>UsuarioAps</code> (no en <code>Pacientes[]</code>). Estado en <code>Tag.Nombre</code>. IC: <code>EsCitaInterconsulta===1</code> + <code>Cupos[0].Descripcion</code> («Citado por:», «N° Solicitud Interconsulta:»).</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>POST FichaClinica/HistorialAtencion</code> body <code>{IdNodo, FechaInicio, FechaTermino, Traer*…}</code></td><td>historial.js</td><td>Todas las atenciones del nodo en el rango (~1 MB/día). Trae <code>RutPaciente, NombreCompleto, EdadExacta, IdSexo, TipoDeAtencion, EsUrgencia, EsEspontanea, EsDiada, Diagnosticos[], Actividades[], FuncionariosPrestadores[], ArchivosAdjunto[]</code>. <b><code>IdCita</code> viene en 0</b>: el cruce con la agenda es por RUN + día (<code>matchKey</code>). Se guardan solo las atenciones del oficial o que calzan con una cita; el resto se reduce a un agregado diario (equipo).</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>GET ReferenciaYContrarreferencia/IdsSolicitudesInterconsultasGet?paramsFiltro=ORIGEN=…;BUSQUEDAINICIAL=false;TIPOSOLICITUD=1;FECHAINICIO=…;FECHATERMINO=…;CAMPOORDEN=2;ESTADOSSOLICITUDES=…;IDNODOORIGEN|IDNODODESTINO=5576</code></td><td>sic.js</td><td>Lista de IDs de SIC. <code>ORIGEN=SOLICITUD_INTERCONSULTA</code> (emitidas, estados 13,25,26,28,30,32) y <code>ORIGEN=RECEPCION_CONTRALOR</code> (recibidas, estados 2…32). También existe <code>ORIGEN=BOX_DERIVACION</code> con <code>IDFUNCIONARIOREGISTRADOR</code> / <code>IDFUNCIONARIOPRESTADORSOLICITANTE</code> (devolvió 0 en el HAR).</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>GET ReferenciaYContrarreferencia/SolicitudInterconsultaDerivacionPorIds/Ids=a%2Cb%2C…;TIPOSOLICITUD=1;TraerDocumentos=true</code></td><td>sic.js</td><td>Detalle de hasta 10 SIC por llamada: fundamentos clínicos, exámenes, <code>ArrDiagnosticos[].CodigoCIE10</code>, prioridad, estado (<code>SolicitudInterconsulta.Estado</code> numérico), paciente completo (<code>UsuarioApsDerivacion</code> con teléfonos, dirección, previsión), registrador, ejecutor, establecimientos.</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>POST ReferenciaYContrarreferencia/ObtenerHistorialContrarreferenciasPorSicIds</code> body <code>{"ids":[…]}</code></td><td>sic.js</td><td>Contrarreferencias (respuesta del especialista): fecha, especialidad, profesional, establecimiento.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>POST FichaClinica/HistorialAtencion</code> body <code>{IdUsuario, IdFuncionarioPrestador:null, FechaInicio (−12 m), FechaTermino, Traer*: true ×17}</code></td><td>ficha.js</td><td><b>Modo por paciente</b> (HAR «acceso a ficha clínica»): todas las atenciones del paciente de todos los profesionales, ~4 KB por atención, con <code>Anamnesis[{MotivoConsulta, HistoriaEnfermedadActual}]</code>, <code>EspecialidadesDerivadas[]</code>, <code>Prescripciones[]</code>, <code>ExamenesSolicitados[]</code>, <code>Indicaciones[]</code>, <code>Recetas[]</code>, <code>LicenciasMedicasElectronicasOtorgadas[]</code>… Las secciones cuya forma exacta aún no se ha capturado se muestran con <code>describe()</code> (etiqueta + detalles por heurística).</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET Inscripcion/UsuarioApsRut/{rut}/5576</code></td><td>ficha.js</td><td>Ficha administrativa completa (array de 1): <code>Id</code> (= IdUsuarioAps), NumeroDeFicha, Familia.CodigoDeFamiliaCompleto, Georeferencias, Telefonos, EMail, ConvenioPrevisional, Ocupacion, Escolaridad, Nacionalidad, GrupoEtnico, GrupoSanguineo/FactorRH, EstaActivo, MotivoDePasivacion, FechaDeFallecimiento, EsCuidador, MovilidadReducida, NombreAlQueResponde. El rut va en minúscula sin puntos.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET FichaClinica/RecuperarAntecedentes/{idUsp}</code></td><td>ficha.js</td><td><code>{antecedenteMedicoPersonal[{Diagnostico, Fecha, EsMorbido, Seleccionado}], farmacoEnUsos.medications[{Descripcion, DescripcionArticulo, IdReceta, FechaReceta, EsHearts}], alergia{catálogos + filas del paciente}, eventoAdverso{…}, inmunizaciones[], parentesco[]}</code>. Las listas de <code>alergia</code>/<code>eventoAdverso</code> mezclan catálogos con datos del paciente: se conservan solo las filas con <code>IdUsuarioAps</code>.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET inscripcion/HistorialUsuarioApsEnProgramaSalud/IdUsuarioAps={idUsp}</code></td><td>ficha.js</td><td>Eventos de programas de salud: <code>{NombrePrograma, IdPrograma, Estado (1 = ingreso), FechaHora, NombreFuncionarioPrestador}</code>. Se muestra el último evento por programa.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET FichaClinica/EventoAdverso/AlertaRAM/{idUsp}</code></td><td>ficha.js</td><td>Reacciones adversas a medicamentos (vacío en el HAR; se muestra con <code>describe()</code>).</td></tr>
+<tr><td><span class="tag ok">forma confirmada</span></td><td><code>HistorialAtencion</code> secciones: <code>Prescripciones[{Descripcion "… de la Receta Nº N", IdReceta, Suspendido, EsExterna}]</code> · <code>Recetas[{Id, TipoReceta, EstadoReceta, FechaGeneracion, FechaProximoDespacho, EsIniciativaHearts}]</code> · <code>OrdenAtencionInterna[{Motivo, FechaSugerida, CuantosDiasMas, PrioridadAlta}]</code> (= próximo control) · <code>OrdenAtencionPruebaDiagnostica[{Descripcion, Estado}]</code> · <code>EspecialidadesDerivadas[{Descripcion, TieneContrarreferencias}]</code></td><td>ficha.js</td><td>HAR «FICHA 2 SEPT». Pendientes de capturar: <code>ExamenesSolicitados</code>, <code>Indicaciones</code>, <code>LicenciasMedicasElectronicasOtorgadas</code>, <code>ExamenesFisicos</code> (hoy vía <code>describe()</code>).</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET FichaClinica/RecuperarRUI/{idUsp}/true</code> (294 KB), <code>FichaClinica/RecuperarAtencion/{idAtencion}</code>, <code>Farmacia/Receta/?paramsFiltro=Id={idReceta}</code>, <code>Farmacia/EtapaRecetaUsuario/{idUsp}</code>, <code>General/ObtenerNotas/IdFuncionarioPrestadorOrigen=439550;IdNodo=5576</code>, <code>General/NotaAdhesiva/IdUsuario={idUsp}</code>, <code>AlertasClinicas/AlertaClinica/IdUsuarioAps={idUsp}</code>, <code>reporte/ReportePDF/Nombre=RecetaEmitida;IdNodo=5576;IdAtencion=…;IdReceta=…;IdFuncionarioPrestador=…</code></td><td>—</td><td>RUI = Registro Único Integrado (JSON serializado en <code>RegistroUnicoIntegradoSerializado</code>, con <code>historySummary.personalCondition[]</code>). <b>ObtenerNotas</b> = mensajería interna entre profesionales (hilos con <code>Responde</code>/<code>IdNota</code>, <code>NotaLeida</code>): candidata a una pestaña «Mensajes». <b>RecetaEmitida</b> = PDF de la receta.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET fichaclinica/VigenciaExamenesUsuario/{idUsp}</code></td><td>ficha.js</td><td><code>[{Ok, Alert, Mensaje:"EMP no vigente"|"PAP no vigente"|"VPH no vigente"}]</code>.</td></tr>
+<tr><td><span class="tag new">nuevo 1.2</span></td><td><code>GET FichaClinica/RiesgoMultiMorbilidad/IdUsuarioAPS={idUsp}</code></td><td>ficha.js</td><td><code>[{Estratificacion:"G1", FechaHoraIngreso, Activo, IdsDiagnosticosUsuario[]}]</code>.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET inscripcion/HistorialUsuarioApsEnProgramaSalud/IdUsuarioAps={id}</code>, <code>FichaClinica/CompromisoAcordadoUsuario/IdUsuario={id}</code>, <code>General/RegistroDeVisualizacion</code> (POST, auditoría de acceso)</td><td>—</td><td>Programas de salud del paciente, compromisos acordados. Vacíos en el HAR.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET general/ObtenerFuncionariosPrestadoresDinamico/5576</code> (850 KB), <code>general/TipoDeAtencion/IdNodo=5576</code>, <code>Farmacia/ObtenerTipoRecetaPorIdNodo/5576</code>, <code>Abastecimiento/Unidad</code>, <code>general/programasalud/TipoPrograma=3</code>, <code>Inscripcion/Alerta/?paramsFiltro=TipoAlerta=0,1,2</code></td><td>—</td><td>Catálogos que Eloisa precarga al abrir la ficha.</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>GET reporte/reportePDF/Nombre=CertificadoAtencion;IdCita={idCita};IdNodo=5576</code></td><td>pdf.js</td><td>PDF del certificado de atención (respuesta <code>application/pdf</code>).</td></tr>
+<tr><td><span class="tag new">nuevo 1.1</span></td><td><code>GET Reporte/ReportePDF/Nombre=SolicitudInterconsulta;IdNodo=5576;IdSolicitud={id};IdNodoQueSolicitaInforme=5576</code></td><td>pdf.js</td><td>PDF de la solicitud de interconsulta.</td></tr>
+</table>
+
+<h2>Endpoints descubiertos, aún no usados</h2>
+<table>
+<tr><th>Estado</th><th>Endpoint</th><th>Notas</th></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET general/FuncionarioPrestadorMini/idNodo=5576;esPrestador=1</code></td><td>125 profesionales con RUT, nombre e instrumentos (Médico, Kinesiólogo, …). Útil para un catálogo id→profesión.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET ReferenciaYContrarreferencia/EstadosDerivacion/{SOLICITUD_INTERCONSULTA|RECEPCION_CONTRALOR|BOX_DERIVACION}/{1|2}</code></td><td>Catálogo de estados. Ya copiado a <code>SIC_ESTADOS</code> en config.js.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET ReferenciaYContrarreferencia/EspecialidadSICEstablecimiento{Origen|Destino}Multibrowser/IDNODO…=5576/{1|2|3}</code></td><td>Especialidades derivables (50 en origen). Solo IDs; el nombre viene en el detalle de la SIC.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET ReferenciaYContrarreferencia/DestinoSICEstablecimiento/IDESPECIALIDADSIC=…;IDUSP=…;IDDIAG=…;IDPROBLEMASALUD=…;ESGES=…</code></td><td>Destinos posibles para una derivación concreta.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET general/sector/idNodo=5576</code>, <code>administracion/parametrosRayen/IdNodo=5576[;Descripcion=…]</code>, <code>servidor/fechaHora</code></td><td>Catálogos y configuración del nodo.</td></tr>
+<tr><td><span class="tag todo">por usar</span></td><td><code>GET reporte/iris?paramsFiltro=tipo=1;idReporte=29</code></td><td>Devuelve URLs con token al portal IRIS (BI de Rayen).</td></tr>
+<tr><td><span class="tag todo">flags</span></td><td><code>HistorialAtencion</code> con <code>TraerPrescripciones, TraerExamenesSolicitados, TraerAnamnesis, TraerRecetas, TraerIndicaciones, TraerExamenesFisicos, TraerLicenciasMedicasElectronicasOtorgadas…</code></td><td>Cada flag añade arrays a la respuesta. Hoy solo se piden Actividades, Diagnosticos y FuncionariosPrestadores.</td></tr>
+</table>
+
+<h2>Ciclo de vida de una SIC (ids de estado)</h2>
+<div class="cols">
+  <div class="card"><h3>Pendiente (origen)</h3><ul><li>13 Nueva</li><li>25 En Revisión</li><li>26 Re Emitida</li><li>28 Observada por est. destino</li><li>32 Postergada</li></ul></div>
+  <div class="card"><h3>En curso</h3><ul><li>2 Enviada</li><li>15 Aceptada por est. destino</li><li>3 Cita Agendada</li><li>4 Con Cita Confirmada</li></ul></div>
+  <div class="card"><h3>Atendida / cerrada</h3><ul><li>5 Atendido</li><li>18 Diagnóstico confirmado</li><li>19 Alta</li><li>20 Egresada</li></ul></div>
+  <div class="card"><h3>Fallida</h3><ul><li>6 No Atendido</li><li>7 Rechazada por est. destino</li><li>9 Cita Cancelada</li><li>12 No se presentó</li><li>27 Rechazada por paciente</li><li>29 Cancelada</li><li>30 Rechazada por sistema</li></ul></div>
+</div>
+<p>Distribución en el HAR (983 SIC, jun–sep 2026): Aceptada 314 · Enviada 223 · Nueva 131 · Egresada 113 · Cita confirmada 112 · Atendido 61 · Cita cancelada 26. Prioridad: 1 = 33, 2 = 720, 3 = 230 (etiquetas Alta/Media/Baja inferidas). <code>EsAuge</code> es string «Si»/«No».</p>
+
+<h2>Arquitectura v1.1</h2>
+<div class="tree">popup.html + popup-init.js      detecta sesión, abre app.html en pestaña completa
+app.html + app.js               orquestador: pestañas, eventos, estado (allData, sics, team)
+src/
+  config.js      constantes, estados SIC, grupos, prioridad, sexo
+  http.js        apiGet / apiPost / apiBlob con guardia de origen; rayenParams; chunk
+  auth.js        token desde la pestaña de Eloisa (fallback storage.session)
+  parser.js      fechas, formatRun (DV), decodeEdadExacta, parseCita, parseAtencion, matchKey
+  api.js         loadData: agenda por día (caché, días fallidos NO se marcan) → historial → merge
+  historial.js   HistorialAtencion por día, filtro oficial/citas, agregado diario del equipo, mergeHistorial
+  sic.js         IDs + detalle + contrarreferencias, parseSIC, isMine, contactsFromSICs (TTL 30 min)
+  cache.js       storage.local con runtime.lastError, stores por fecha, prune 13 meses, prefs
+  pdf.js         certificado / solicitud SIC → blob → nueva pestaña
+  export.js      CSV atenciones y SIC (Blob URL, anti-inyección de fórmulas)
+  notes.js       notas por paciente (clave = RUN con DV)
+  table.js       tabla de atenciones (15 columnas, diagnóstico, docs)
+  stats.js       tiles, filtros (conservan selección), filterRecords
+  ic-tab.js      tabla SIC con fila expandible, resumen, filtros
+  charts.js      SVG: mis atenciones (día, mes, previsión, tipo, dx) + equipo (profesión, profesional, tipo)
+  patient-panel.js  panel lateral: contacto, problemas, SIC del paciente, timeline, certificados
+  dom.js         esc, $, clases de badges, fillSelect
+tests/           node --test (parser, sic, historial) — sin dependencias
+</div>
+
+<h2>Storage</h2>
+<table>
+<tr><th>Clave</th><th>Contenido</th></tr>
+<tr><td><code>rayen_citas_v2</code></td><td>{fetchedDates[], records[] (citas parseadas), savedAt}. v2 = registros sin <code>_extra</code> y RUN corregido; la v1 se ignora.</td></tr>
+<tr><td><code>rayen_historial_v1</code></td><td>{fetchedDates[], records[] (atenciones compactas del oficial / con cita), extra.team{date8 → agregado}, savedAt}.</td></tr>
+<tr><td><code>rayen_sic_v1</code></td><td>{records[] (SIC compactas), savedAt, months}. Se refresca si &gt; 30 min o al pulsar «Actualizar IC».</td></tr>
+<tr><td><code>rayen_notes_v1</code></td><td>{ run_&lt;RUN+DV&gt; → nota }.</td></tr>
+<tr><td><code>rayen_prefs_v1</code></td><td>{months, historial}.</td></tr>
+</table>
+<p>Permiso <code>unlimitedStorage</code> añadido en el manifest: 6–12 meses de agenda + ficha + SIC superan los 10 MB por defecto.</p>
+
+<h2>Pendientes / ideas</h2>
+<ul>
+  <li><span class="tag warn">validar en vivo</span> Que <code>IdCita</code> del certificado sea el <code>Id</code> de la cita de la agenda (en el HAR el certificado se pidió con <code>IdCita=805645254</code>).</li>
+  <li><span class="tag warn">validar en vivo</span> La tercera consulta de IDs (<code>SOLICITUD_INTERCONSULTA</code> + estados de destino) para SIC enviadas fuera del hospital; si la API la rechaza, cuenta como «1 llamada falló» sin afectar el resto.</li>
+  <li>Activar <code>TraerPrescripciones</code>/<code>TraerExamenesSolicitados</code> en HistorialAtencion y mostrarlos en el panel del paciente.</li>
+  <li>Catálogo de profesionales (<code>FuncionarioPrestadorMini</code>) para etiquetar instrumentos en las SIC.</li>
+  <li>Descarga de <code>ArchivosAdjunto</code> (falta descubrir el endpoint que resuelve <code>PathAzure</code>).</li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rayen Atenciones</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:340px;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#2d3748}
+.logo{background:linear-gradient(135deg,#2d8c6e,#1a6b53);color:white;border-radius:10px;padding:16px;margin-bottom:14px}
+.logo h1{font-size:1rem;font-weight:700}
+.logo p{font-size:.75rem;opacity:.8;margin-top:2px}
+#status{font-size:.78rem;color:#718096;margin-bottom:12px;padding:8px 10px;border-radius:7px;background:white;border:1px solid #e2e8f0}
+#status.ok{color:#276749;background:#f0fff4;border-color:#9ae6b4}
+#status.err{color:#c53030;background:#fff5f5;border-color:#feb2b2}
+.btn{display:block;width:100%;padding:10px;border:none;border-radius:9px;cursor:pointer;font-size:.9rem;font-weight:600;text-align:center;margin-bottom:8px}
+.btn-main{background:linear-gradient(135deg,#2d8c6e,#1a6b53);color:white}
+.btn-main:hover{opacity:.9}
+</style>
+</head>
+<body>
+<div class="logo">
+  <h1>Rayen Atenciones</h1>
+  <p>Hospital Hanga Roa — Dr. Daniel Opazo Damiani</p>
+</div>
+<div id="status">Verificando sesión...</div>
+<button class="btn btn-main" id="btnOpen">Abrir en pestaña completa</button>
+<script src="popup-init.js"></script>
+</body>
+</html>
