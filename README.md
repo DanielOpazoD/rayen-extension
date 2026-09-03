@@ -21,8 +21,8 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 | **Hoy** | Una jornada enfocada: **Novedades** muestra qué cambió desde la última carga en las interconsultas vigiladas y la **agenda del día** presenta los antecedentes de cada paciente. Los pendientes no ocupan esta vista; siguen disponibles en Pacientes y en el contador del ícono. |
 | **Pacientes** | Una fila por persona, no por cita: última atención, número de visitas, diagnósticos activos (con GES), interconsultas abiertas, pendientes y tu nota. Ordenable por cualquier columna, con filtros rápidos (con IC abierta · con pendientes · GES · con nota mía · vistos una sola vez) y exportación CSV. Responde «¿quiénes son mis pacientes con X?», que antes obligaba a exportar a Excel. |
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
-| **Estadísticas** | Tiles con porcentajes (pacientes únicos, atenciones/día, inasistencia, GES, diagnóstico…) y gráficos SVG donde cada barra lleva valor y porcentaje: día, mes, hora, sexo, grupo etario, visitas por paciente, estado, razón, GES, tipo, diagnósticos, certeza; interconsultas por especialidad, estado, prioridad y contrarreferencia (% sin CR por especialidad); equipo del hospital por profesión/profesional/tipo. |
-| **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos, contrarreferencias, PDF. Rol explícito: **Emití / Recibí / Otra**. |
+| **Estadísticas** | Tiles con porcentajes (pacientes únicos, atenciones/día, inasistencia, GES, diagnóstico…) y gráficos SVG donde cada barra lleva valor y porcentaje: día, mes, hora, sexo, grupo etario, visitas por paciente, estado, razón, GES, tipo, diagnósticos y certeza; interconsultas por especialidad, estado y prioridad; equipo del hospital por profesión/profesional/tipo. |
+| **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos y PDF. Rol explícito: **Emití / Recibí / Otra**. La extensión no presenta como información clínica el metadato administrativo que Rayen denomina contrarreferencia. |
 | **Panel del paciente** | Al hacer clic en un nombre: ficha completa (10 años, todos los profesionales) en 4 pestañas — Diagnósticos/antecedentes, Atenciones (anamnesis, prescripciones, exámenes, próximo control), Interconsultas, Recetas (cada receta con su PDF). Datos administrativos y alertas tras **Datos**. Botón **PDF ▾** con la historia imprimible: atenciones de todos los profesionales / solo médicos / solo mías, interconsultas del paciente, o historia completa (atenciones + IC + fármacos y recetas). |
 | **Explorador API** | Consultas manuales a la API con la sesión activa (solo al origen de Eloisa). |
 | **Exportar** | Excel (.xls), CSV, HTML, PDF (vía diálogo de impresión), JSON — siempre lo filtrado en la tabla. |
@@ -34,7 +34,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). **Tipo de atención** permite combinar varias opciones mediante casillas. Lo mismo en Interconsultas.
 - **Período**: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año*; las fechas explícitas mandan sobre el chip.
 - La altura de las tablas se **mide**, no se cablea: al plegar los filtros la tabla crece sola.
-- **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
+- **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado y solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
 - **Hoy**: flechas ◀ ▶, selector de fecha y botón «Hoy» para ver cualquier jornada.
 - **Preferencias** (cabecera): refresco automático (apagado / 5 / 15 / 30 / 60 min), bloqueo por inactividad (idem), pestaña inicial, umbrales en días de cada regla de pendientes, especialidades vigiladas para Novedades y gestión de datos locales. Todo se guarda al instante en `chrome.storage.local` (`rayen_prefs_v1`) junto con densidad, columnas y orden de la tabla.
 - La búsqueda de Atenciones también cubre las notas propias.
@@ -47,7 +47,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
 - **Cancelar** detiene una carga larga sin perder lo ya descargado (cancelación cooperativa: termina el lote en vuelo y no encola más).
 - **Actualizar estados históricos**: los días que todavía contienen citas iniciadas, confirmadas, agendadas o en espera se vuelven a consultar. Si una atención se completa posteriormente en Eloisa, la extensión actualiza tanto su estado como su ficha clínica sin borrar todo el caché.
-- **Sincronización verificable**: una franja bajo el estado general separa Agenda, Ficha clínica e Interconsultas. Indica último intento, último éxito completo y fechas pendientes; «Reintentar pendientes» vuelve a pedir solo esas fechas y nunca presenta una carga parcial como completa.
+- **Sincronización verificable y compacta**: junto al total aparece únicamente el estado global (`Al día`, `Pendiente` o `Error`). Al abrirlo se muestran Agenda, Ficha clínica e Interconsultas, con último intento, último éxito completo y fechas pendientes; «Reintentar» vuelve a pedir solo esas fechas y nunca presenta una carga parcial como completa.
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
 - Los estados vacíos traen el botón para cargar, en vez de solo decirlo.
 
@@ -62,22 +62,15 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 
 ## Pendientes: las reglas
 
-Las interconsultas del hospital son **internas** (origen y destino son el nodo 5576): el especialista está en el mismo edificio. Por eso una contrarreferencia que falta es una brecha de registro, no de logística. En el trimestre analizado, **131 de 174** solicitudes atendidas no tenían contrarreferencia en Rayen.
-
 Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `config.js → pendientes`.
 
 | Regla | Dato | Umbral |
 |---|---|---|
-| Atendida sin contrarreferencia | `contrarreferencias.length === 0` en SIC atendida/egresada | 30 días |
 | Interconsulta sin cursar | SIC en estado «Nueva» (13) | 21 días |
 | Cita pasada sin resolver | `fechaCita` anterior a hoy y estado agendada/confirmada | 7 días |
 | Control vencido sin agendar | `OrdenAtencionInterna.FechaSugerida` pasada, sin atención posterior del paciente | 1 día |
 
-**Honestidad incorporada**: «sin contrarreferencia en Rayen» no es «no llegó información». Pudo llegar por correo, en papel o de palabra. La interfaz lo dice en cada lugar donde aparece.
-
-**Memoria de cambio** (`src/watch.js`): guarda una huella de las SIC de las especialidades vigiladas (`config.js → watchEspecialidades`, por defecto Gastroenterología Adulto y Reumatología) y en cada carga reporta qué cambió: contrarreferencia que llegó, cambio de estado, cita confirmada, solicitud nueva. La primera lectura solo registra.
-
-**Contrarreferencia**: columna propia en Interconsultas (fecha y profesional, o «Falta» si la solicitud está atendida), bloque destacado al expandir la fila, y filtro «Falta — atendida y sin contrarreferencia». Los tiles del resumen filtran al hacer clic. Rayen guarda quién y cuándo contrarrefirió, no el texto: el contenido está en el PDF de la solicitud.
+**Memoria de cambio** (`src/watch.js`): guarda una huella de las SIC de las especialidades vigiladas (`config.js → watchEspecialidades`, por defecto Gastroenterología Adulto y Reumatología) y en cada carga reporta cambios de estado, citas confirmadas y solicitudes nuevas. La primera lectura solo registra.
 
 ## Permisos y por qué
 

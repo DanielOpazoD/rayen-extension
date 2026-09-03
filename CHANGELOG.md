@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 2.6.0 — 2026-09-03
+
+- Integra la salud de sincronización en la misma línea compacta del total de atenciones y mueve el detalle técnico a un panel desplegable, sin desplazar el contenido.
+- Retira de filtros, tablas, pendientes, estadísticas, paneles, reportes y exportaciones el metadato administrativo que Rayen rotula como contrarreferencia.
+- Evita la petición adicional usada exclusivamente para obtener ese metadato y conserva la ruta real de interconsultas de Rayen sin presentarla como un concepto clínico.
+
 ## 2.5.0 — 2026-09-03
 
 - Separa las 569 líneas del sistema visual de `app.html` hacia `styles/app.css`, sin cambiar su resultado renderizado.
