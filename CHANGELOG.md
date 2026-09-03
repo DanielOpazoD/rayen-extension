@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 2.3.0 — 2026-09-03
+
+- Permite combinar varios tipos de atención desde un selector moderno con casillas, resumen compacto y uso por teclado.
+- Reduce el estado de una carga terminada al dato relevante: el total de atenciones.
+- Retira el bloque de pendientes de Hoy para devolver el foco a las novedades y a la jornada; los pendientes siguen disponibles en Pacientes y en el contador de la extensión.
+
 ## 2.2.0 — 2026-09-03
 
 - Muestra por separado el estado de Agenda, Ficha clínica e Interconsultas, con último intento y última actualización completa.

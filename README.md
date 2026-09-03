@@ -29,7 +29,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 
 ## Filtros, períodos y ajustes
 
-- **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). Lo mismo en Interconsultas.
+- **Una sola fila de controles**: buscador + chips de período + `Filtros`. Los demás (estado, tipo, diagnóstico, IC, fecha exacta, día, sexo, previsión, prestador y rango desde–hasta) viven plegados; el botón muestra cuántos hay activos (`Filtros · 3`). **Tipo de atención** permite combinar varias opciones mediante casillas. Lo mismo en Interconsultas.
 - **Período**: chips *Todo · Hoy · Esta semana · Este mes · 30 días · 90 días · Este año*; las fechas explícitas mandan sobre el chip.
 - La altura de las tablas se **mide**, no se cablea: al plegar los filtros la tabla crece sola.
 - **Interconsultas**: cabeceras ordenables (fecha, días, paciente, especialidad, prioridad, estado, contrarreferencia, solicitante), filtros de GES y prioridad, exportación CSV y Excel de lo filtrado.
