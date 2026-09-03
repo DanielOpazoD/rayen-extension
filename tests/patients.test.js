@@ -45,7 +45,7 @@ test('buildPatients cruza interconsultas abiertas y pendientes por RUN', () => {
   const p = buildPatients(
     [rec()],
     [sic({ id: 90 }), sic({ id: 91, grupo: 'cerrada', estadoId: 20, estado: 'Egresada' })],
-    [{ run: '1K', titulo: 'Sin contrarreferencia', dias: 40 }, { run: '9Z', titulo: 'otro', dias: 5 }],
+    [{ run: '1K', titulo: 'Interconsulta sin cursar', dias: 40 }, { run: '9Z', titulo: 'otro', dias: 5 }],
   );
   assert.equal(p[0].sics.length, 2);
   assert.equal(p[0].abiertas.length, 1, 'solo pendiente/en curso cuentan como abiertas');

@@ -70,13 +70,11 @@ function sicLine(s, role, extra = '') {
   const who = role === 'in'    ? (s.registrador.nombre ? `de ${s.registrador.nombre}` : '')
             : role === 'other' ? (s.registrador.nombre ? `por ${s.registrador.nombre}` : '')
             : (s.ejecutor.nombre ? `a ${s.ejecutor.nombre}` : '');
-  const cr  = s.contrarreferencias.length ? ` · CR ✓` : '';
-  const tip = `SIC #${s.id} · ${s.fecha} · ${s.estado}${who ? ` · ${who}` : ''}${s.cie10 ? ` · ${s.cie10}` : ''}${s.diagnostico ? ` · ${s.diagnostico}` : ''}${cr}${extra ? `\n${extra}` : ''}`;
+  const tip = `SIC #${s.id} · ${s.fecha} · ${s.estado}${who ? ` · ${who}` : ''}${s.cie10 ? ` · ${s.cie10}` : ''}${s.diagnostico ? ` · ${s.diagnostico}` : ''}${extra ? `\n${extra}` : ''}`;
   return `<div class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="0" data-tip="${esc(tip)}">` +
     `<span class="rol rol-${role}">${ROLE_LABEL[role]}</span>` +
     `<span class="ic-esp">${esc(s.especialidad)}</span>` +
     stateDot(s.estado, { tone: sicTone(s.grupo), small: true }) +
-    (s.contrarreferencias.length ? `<span class="ic-cr">CR</span>` : '') +
     `</div>`;
 }
 

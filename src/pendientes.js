@@ -7,8 +7,7 @@ import { dateToInt, localDateStr } from './parser.js';
  * itself does not belong in a clinical tool.
  *
  * Interconsultas at Hospital Hanga Roa are internal (origin and destination are
- * both node 5576): the specialist is in the same building. That makes a missing
- * contrarreferencia a documentation gap, not a logistics one.
+ * both node 5576): the specialist is in the same building.
  */
 
 const DAY = 86_400_000;
@@ -41,25 +40,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
   const soloMias = opts.soloMias !== false;
   const out = [];
 
-  // ── 1. Atendida sin contrarreferencia ─────────────────────────
-  // 75% of attended SIC had none in the captured quarter. The wording must stay
-  // honest: Rayen has no record — the report may well have arrived by another route.
-  for (const s of sics) {
-    if (!['atendida', 'cerrada'].includes(s.grupo)) continue;
-    if (soloMias && !mine(s)) continue;
-    if (s.contrarreferencias.length) continue;
-    const dias = s.antiguedadDias ?? daysSince(s.fecha8, hoy8) ?? 0;
-    if (dias < U.crDias) continue;
-    out.push({
-      tipo: 'cr-faltante', severidad: 2, dias, sicId: s.id, run: s.paciente.run,
-      paciente: s.paciente.nombre,
-      titulo: `Sin contrarreferencia · ${s.especialidad}`,
-      detalle: `Atendida (${s.estado}), ${rol(s)}. Rayen no registra contrarreferencia.`,
-      nota: 'Puede haber llegado por otra vía (correo, papel, conversación).',
-    });
-  }
-
-  // ── 2. SIC que nunca salió del hospital ───────────────────────
+  // ── 1. SIC que nunca salió del hospital ───────────────────────
   for (const s of sics) {
     if (s.estadoId !== 13) continue;               // Nueva
     if (soloMias && !mine(s)) continue;
@@ -73,7 +54,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
     });
   }
 
-  // ── 3. Cita pasada y la SIC sigue sin cerrarse ────────────────
+  // ── 2. Cita pasada y la SIC sigue sin cerrarse ────────────────
   for (const s of sics) {
     if (![3, 4].includes(s.estadoId)) continue;    // agendada / confirmada
     if (soloMias && !mine(s)) continue;
@@ -88,7 +69,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
     });
   }
 
-  // ── 4. Control que él mismo pidió, vencido y sin cita posterior ──
+  // ── 3. Control que él mismo pidió, vencido y sin cita posterior ──
   // OrdenAtencionInterna comes free with the day-level ficha; nothing extra is fetched.
   const porPaciente = new Map();
   for (const r of allData) {
@@ -134,7 +115,6 @@ export function resumirPendientes(pendientes) {
 }
 
 const TIPO_LABEL = {
-  'cr-faltante':     'Sin contrarreferencia',
   'sic-nueva':       'Interconsultas sin cursar',
   'cita-pasada':     'Citas pasadas sin resolver',
   'control-vencido': 'Controles vencidos',

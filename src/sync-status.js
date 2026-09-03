@@ -24,16 +24,16 @@ function formatItem(item) {
 
 export function syncOverview(health) {
   const rows = SYNC_SOURCES.map(source => ({ source, value: health?.[source] })).filter(row => row.value);
-  if (!rows.length) return { text: 'Sin sincronizaciones registradas', tone: 'neutral', pending: 0 };
+  if (!rows.length) return { text: 'Sin comprobar', tone: 'neutral', pending: 0 };
   const pending = rows.reduce((sum, row) => sum + (row.value.failedItems?.length ?? 0), 0);
-  if (rows.some(row => row.value.status === 'running')) return { text: 'Actualización en curso', tone: 'info', pending };
-  if (rows.some(row => row.value.status === 'error')) return { text: 'Hay fuentes sin actualizar', tone: 'bad', pending };
-  if (rows.some(row => row.value.status === 'partial')) return { text: 'Actualización parcial', tone: 'warn', pending };
-  if (pending) return { text: 'Actualización parcial', tone: 'warn', pending };
+  if (rows.some(row => row.value.status === 'running')) return { text: 'Sincronizando', tone: 'info', pending };
+  if (rows.some(row => row.value.status === 'error')) return { text: 'Error', tone: 'bad', pending };
+  if (rows.some(row => row.value.status === 'partial')) return { text: 'Pendiente', tone: 'warn', pending };
+  if (pending) return { text: 'Pendiente', tone: 'warn', pending };
   const checked = rows.filter(row => row.value.status !== 'disabled');
   const complete = rows.length === SYNC_SOURCES.length && checked.length > 0
     && checked.every(row => ['ok', 'cached'].includes(row.value.status));
-  return { text: complete ? 'Fuentes disponibles' : 'Comprobación incompleta', tone: complete ? 'ok' : 'neutral', pending };
+  return { text: complete ? 'Al día' : 'Sin comprobar', tone: complete ? 'ok' : 'neutral', pending };
 }
 
 export async function renderSyncStatus(health = null) {
@@ -46,6 +46,8 @@ export async function renderSyncStatus(health = null) {
   const overview = syncOverview(data);
   $('syncOverall').textContent = overview.text;
   $('syncOverall').className = `sync-overall ${overview.tone}`;
+  $('btnSyncDetails').className = `sync-summary ${overview.tone}`;
+  $('btnSyncDetails').setAttribute('aria-label', `${overview.text}. ${overview.pending ? `${overview.pending} pendientes. ` : ''}${$('syncDetails').hidden ? 'Ver detalle' : 'Ocultar detalle'}`);
   $('btnRetrySync').hidden = !hasRetryableSync(data);
 
   $('syncSources').innerHTML = SYNC_SOURCES.map(source => {
@@ -70,7 +72,7 @@ export function initSyncStatus(onRetry) {
     const open = details.hidden;
     details.hidden = !open;
     $('btnSyncDetails').setAttribute('aria-expanded', String(open));
-    $('btnSyncDetails').textContent = open ? 'Ocultar detalle' : 'Ver detalle';
+    $('btnSyncDetails').setAttribute('aria-label', `${$('syncOverall').textContent}. ${open ? 'Ocultar detalle' : 'Ver detalle'}`);
   });
   $('btnRetrySync').addEventListener('click', onRetry);
   recoverStaleSyncSources().then(() => renderSyncStatus()).catch(() => {});

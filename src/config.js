@@ -38,7 +38,6 @@ export const CONFIG = Object.freeze({
 
   /** Day thresholds at which each rule stops being noise. Clinical judgement. */
   pendientes: {
-    crDias:      30,  // atendida sin contrarreferencia registrada
     nuevaDias:   21,  // SIC que nunca salió del estado "Nueva"
     citaDias:     7,  // cita ya pasada y la SIC sigue abierta
     controlDias:  1,  // control sugerido vencido

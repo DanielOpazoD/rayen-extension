@@ -54,8 +54,6 @@ const REPORT_CSS = `
   .item{margin-left:8px;padding-left:8px;border-left:2px solid #d7dcdf}
   .item small{display:block;color:#666f74}
   .sic{border:1px solid #e4e7e7;border-radius:6px;padding:9px 12px;margin-bottom:8px;break-inside:avoid}
-  .sic .cr{margin-top:6px;padding:6px 8px;border-radius:4px;background:#e7f3ec;color:#0f6b46}
-  .sic .cr.miss{background:#f8f0dc;color:#7d5200}
   .ges{background:#1a7f5f;color:#fff;font-size:9px;padding:0 4px;border-radius:3px;margin-left:4px}
   .muted{color:#98a1a6}
   .foot{margin-top:24px;padding-top:8px;border-top:1px solid #e4e7e7;font-size:10px;color:#666f74}
@@ -79,15 +77,12 @@ function visitHTML(v, officerId) {
 }
 
 function sicHTML(s) {
-  const c = s.contrarreferencias?.[0];
   return `<div class="sic">
     <div class="vh"><b>${esc(s.fecha)}</b><span class="t">${esc(s.especialidad)}</span><span class="muted">· ${esc(s.estado)} · SIC #${s.id}</span>${s.esAuge ? '<span class="ges">GES</span>' : ''}</div>
     <div class="who">Solicitó ${esc(s.registrador?.nombre || '—')}${s.ejecutor?.nombre ? ` · Ejecutor ${esc(s.ejecutor.nombre)}` : ''}${s.motivo ? ` · ${esc(s.motivo)}` : ''}</div>
     ${s.diagnostico ? `<div class="dx">${s.cie10 ? `<b>${esc(s.cie10)}</b> ` : ''}${esc(s.diagnostico)}</div>` : ''}
     ${s.fundamentos ? `<div class="sec"><span class="sec-l">Fundamentos clínicos</span><p>${esc(s.fundamentos)}</p></div>` : ''}
     ${s.examenes ? `<div class="sec"><span class="sec-l">Exámenes realizados</span><p>${esc(s.examenes)}</p></div>` : ''}
-    ${c ? `<div class="cr">Contrarreferencia ${esc(c.fecha)} · ${esc(c.profesional)} (${esc(c.especialidad)})</div>`
-        : ['atendida', 'cerrada'].includes(s.grupo) ? `<div class="cr miss">Atendida sin contrarreferencia registrada en Rayen</div>` : ''}
   </div>`;
 }
 

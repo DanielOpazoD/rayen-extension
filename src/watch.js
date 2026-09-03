@@ -6,8 +6,8 @@ import { storageGet, storageSet } from './cache.js';
  *
  * Every load used to overwrite the previous one, so the extension could only
  * ever show a snapshot. This keeps the previous state of the watched SICs and
- * reports what moved since the last look: a state change, a contrarreferencia
- * that arrived, a cita that got confirmed.
+ * reports what moved since the last look: a state change or a cita that got
+ * confirmed.
  *
  * Scoped on purpose. Watching all 847 SIC would produce noise; watching the
  * telemedicine specialties he resolves himself produces a morning briefing.
@@ -27,7 +27,6 @@ function fingerprint(s) {
     estadoId: s.estadoId,
     estado:   s.estado,
     grupo:    s.grupo,
-    cr:       s.contrarreferencias.length,
     cita:     s.fechaCita || '',
   };
 }
@@ -37,7 +36,6 @@ function isWatched(s, especialidades) {
 }
 
 const LABEL = {
-  contrarreferencia: 'Llegó contrarreferencia',
   estado: 'Cambió de estado',
   cita:   'Cambió la cita',
   nueva:  'Interconsulta nueva',
@@ -74,11 +72,6 @@ export function computeCambios(sics, especialidades, snapshot = {}) {
       cambios.push({ ...base, tipo: 'nueva', label: LABEL.nueva, antes: '', ahora: s.estado });
       continue;
     }
-    if (fp.cr > prev.cr) {
-      const c = s.contrarreferencias[0];
-      cambios.push({ ...base, tipo: 'contrarreferencia', label: LABEL.contrarreferencia,
-        antes: 'sin contrarreferencia', ahora: c ? `${c.fecha} · ${c.profesional}` : 'registrada' });
-    }
     if (fp.estadoId !== prev.estadoId) {
       cambios.push({ ...base, tipo: 'estado', label: LABEL.estado, antes: prev.estado, ahora: s.estado });
     }
@@ -87,8 +80,7 @@ export function computeCambios(sics, especialidades, snapshot = {}) {
     }
   }
 
-  // Arrivals first, then state moves — that is the order they matter in
-  const orden = { contrarreferencia: 0, nueva: 1, estado: 2, cita: 3 };
+  const orden = { nueva: 0, estado: 1, cita: 2 };
   cambios.sort((a, b) => (orden[a.tipo] - orden[b.tipo]) || b.dias - a.dias);
 
   return { cambios, firstRun, next, vigiladas: watched.length };

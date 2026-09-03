@@ -28,11 +28,27 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
 
   await page.locator('#btnFetch').click();
   await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones$/);
+  await expect(page.locator('#syncOverall')).toHaveText(/^(Al día|Pendiente)$/);
   const total = Number((await page.locator('#statusBar').innerText()).split(' ')[0]);
   expect(total).toBeGreaterThan(0);
 
+  const compactHeader = await page.locator('.status-line').boundingBox();
+  expect(compactHeader.height).toBeLessThanOrEqual(40);
+  const tabsBeforeDetails = await page.locator('.tabs').first().boundingBox();
+  await page.locator('#btnSyncDetails').click();
+  await expect(page.locator('#syncDetails')).toBeVisible();
+  const tabsAfterDetails = await page.locator('.tabs').first().boundingBox();
+  expect(tabsAfterDetails.y).toBe(tabsBeforeDetails.y);
+  await page.locator('#btnSyncDetails').click();
+  await expect(page.locator('#syncDetails')).toBeHidden();
+
   await expect(page.locator('#todayContent')).not.toContainText('Citas pasadas sin resolver');
   await expect(page.locator('#todayContent')).not.toContainText('Sin contrarreferencia');
+
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Interconsultas' }).click();
+  await expect(page.locator('#tab-interconsultas')).toBeVisible();
+  await expect(page.locator('#tab-interconsultas')).not.toContainText(/contrarreferencia/i);
+  await expect(page.locator('.sic-table thead th')).toHaveCount(8);
 
   await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones' }).click();
   await page.locator('#btnFilters').click();
