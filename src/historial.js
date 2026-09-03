@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { apiPost, chunk } from './http.js';
+import { apiPost, chunk, session } from './http.js';
 import { parseAtencion, matchKey, localDateStr } from './parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 
@@ -104,6 +104,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
     if (okDates.length) await saveStore(store, okDates, keep);
     done += batch.length;
     onProgress(Math.round((done / toFetch.length) * 100));
+    if (session.expired) break;
   }
 
   const wanted = new Set(dates8);
@@ -130,7 +131,10 @@ export function mergeHistorial(citas, atenciones) {
 
   const used = new Set();
   const out  = citas.map(c => {
-    const a = idx.get(matchKey(c))?.find(x => !used.has(x.id));
+    // Same patient may have several atenciones that day (kinesiólogo, matrona…):
+    // prefer the one where the officer is a prestador, then the earliest unused.
+    const cands = (idx.get(matchKey(c)) ?? []).filter(x => !used.has(x.id));
+    const a = cands.find(isOfficer) ?? cands[0];
     if (!a) return c;
     used.add(a.id);
     return {

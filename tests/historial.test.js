@@ -60,6 +60,17 @@ test('mergeHistorial keeps a cita untouched when the ficha does not know that da
   assert.deepEqual(c.diagnosticos, []);
 });
 
+test('mergeHistorial prefers the atención where the officer is a prestador over an earlier one by another professional', () => {
+  const kine   = atencion({ Id: 10, Fecha: '20260902 083000', FuncionariosPrestadores: [{ Id: 5, NombreCompleto: 'Kine Uno', NombreInstrumento: 'Kinesiólogo(a)' }],
+    Diagnosticos: [{ DescripcionClasificacion: 'Bronquitis- (Confirmada)', DescripcionDiagnostico: 'Kine dx' }] });
+  const mine   = atencion({ Id: 11, Fecha: '20260902 113000',
+    Diagnosticos: [{ DescripcionClasificacion: 'HTA- (Confirmada)', DescripcionDiagnostico: 'Mi dx' }] });
+  const out = mergeHistorial([cita({ id: 100, hora: '11:00' })], [kine, mine]);
+  assert.equal(out.length, 1, 'the kine atención is not appended as an extra row (not the officer\'s)');
+  assert.equal(out[0].atencionId, 11);
+  assert.equal(out[0].diagnosticos[0].nombre, 'Mi dx');
+});
+
 test('aggregateTeam counts atenciones per instrument, prestador and tipo', () => {
   const agg = aggregateTeam([
     atencion({ Id: 1 }),

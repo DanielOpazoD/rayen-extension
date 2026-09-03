@@ -2,7 +2,8 @@ import { loadData, getRawSamples }        from './src/api.js';
 import { getToken }                       from './src/auth.js';
 import { attachNotes, saveNote }          from './src/notes.js';
 import { exportCSV, exportSICsCSV, exportXLS, exportHTML, exportJSON, exportPDF } from './src/export.js';
-import { clearAllCaches, loadPrefs, savePrefs } from './src/cache.js';
+import { clearAllCaches, clearEverything, loadPrefs, savePrefs } from './src/cache.js';
+import { AuthError } from './src/http.js';
 import { renderCharts }                   from './src/charts.js';
 import { initPanel, openPanel }           from './src/patient-panel.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from './src/explorer.js';
@@ -49,6 +50,33 @@ function updateBadge() {
   } catch { /* not in extension context */ }
 }
 
+// ── Session expiry ────────────────────────────────────────────
+let expired = false;
+
+async function openEloisa() {
+  try {
+    const tabs = await chrome.tabs.query({ url: `${CONFIG.base}/*` });
+    if (tabs[0]) await chrome.tabs.update(tabs[0].id, { active: true });
+    else await chrome.tabs.create({ url: CONFIG.base });
+  } catch { window.open(CONFIG.base, '_blank'); }
+}
+
+/** One clear message instead of "N días fallaron"; auto-refresh stops until the session is back. */
+function showExpired() {
+  expired = true;
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  const el = $('statusBar');
+  el.className = 'err';
+  el.innerHTML = `Sesión de Eloisa vencida. Inicia sesión de nuevo y vuelve a esta pestaña: se recargará sola. ` +
+    `<button class="btn-mini" id="btnOpenEloisa">Abrir Eloisa</button>`;
+  $('btnOpenEloisa').addEventListener('click', openEloisa);
+}
+
+// When the user comes back after logging in again, retry once automatically
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && expired && !$('btnFetch').disabled) handleFetch();
+});
+
 function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
@@ -79,7 +107,7 @@ async function applyResult(result) {
   render();
   renderCharts(allData, team, $('chartsSection'));
   updateBadge();
-  ['statsBar','chartsSection','barEl','tblWrap','exportWrap','btnClearCache'].forEach(id => { $(id).style.display = ''; });
+  ['statsBar','chartsSection','barEl','tblWrap','exportWrap','clearWrap'].forEach(id => { $(id).style.display = ''; });
   $('statsEmpty').style.display = 'none';
 }
 
@@ -126,7 +154,9 @@ async function handleFetch() {
     return;
   }
 
-  await applyResult(result);
+  if (result.records.length) await applyResult(result);
+  if (result.sessionExpired) { showExpired(); return; }
+  expired = false;
   const s = summarize(result);
   setStatus(s.text, s.cls);
 
@@ -141,6 +171,7 @@ async function silentRefresh() {
   try { result = await loadData(loadedMonths, () => {}, { historial: $('optHistorial').checked }); }
   catch { return; }
   if (!result) return;
+  if (result.sessionExpired) { showExpired(); return; }
   const scrollY = window.scrollY;
   await applyResult(result);
   window.scrollTo(0, scrollY);
@@ -186,7 +217,8 @@ async function ensureSICs(force = false) {
     $('sicStatus').textContent = `${sics.length} SIC · ${res.fromCache ? 'caché' : 'red'} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
     $('btnSicExport').style.display = '';
   } catch (err) {
-    $('sicStatus').textContent = `Error: ${err.message}`;
+    $('sicStatus').textContent = err instanceof AuthError ? 'Sesión de Eloisa vencida.' : `Error: ${err.message}`;
+    if (err instanceof AuthError) showExpired();
   } finally {
     sicLoading = false;
     $('btnSicRefresh').disabled = false;
@@ -314,20 +346,33 @@ $('exportMenu').addEventListener('click', async e => {
   catch (err) { setStatus(`No se pudo exportar: ${err.message}`, 'err'); }
 });
 document.addEventListener('click', e => { if (!e.target.closest('#exportWrap')) $('exportMenu').classList.remove('open'); });
-$('btnClearCache').addEventListener('click', async () => {
-  if (!confirm('¿Borrar el caché local (agenda, ficha clínica e interconsultas)? Las notas se conservan.')) return;
+$('btnClearCache').addEventListener('click', e => { e.stopPropagation(); $('clearMenu').classList.toggle('open'); });
+$('clearMenu').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-clear]');
+  if (!b) return;
+  $('clearMenu').classList.remove('open');
+  const all = b.dataset.clear === 'all';
+  const msg = all
+    ? '¿Borrar TODOS los datos de la extensión?\n\nAgenda, ficha clínica, interconsultas, NOTAS, preferencias y el token de sesión. No se puede deshacer.'
+    : '¿Borrar el caché local (agenda, ficha clínica e interconsultas)?\n\nLas notas y preferencias se conservan.';
+  if (!confirm(msg)) return;
+  if (all && !confirm('Última confirmación: se borrarán también tus notas por paciente. ¿Continuar?')) return;
   try {
-    await clearAllCaches();
-    sics = []; sicLoadedFor = 0; indexSICs();
-    setStatus('Caché borrado. Pulsa Actualizar para recargar desde la red.', 'idle');
+    if (all) await clearEverything(); else await clearAllCaches();
+    allData = []; team = {}; sics = []; sicLoadedFor = 0; indexSICs();
+    render(); buildStats(allData, team);
+    setStatus(all ? 'Todos los datos borrados.' : 'Caché borrado. Pulsa Actualizar para recargar desde la red.', 'idle');
   } catch (err) {
-    setStatus(`No se pudo borrar el caché: ${err.message}`, 'err');
+    setStatus(`No se pudo borrar: ${err.message}`, 'err');
   }
 });
+document.addEventListener('click', e => { if (!e.target.closest('#clearWrap')) $('clearMenu').classList.remove('open'); });
 
+const debounce = (fn, ms) => { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; };
+const renderSoon = debounce(render, 150);
 FILTER_IDS.forEach(id => {
-  $(id).addEventListener('input',  render);
-  $(id).addEventListener('change', render);
+  // Typing re-renders after a pause; selects re-render at once
+  $(id).addEventListener(id === 'search' ? 'input' : 'change', id === 'search' ? renderSoon : render);
 });
 $('btnClearFilters').addEventListener('click', () => {
   FILTER_IDS.forEach(id => { $(id).value = ''; });

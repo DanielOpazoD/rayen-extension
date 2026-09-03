@@ -37,7 +37,9 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 
 - Los datos clínicos descargados se guardan **en claro** en `chrome.storage.local` del perfil de Chrome (hasta 13 meses; se podan solos). Úsala solo en un equipo propio con disco cifrado.
 - El token de sesión vive en `chrome.storage.session` (memoria): no se escribe en disco.
-- **✕ Borrar caché** elimina agenda, ficha y SIC. Las notas propias (`rayen_notes_v1`) se conservan.
+- **✕ Borrar ▾ → Borrar caché** elimina agenda, ficha y SIC; las notas propias (`rayen_notes_v1`) se conservan. **Borrar todos los datos** vacía todo el almacenamiento de la extensión (notas, preferencias y token incluidos) tras doble confirmación.
+- El reporte que se abre para imprimir/PDF se borra del almacenamiento en cuanto se muestra.
+- Si la sesión de Eloisa vence (HTTP 401/403), la carga se detiene en la primera llamada fallida y la barra de estado ofrece **Abrir Eloisa**; al volver a esta pestaña con sesión nueva, se recarga sola.
 - Los archivos exportados contienen datos de pacientes: trátalos como tal.
 
 ## Desarrollo

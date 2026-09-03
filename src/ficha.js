@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { apiGet, apiPost } from './http.js';
+import { apiGet, apiPost, session } from './http.js';
 import { parseAtencion, fmtDate, localDateStr, formatRun } from './parser.js';
 
 /**
@@ -188,7 +188,7 @@ export function parseProgramas(list) {
   return [...by.values()].sort((a, b) => b.fechaRaw.localeCompare(a.fechaRaw));
 }
 
-function parseMaster(u) {
+export function parseMaster(u) {
   if (!u) return null;
   const tel = (u.Telefonos ?? []).filter(t => !t.Eliminado && !t.EsBorrado).map(t => t.TelefonoDescripcion).filter(Boolean);
   const nameOf = v => typeof v === 'string' ? v : (v?.Nombre ?? '');
@@ -265,6 +265,7 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
     apiGet(token, `/API/api/rayen/FichaClinica/EventoAdverso/AlertaRAM/${id}`).catch(() => []),
   ]);
 
+  if (session.expired) errors.push('Sesión de Eloisa vencida — vuelve a iniciar sesión');
   const visits = (Array.isArray(hist) ? hist : []).map(parseFichaAtencion)
     .sort((a, b) => (b.fecha8 + b.hora).localeCompare(a.fecha8 + a.hora));
 

@@ -88,6 +88,14 @@ export async function clearAllCaches() {
   await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey]);
 }
 
+/** Wipes everything the extension stored: caches, notes, prefs, pending report and the session token. */
+export async function clearEverything() {
+  await new Promise((resolve, reject) =>
+    chrome.storage.local.clear(() => { const err = lastErr(); err ? reject(err) : resolve(); })
+  );
+  try { await chrome.storage.session.clear(); } catch { /* session storage may be unavailable */ }
+}
+
 // ── Prefs ──────────────────────────────────────────────────────
 
 export async function loadPrefs() {

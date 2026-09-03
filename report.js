@@ -17,6 +17,7 @@
   }
   document.getElementById('reportCss').textContent = data.css ?? '';
   out.innerHTML = data.fragment; // built by the extension itself from escaped values
+  chrome.storage.local.remove('rayen_report', () => void chrome.runtime.lastError); // PHI: do not leave it on disk
   document.getElementById('btnPrint').addEventListener('click', () => window.print());
   if (new URLSearchParams(location.search).get('print') === '1') {
     setTimeout(() => window.print(), 300);

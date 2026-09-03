@@ -1,5 +1,5 @@
 import { CONFIG, SIC_ESTADOS, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO, sicGrupo } from './config.js';
-import { apiGet, apiPost, rayenParams, chunk } from './http.js';
+import { apiGet, apiPost, rayenParams, chunk, session, AuthError } from './http.js';
 import { formatRun, fmtDate, localDateStr } from './parser.js';
 import { storageGet, storageSet } from './cache.js';
 
@@ -158,6 +158,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     listIds(token, 'RECEPCION_CONTRALOR',     from8, to8, SIC_ESTADOS_DESTINO, 'IDNODODESTINO'),
     listIds(token, 'SOLICITUD_INTERCONSULTA', from8, to8, SIC_ESTADOS_DESTINO, 'IDNODOORIGEN'),
   ]);
+  if (session.expired) throw new AuthError(401);
   let failed = (a === null) + (b === null);
   const ids = [...new Set([...(a ?? []), ...(b ?? []), ...(c ?? [])])];
   onProgress(5);
@@ -170,6 +171,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     res.forEach(r => r === null ? failed++ : details.push(...r));
     done += batch.length;
     onProgress(5 + Math.round((done / Math.max(groups.length, 1)) * 75));
+    if (session.expired) throw new AuthError(401);
   }
 
   // Contrarreferencias, grouped by SIC id

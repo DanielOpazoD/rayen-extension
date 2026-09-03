@@ -7,7 +7,7 @@ import { storageSet } from './cache.js';
  * CSV cell: quoted, quotes doubled, and formula-leading characters neutralised
  * so a note like "=HYPERLINK(...)" cannot execute when opened in Excel.
  */
-function cell(v) {
+export function csvCell(v) {
   let s = String(v ?? '');
   if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return `"${s.replace(/"/g, '""')}"`;
@@ -69,7 +69,7 @@ const SIC_COLS = [
 // ── CSV ────────────────────────────────────────────────────────
 
 function toCSV(cols, rows) {
-  const lines = [cols.map(([h]) => cell(h)).join(';'), ...rows.map(r => cols.map(([, get]) => cell(get(r))).join(';'))];
+  const lines = [cols.map(([h]) => csvCell(h)).join(';'), ...rows.map(r => cols.map(([, get]) => csvCell(get(r))).join(';'))];
   // BOM so Excel opens UTF-8 correctly
   return new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
 }

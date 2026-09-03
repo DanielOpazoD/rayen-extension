@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { getToken } from './auth.js';
-import { apiGet, rayenParams, chunk } from './http.js';
+import { apiGet, rayenParams, chunk, session, resetSession } from './http.js';
 import { parseCita, dateRange, localDateStr, matchKey } from './parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 import { loadHistorial, mergeHistorial } from './historial.js';
@@ -28,7 +28,7 @@ async function fetchDay(token, dateStr) {
     const data = await apiGet(token, `/API/api/rayen/Citas/ListaPacientesCitados/${CONFIG.nodeId}/${params}`);
     return Array.isArray(data) ? data : null;
   } catch {
-    return null;
+    return null; // AuthError already flagged session.expired
   }
 }
 
@@ -41,12 +41,14 @@ async function fetchDay(token, dateStr) {
  * @param {{ historial?: boolean }} opts
  * @returns {Promise<null | {
  *   records: object[], fromCache: number, fromNetwork: number,
- *   failedDays: number, historialFailed: number, team: Record<string, object>
- * }>} null = no active session
+ *   failedDays: number, historialFailed: number, team: Record<string, object>,
+ *   sessionExpired: boolean
+ * }>} null = no active session token
  */
 export async function loadData(months, onProgress = () => {}, { historial = true } = {}) {
   const token = await getToken();
   if (!token) return null;
+  resetSession();
 
   const today = new Date();
   const from  = new Date(today);
@@ -85,13 +87,14 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     if (okDates.length) await saveStore(store, okDates, newRecords);
     done += batch.length;
     onProgress(Math.round((done / toFetch.length) * citasShare), 'citas');
+    if (session.expired) break; // no point hammering a dead session
   }
 
   const wanted = new Set(allDates);
   let records  = [...store.records.values()].filter(r => wanted.has(r.fecha8));
   let team = {}, historialFailed = 0;
 
-  if (historial) {
+  if (historial && !session.expired) {
     const citaKeys = new Set(records.map(matchKey));
     const res = await loadHistorial(token, allDates, citaKeys,
       pct => onProgress(50 + Math.round(pct / 2), 'ficha'));
@@ -107,5 +110,6 @@ export async function loadData(months, onProgress = () => {}, { historial = true
     failedDays,
     historialFailed,
     team,
+    sessionExpired: session.expired,
   };
 }

@@ -174,6 +174,10 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .menu button{display:block;width:100%;text-align:left;padding:7px 10px;border:none;background:none;border-radius:6px;font-size:.8rem;color:var(--ink);cursor:pointer}
 .menu button:hover{background:var(--g-50);color:var(--g-800)}
 .menu-note{font-size:.64rem;color:var(--ink-4);padding:6px 10px 2px;border-top:1px solid var(--line-2);margin-top:4px}
+.menu button small{display:block;font-size:.64rem;color:var(--ink-4);font-weight:400}
+.menu button.danger{color:#c53030}
+.menu button.danger:hover{background:#fff5f5;color:#c53030}
+#statusBar .btn-mini{margin-left:6px}
 
 /* ── Charts ── */
 .chart-h3{font-size:.82rem;font-weight:700;color:var(--ink-2);padding:8px 24px 0}
@@ -357,7 +361,13 @@ progress::-webkit-progress-value{background:var(--g-700);transition:width .3s}
         <div class="menu-note">Exporta lo que está filtrado en la tabla</div>
       </div>
     </div>
-    <button class="btn btn-del" id="btnClearCache" style="display:none" data-tip="Borra el caché local y vuelve a pedir todo desde la red">✕ Borrar caché</button>
+    <div class="menu-wrap" id="clearWrap" style="display:none">
+      <button class="btn btn-del" id="btnClearCache">✕ Borrar ▾</button>
+      <div class="menu" id="clearMenu">
+        <button data-clear="cache">Borrar caché <small>agenda, ficha y SIC · las notas se conservan</small></button>
+        <button data-clear="all" class="danger">Borrar todos los datos <small>incluye notas, preferencias y sesión</small></button>
+      </div>
+    </div>
   </div>
 </header>
 <progress id="progress" value="0" max="100" style="display:none"></progress>

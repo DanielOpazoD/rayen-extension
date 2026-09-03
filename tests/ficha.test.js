@@ -1,6 +1,31 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas } from '../src/ficha.js';
+import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster } from '../src/ficha.js';
+
+test('parseMaster maps the UsuarioApsRut record (contact, family, prevision, flags)', () => {
+  const m = parseMaster({
+    Id: 2113572, NumeroDeFicha: '176166002', Rut: '176166002', NombreFormateado: 'Paciente Prueba', NombreAlQueResponde: 'Pau',
+    FechaDeNacimiento: '19910814 000000', Sexo: { Nombre: 'Mujer' }, Genero: { Nombre: 'Femenina' },
+    ConvenioPrevisional: { Nombre: 'Fonasa C' }, EMail: 'p@x.cl', EstaActivo: true, EsCuidador: true,
+    Familia: { CodigoDeFamiliaCompleto: 'HR005070' }, ParentescoConJefeDeFamilia: { Nombre: 'Hijo(a)' },
+    Ocupacion: { Nombre: 'Desconocido' }, Nacionalidad: { Nombre: 'Chilena' }, GrupoEtnico: { Nombre: 'Ninguno' },
+    Telefonos: [{ TelefonoDescripcion: '99999999', Eliminado: false }, { TelefonoDescripcion: '11111111', EsBorrado: true }],
+    Georeferencias: [{ DireccionFormateada: 'Calle HOTU MATUA 1111' }], Direccion: 'HOTU MATUA Block Depto',
+    FechaInscripcion: '19980604 000000', FechaDeFallecimiento: '00010101 000000', IdNodo: 1196,
+  });
+  assert.equal(m.idUsp, 2113572);
+  assert.equal(m.run, '17.616.600-2');
+  assert.equal(m.dob, '14-08-1991');
+  assert.equal(m.prevision, 'Fonasa C');
+  assert.equal(m.telefonos, '99999999', 'deleted phones are skipped');
+  assert.equal(m.direccion, 'Calle HOTU MATUA 1111', 'geo-referenced address wins over the raw one');
+  assert.equal(m.familia, 'HR005070');
+  assert.equal(m.parentesco, 'Hijo(a)');
+  assert.equal(m.fallecido, '', 'sentinel date means alive');
+  assert.equal(m.cuidador, true);
+  assert.equal(m.nodoInscripcion, 1196);
+  assert.equal(parseMaster(null), null);
+});
 
 /** One per-patient HistorialAtencion item — real keys from the "FICHA 2 SEPT" HAR, synthetic values. */
 const RAW = {

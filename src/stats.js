@@ -53,42 +53,69 @@ export function buildFilters(allData) {
   fillSelect($('filtPrest'),  prest);
 }
 
+/** Reads the filter controls into a plain object (see applyFilters). */
+export function readFilters() {
+  return {
+    q:      $('search').value.trim().toLowerCase(),
+    fecha:  $('filtFecha').value,
+    dia:    $('filtDia').value,
+    sexo:   $('filtSexo').value,
+    estado: $('filtEstado').value,
+    prev:   $('filtPrev').value,
+    tipo:   $('filtTipo').value,
+    prest:  $('filtPrest').value,
+    ic:     $('filtIC').value,
+    dx:     $('filtDx').value,
+  };
+}
+
+const EMPTY_CTX = { sicsByRun: new Map(), officerId: 0 };
+
 /**
- * Applies the Atenciones filter controls.
+ * Pure filter — no DOM — so it can be unit-tested.
  * @param {object[]} allData
- * @param {{ sicsByRun: Map<string, object[]> }} ctx  loaded SICs, for the "paciente con SIC" filter
+ * @param {ReturnType<typeof readFilters>} f   empty string = no filter
+ * @param {{ sicsByRun: Map<string, object[]>, officerId: number }} ctx
  */
-export function filterRecords(allData, ctx = { sicsByRun: new Map() }) {
-  const s  = $('search').value.toLowerCase();
-  const f  = $('filtFecha').value;
-  const d  = $('filtDia').value;
-  const sx = $('filtSexo').value;
-  const e  = $('filtEstado').value;
-  const pr = $('filtPrev').value;
-  const tp = $('filtTipo').value;
-  const pt = $('filtPrest').value;
-  const ic = $('filtIC').value;
-  const dx = $('filtDx').value;
+export function applyFilters(allData, f, ctx = EMPTY_CTX) {
+  const sicsOf = p => (p.run ? ctx.sicsByRun.get(p.run) : null) ?? [];
+  const icMatch = p => {
+    switch (f.ic) {
+      case '':         return true;
+      case 'cita':     return !!p.esIC;
+      case 'emiti':    return sicsOf(p).some(s => s.registrador.id === ctx.officerId);
+      case 'recibi':   return !!p.esIC || sicsOf(p).some(s => s.ejecutor.id === ctx.officerId);
+      case 'paciente': return sicsOf(p).length > 0;
+      case 'no':       return !p.esIC && sicsOf(p).length === 0;
+      default:         return true;
+    }
+  };
+  const dxMatch = p => {
+    switch (f.dx) {
+      case '':    return true;
+      case 'con': return (p.diagnosticos?.length ?? 0) > 0;
+      case 'sin': return !(p.diagnosticos?.length);
+      case 'ges': return !!p.diagnosticos?.some(x => x.esAuge);
+      case 'urg': return !!p.esUrgencia;
+      default:    return true;
+    }
+  };
 
   return allData.filter(p =>
-    (!s  || [p.nombre, p.ap, p.am, p.runStr, p.run, ...(p.diagnosticos ?? []).map(x => x.nombre)]
-             .some(v => String(v ?? '').toLowerCase().includes(s))) &&
-    (!f  || p.fechaAtencion === f) &&
-    (!d  || p.diaSemana === d) &&
-    (!sx || p.sexo === sx) &&
-    (!e  || p.estado === e) &&
-    (!pr || p.prevision === pr) &&
-    (!tp || p.tipoAtencion === tp) &&
-    (!pt || (p.prestadores ?? []).some(x => x.nombre === pt)) &&
-    (!ic || (ic === 'cita'     ? p.esIC
-          : ic === 'emiti'    ? (p.run && (ctx.sicsByRun.get(p.run) ?? []).some(s => s.registrador.id === ctx.officerId))
-          : ic === 'recibi'   ? (p.esIC || (p.run && (ctx.sicsByRun.get(p.run) ?? []).some(s => s.ejecutor.id === ctx.officerId)))
-          : ic === 'paciente' ? (p.run && (ctx.sicsByRun.get(p.run)?.length ?? 0) > 0)
-          : ic === 'no'       ? !p.esIC && !(p.run && ctx.sicsByRun.get(p.run)?.length)
-          : true)) &&
-    (!dx || (dx === 'ges' ? p.diagnosticos?.some(x => x.esAuge)
-          : dx === 'con' ? p.diagnosticos?.length > 0
-          : dx === 'sin' ? !(p.diagnosticos?.length)
-          : dx === 'urg' ? p.esUrgencia : true))
+    (!f.q      || [p.nombre, p.ap, p.am, p.runStr, p.run, ...(p.diagnosticos ?? []).map(x => x.nombre)]
+                    .some(v => String(v ?? '').toLowerCase().includes(f.q))) &&
+    (!f.fecha  || p.fechaAtencion === f.fecha) &&
+    (!f.dia    || p.diaSemana === f.dia) &&
+    (!f.sexo   || p.sexo === f.sexo) &&
+    (!f.estado || p.estado === f.estado) &&
+    (!f.prev   || p.prevision === f.prev) &&
+    (!f.tipo   || p.tipoAtencion === f.tipo) &&
+    (!f.prest  || (p.prestadores ?? []).some(x => x.nombre === f.prest)) &&
+    icMatch(p) && dxMatch(p)
   );
+}
+
+/** Applies the Atenciones filter controls. */
+export function filterRecords(allData, ctx) {
+  return applyFilters(allData, readFilters(), ctx);
 }
