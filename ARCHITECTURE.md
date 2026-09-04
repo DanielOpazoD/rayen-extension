@@ -94,7 +94,22 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 
 ## Capas
 
-El código de `src/` está en tres capas con dependencia en un solo sentido: `ui` → `io` → `core`. El lint (`eslint.config.js`) lo hace cumplir: `core` no puede usar `document`, `window`, `chrome` ni `fetch`, ni importar de `io`/`ui`; `io` no importa de `ui`. Una cuarta capa, `src/ai/`, queda reservada para los flujos con modelos de lenguaje (registro clínico canónico, contexto desidentificado, plantillas de informe y proveedores); depende de `core` e `io`, nunca de `ui`.
+El código de `src/` está en tres capas con dependencia en un solo sentido: `ui` → `io` → `core`. El lint (`eslint.config.js`) lo hace cumplir: `core` no puede usar `document`, `window`, `chrome` ni `fetch`, ni importar de `io`/`ui`; `io` no importa de `ui`. La cuarta capa, `src/ai/`, contiene los flujos con modelos de lenguaje; depende de `core` e `io`, nunca de `ui`.
+
+## Flujo con IA
+
+```
+datos (agenda, ficha, SIC, laboratorio, imagenología, biopsias)
+  → buildClinicalRecord   registro canónico con procedencia          (ai/record.js)
+  → buildContext          texto sin identidad, fechas relativas,      (ai/context.js)
+                          presupuesto y comprobación de restos
+  → buildPrompt           plantilla con títulos exactos               (ai/templates.js)
+  → proveedor             manual (portapapeles) o API (apagada)       (ai/provider.js)
+  → parsearRespuesta      secciones reconocidas, faltantes, «Sin datos»
+  → armarInforme          identidad repuesta en local, pie de revisión (ai/report.js)
+```
+
+Reglas que no dependen de la plantilla: la identidad del paciente y los nombres de los profesionales nunca entran al contexto; si el anonimizador detecta un resto, `prepararInforme` falla y no hay prompt. El proveedor por API exige clave, permiso de host en el manifiesto y una decisión institucional; por eso viene apagado.
 
 <!-- module-map:start -->
 
@@ -176,6 +191,17 @@ El código de `src/` está en tres capas con dependencia en un solo sentido: `ui
 - `src/ui/toast.js` — confirmaciones transitorias y acciones de deshacer.
 - `src/ui/today.js` — novedades y agenda diaria con antecedentes.
 - `src/ui/ui.js` — estado general, filtros comunes y medición del área útil.
+
+**Inteligencia artificial (`src/ai/`) — flujos con modelos de lenguaje, sin interfaz. Depende de `core` e `io`.**
+
+- `src/ai/record.js` — registro clínico canónico: agenda, ficha, interconsultas, laboratorio, imagenología y biopsias con procedencia por fuente; la única forma de datos que ven los flujos con IA.
+- `src/ai/sources.js` — registro de fuentes de exámenes complementarios (contrato `obtener()`), con imagenología y biopsias declaradas como pendientes.
+- `src/ai/context.js` — contexto desidentificado para el modelo: sin nombres ni RUN, fechas relativas, presupuesto de tamaño y comprobación final de restos.
+- `src/ai/templates.js` — plantillas de informe declarativas (predeterminadas y personalizadas), validación y prompt con estructura obligatoria.
+- `src/ai/provider.js` — proveedores: manual (copiar prompt, pegar respuesta; sin red) y API de Anthropic (Messages API por HTTP, apagado sin clave); reconocimiento de la respuesta por secciones.
+- `src/ai/report.js` — informe final con la identidad repuesta en local, secciones faltantes marcadas, pie de revisión y Markdown → HTML mínimo.
+- `src/ai/index.js` — ciclo completo: `prepararInforme` (registro → contexto → prompt) y `cerrarInforme` (respuesta → informe).
+
 <!-- module-map:end -->
 
 ## Puertas de calidad

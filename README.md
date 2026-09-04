@@ -6,6 +6,10 @@ No usa librerías ni servicios externos. Todo el código corre en el navegador y
 
 Para continuar el desarrollo, comienza por el [`mapa de documentación`](DOCUMENTATION_MAP.md) y la [`arquitectura canónica`](ARCHITECTURE.md). Ahí están los flujos, invariantes, responsables y puertas de calidad vigentes.
 
+## Preparación para IA
+
+Desde 2.32.0 el código tiene una capa `src/ai/` que arma un registro clínico canónico, produce un contexto desidentificado con fechas relativas, aplica plantillas de informe (predeterminadas o personalizadas) y reconoce la respuesta del modelo para devolver un informe con la identidad repuesta en local. El único proveedor activo es el manual (copiar el prompt, pegar la respuesta); el proveedor por API queda preparado y apagado. Detalle en [ARCHITECTURE.md](ARCHITECTURE.md), sección «Flujo con IA».
+
 ## Instalación
 
 1. `chrome://extensions` → activar **Modo de desarrollador**.
