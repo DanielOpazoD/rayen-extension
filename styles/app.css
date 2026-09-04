@@ -52,7 +52,11 @@ body.dense{--row-y:4px}
    título   — versalita 12 px, 600, gris (--ink-3), letter-spacing .06em: cabeceras de tabla, h4 del panel, bloques de la jornada, gráficos, preferencias;
    dato     — 400 en tinta; la clave de cada fila (nombre, fecha, hora) a 500. Nunca 600 ni 700 dentro de un dato: el color de estado ya es la señal;
    secundario — 12 px en --ink-3, sin versalita: RUN, edad, códigos, «hace n días».
-   Las negritas del marcado (<b>, <strong>) dentro de las vistas pesan 500 por esta regla. */
+   Las negritas del marcado (<b>, <strong>) dentro de las vistas pesan 500 por esta regla.
+   Excepciones deliberadas: las chapas y marcadores de rol (GES, EMITÍ/RECIBÍ, chapas de laboratorio) van en
+   versalita a 500 porque son etiquetas, no datos; el número grande de una tarjeta de estadísticas y el día de
+   hoy en el calendario son el título de su tarjeta y van a 600. Nada se atenúa con opacity: el contraste se
+   pierde sin que se note en el token. */
 .tab-pane b,.tab-pane strong,#patientPanel b,#patientPanel strong,#syncHealth strong{font-weight:500}
 html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--t-base);line-height:1.55;-webkit-font-smoothing:antialiased}
 button,select,input,textarea{font-family:inherit;color:inherit;font-size:var(--t-sm)}
@@ -331,7 +335,7 @@ button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
 .st-info{color:var(--ink-2)} .st-neutral{color:var(--ink-3)}
 .st.sm{font-size:var(--t-xs)}
 /* Only genuine flags keep a fill */
-.bges{box-shadow:inset 0 0 0 1px var(--brand-line);color:var(--brand-2);font-size:var(--t-xs);font-weight:600;padding:0 5px;border-radius:var(--r-sm);margin-left:5px;vertical-align:1px;letter-spacing:.02em}
+.bges{box-shadow:inset 0 0 0 1px var(--brand-line);color:var(--brand-2);font-size:var(--t-xs);font-weight:500;padding:0 5px;border-radius:var(--r-sm);margin-left:5px;vertical-align:1px;letter-spacing:.02em}
 .flag{display:inline-block;font-size:var(--t-xs);font-weight:500;padding:0 4px;border-radius:var(--r-sm);margin-left:5px;vertical-align:1px}
 .flag-urg{background:var(--bad-soft);color:var(--bad)}
 .flag-esp{background:var(--surface-2);color:var(--ink-2)}
@@ -393,6 +397,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .chart-section{display:flex;gap:var(--sp-3);padding:var(--sp-2) var(--gutter) var(--sp-3);flex-wrap:wrap}
 /* Bajo 760 px, una columna: a dos, el texto de los SVG bajaba a 7 px. */
 @media(max-width:760px){.chart-section{flex-direction:column}.chart-card{max-width:none}}
+.chart-t{font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chart-card{flex:1;min-width:240px;max-width:520px;background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);color:var(--ink)}
 
 /* ═══ Hoy ═══ */
@@ -401,7 +406,8 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .today-h h2{font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em}
 .today-h span{font-size:var(--t-sm);color:var(--ink-3)}
 .tcard{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--card);margin-bottom:var(--sp-2);overflow:hidden}
-.tcard.done{opacity:.62}
+.tcard.done{background:var(--surface-2)}
+.tcard.done .thora,.tcard.done .tname b{color:var(--ink-2)}
 .tcard-h{display:flex;align-items:center;gap:var(--sp-3);padding:10px var(--sp-4);cursor:pointer}
 .tcard-h:hover{background:var(--surface-3)}
 .thora{font-variant-numeric:tabular-nums;font-weight:500;font-size:var(--t-base);min-width:46px}
@@ -562,7 +568,7 @@ tr.sic-row:focus-visible{outline-offset:-2px}
 tr.sic-row.open td{background:var(--surface-2)!important;border-bottom:none}
 .caret{color:var(--ink-4);font-size:var(--t-xs)}
 .mine{color:var(--ink);font-weight:500;margin-right:3px}
-.age-old{color:var(--bad);font-weight:600}
+.age-old{color:var(--bad);font-weight:500}
 .prio{font-family:var(--mono);font-size:var(--t-xs);font-weight:500;color:var(--ink-3);cursor:help;border-bottom:1px dotted var(--ink-4)}
 .prio-1{color:var(--bad)} .prio-2{color:var(--ink-2)} .prio-3{color:var(--ink-3)}
 tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;padding:var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-6);border-bottom:1px solid var(--rule)}

@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.28.1 — 2026-09-04
+
+Correcciones tras revisión adversarial de 2.27.0 y 2.28.0.
+
+- **Portada honesta**: el próximo control sugerido ignora las órdenes descartadas en Eloisa (`proximoControlSugerido`, con prueba); con la ficha caída ya no afirma «Sin diagnósticos registrados» sino «Ficha no disponible · sólo tus atenciones», y se repinta cuando la ficha falla.
+- **Orden de problemas** como promete la cabecera: GES, crónicos, recurrentes; un nombre que niega el problema («Sin diabetes», «Descarta hipertensión») no cuenta como crónico, y «crónica» en el nombre sí.
+- «Ver todo» conserva el foco en la pestaña destino y lleva nombre accesible; el de Interconsultas abre «De otros» cuando ninguna abierta es tuya.
+- Títulos de los gráficos fuera del SVG, a 12 px fijos (dentro escalaban de 5 a 12 px según el ancho).
+- Contrato de énfasis: excepciones documentadas (chapas y marcadores de rol, número de tarjeta); GES y «días» de interconsulta a 500; las tarjetas cerradas de Hoy ya no se atenúan con opacidad (el RUN bajaba a 2,5:1), se distinguen por fondo.
+- README: el panel tiene cinco pestañas y la primera es Resumen.
+
 ## 2.28.0 — 2026-09-04
 
 Un solo nivel de énfasis en las siete pestañas y el panel (iteración 5, última del plan de diseño).

@@ -13,8 +13,8 @@ const pct = (v, total) => total > 0 ? Math.round(v / total * 100) : 0;
 // ── Primitives: every mark carries value and percentage ───────
 
 function barSVG({ labels, values, title, width = 300, height = 190, color = GREEN }) {
-  // 46 px arriba: el valor (y-11) y el % (y-2) de la barra más alta ya no pisan el título.
-  const P = { top: 46, bottom: 34, left: 8, right: 8 };
+  // 30 px arriba para el valor (y-11) y el % (y-2) de la barra más alta; el título va fuera, en HTML.
+  const P = { top: 30, bottom: 34, left: 8, right: 8 };
   const cw = width - P.left - P.right, ch = height - P.top - P.bottom;
   const max = Math.max(...values, 1), n = labels.length, total = values.reduce((a, b) => a + b, 0);
   const bw = Math.max(4, Math.floor(cw / n) - 3);
@@ -30,22 +30,16 @@ function barSVG({ labels, values, title, width = 300, height = 190, color = GREE
       `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="${TXT2}">${esc(lbl.length > 5 ? lbl.slice(0, 4) : lbl)}</text>`,
     ].join('');
   }).join('');
-  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    ${titleSVG(title, width)}${bars}</svg>`;
+  return `${chartTitle(title)}<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
+    ${bars}</svg>`;
 }
 
-// Un título más largo que el ancho se comprime en vez de recortarse («% sin
-// contrarreferencia por especialidad (≥3 atendidas)» perdía el paréntesis).
-// Mismo nivel «título» que las cabeceras de tabla y los h4 del panel: versalita, 600, gris.
-function titleSVG(title, width) {
-  const label = title.toUpperCase();
-  // El SVG se escala al ancho de la tarjeta (×1,3–1,5): 7,5 aquí son ~11 px en pantalla.
-  const fit = label.length * 5.3 > width - 16 ? ` textLength="${width - 16}" lengthAdjust="spacingAndGlyphs"` : '';
-  return `<text x="8" y="13" font-size="7.5" font-weight="600" letter-spacing="0.45" fill="${TXT2}"${fit}>${esc(label)}</text>`;
-}
+// El título vive fuera del SVG: dentro escalaba con la tarjeta (5 px a 800 de
+// ancho, 12 a 700). En HTML es el mismo nivel «título» que th y h4, a 12 px fijos.
+const chartTitle = title => `<div class="chart-t" title="${esc(title)}">${esc(title)}</div>`;
 
 function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96, filter = null }) {
-  const rowH = 22, PAD = { top: 28, bottom: 8, left: labelW, right: 44 };
+  const rowH = 22, PAD = { top: 6, bottom: 8, left: labelW, right: 44 };
   const h = PAD.top + PAD.bottom + Math.max(labels.length, 1) * rowH;
   const cw = width - PAD.left - PAD.right, max = Math.max(...values, 1), total = values.reduce((a, b) => a + b, 0), barH = 12;
   const maxChars = Math.floor(labelW / 5.2);
@@ -61,8 +55,8 @@ function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 9
       `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8" fill="${TXT3}">${pct(v,total)}%</text>`,
     wrap[1]].join('');
   }).join('');
-  return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    ${titleSVG(title, width)}${bars}</svg>`;
+  return `${chartTitle(title)}<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
+    ${bars}</svg>`;
 }
 
 const topEntries = (counts, n) => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);

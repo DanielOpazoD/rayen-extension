@@ -163,6 +163,7 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
   expect(await page.locator('#ppPaneRes h4').count()).toBeGreaterThanOrEqual(3); // el próximo control sólo aparece si hay uno
   await page.locator('#ppPaneRes button[data-goto="at"]').click();
   await expect(page.locator('.pp-tab[data-pt="at"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.pp-tab[data-pt="at"]')).toBeFocused(); // el botón pulsado quedó oculto: el foco no cae al body
   await page.locator('.pp-tab[data-pt="res"]').click();
   // Cabecera mínima: RUN y edad; Datos se abre desde las iniciales.
   await expect(page.locator('#ppMeta')).toHaveText(/^RUN [\d.]+-[\dK] · \d+ años$/);
