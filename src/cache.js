@@ -83,9 +83,13 @@ export function dropDay(store, date8) {
   store.fetchedDates.delete(date8);
 }
 
-/** Clears all data caches (citas, ficha clínica, SIC). Notes and prefs are kept. */
+/**
+ * Clears all data caches (citas, ficha clínica, SIC). Notes and prefs are kept.
+ * Incluye el informe pendiente de impresión: es una historia clínica completa
+ * que sólo se borraba si la pestaña de impresión llegaba a abrirse.
+ */
 export async function clearAllCaches() {
-  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys)]);
+  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys), 'rayen_report']);
 }
 
 /** Wipes everything the extension stored: caches, notes, prefs, pending report and the session token. */
@@ -99,7 +103,7 @@ export async function clearEverything() {
 // ── Prefs ──────────────────────────────────────────────────────
 
 export const DEFAULT_PREFS = Object.freeze({
-  historial: true, months: 6, dense: false, hiddenCols: [],
+  historial: true, months: 6, dense: false, hiddenCols: [], retentionMonths: 13,
   refreshMin: 15, lockMin: 15, startTab: 'hoy',
   watchEsp: null,      // null = CONFIG.watchEspecialidades
   umbrales: null,      // null = CONFIG.pendientes

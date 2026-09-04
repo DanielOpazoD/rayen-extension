@@ -83,3 +83,20 @@ test('aggregateTeam counts atenciones per instrument, prestador and tipo', () =>
   assert.deepEqual(agg.byTipo, { 'Morbilidad Medica': 1, 'Poli Choque': 1 });
   assert.equal(agg.byPrestador['Kine Uno'], 1, 'duplicate prestador entries count once');
 });
+
+// Regresión del balance 2: /present/ aceptaba «No se presentó», y una cita a la
+// que el paciente no fue heredaba la atención de la matrona del mismo día.
+test('una cita «No se presentó» no hereda la atención de otro prestador ese día', () => {
+  const matrona = atencion({
+    Id: 901,
+    FuncionariosPrestadores: [{ Id: 777, NombreCompleto: 'Matrona X', NombreInstrumento: 'Matrona' }],
+    Diagnosticos: [{ DescripcionClasificacion: 'Embarazo- (Confirmada)', DescripcionDiagnostico: 'Embarazo' }],
+  });
+  const out = mergeHistorial([cita({ estado: 'No se presentó' })], [matrona]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].atencionId, null, 'la atención ajena no se cruza');
+  assert.deepEqual(out[0].diagnosticos, []);
+  // La atención del propio oficial sí se cruza: la agenda puede estar mal marcada.
+  const mine = mergeHistorial([cita({ estado: 'No se presentó' })], [atencion()]);
+  assert.equal(mine[0].atencionId, 1);
+});

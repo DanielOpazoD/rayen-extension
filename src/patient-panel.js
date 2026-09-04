@@ -1,3 +1,4 @@
+import { humanError } from './errors.js';
 import { patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
 import { esc, stateDot, sicTone, $, initTablist, activateOnKey, skeletonCards } from './dom.js';
@@ -15,11 +16,26 @@ let cur = null;          // { record, key, visits, sics, contact, ficha }
 let activeTab = 'dx';    // remembered across patients
 let navigate = null;     // (dir) => void, supplied by the host
 
+let opener = null;       // quien tenía el foco al abrir; lo recupera al cerrar
+
+// Diálogo modal de verdad: mientras está abierto, cabecera y contenido quedan
+// inertes (sin foco, sin clics, sin lector de pantalla); cerrado, el propio
+// panel queda inerte e invisible. Antes el fondo seguía tabulable bajo el velo y
+// el panel cerrado conservaba catorce controles alcanzables con Tab.
+const shielded = () => [document.getElementById('mainContent'), document.getElementById('topbar')].filter(Boolean);
+const isOpen = () => $('patientPanel').classList.contains('open');
+
 function close() {
+  if (!isOpen()) return;
   const id = cur?.record?.id;
-  $('patientPanel').classList.remove('open');
+  const panel = $('patientPanel');
+  panel.classList.remove('open');
   $('panelBackdrop').classList.remove('open');
+  panel.inert = true;
+  for (const node of shielded()) node.inert = false;
   cur = null;
+  if (opener?.isConnected) opener.focus({ preventScroll: true });
+  opener = null;
   // The host brings the table back to the row this patient came from
   document.dispatchEvent(new CustomEvent('rayen:panel-closed', { detail: { id } }));
 }
@@ -35,8 +51,24 @@ const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
  *   saveNote is the host's single note-writing path (it updates every row,
  *   shows the toast and offers undo); the panel never writes on its own.
  */
-export function initPanel({ saveNote, onNavigate } = {}) {
+let labSearch = null;
+
+export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
+  const panel = $('patientPanel');
+  panel.inert = true;
+  // Tab y Shift+Tab dan la vuelta dentro del diálogo.
+  panel.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const focusables = [...panel.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    const at = document.activeElement;
+    if (e.shiftKey && (at === first || at === panel)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+  });
   navigate = onNavigate;
+  labSearch = onLabSearch;
   $('ppClose').addEventListener('click', close);
   $('panelBackdrop').addEventListener('click', close);
 
@@ -67,7 +99,7 @@ export function initPanel({ saveNote, onNavigate } = {}) {
       const { fragment, css } = buildPatientReport(cur, scope);
       await openReport(fragment, css);
     } catch (err) {
-      $('ppFichaStatus').innerHTML = `<span class="al al-bad">No se pudo generar el informe: ${esc(err.message)}</span>`;
+      $('ppFichaStatus').innerHTML = `<span class="al al-bad">No se pudo generar el informe. ${esc(humanError(err, 'Eloisa'))}</span>`;
     } finally { b.disabled = false; }
   });
 
@@ -75,6 +107,15 @@ export function initPanel({ saveNote, onNavigate } = {}) {
     const hidden = $('ppDatos').toggleAttribute('hidden');
     $('ppDatosBtn').classList.toggle('on', !hidden);
     $('ppDatosBtn').setAttribute('aria-expanded', String(!hidden));
+  });
+
+  $('ppLabBtn').addEventListener('click', () => {
+    // Se cierra antes de saltar: con el diálogo abierto el resto queda inerte y
+    // la pestaña Laboratorio no se podría usar.
+    if (!cur?.record?.run || !labSearch) return;
+    const run = cur.record.run;
+    close();
+    labSearch(run);
   });
 
   // Tabs: click or ←/→; remembered across patients
@@ -144,6 +185,7 @@ function renderHeader() {
     || record.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
   $('ppAvatar').textContent = initials;
   $('ppName').textContent = record.nombre;
+  $('ppName').title = record.nombre;
   $('ppMeta').textContent = [
     m?.sexo || record.sexo,
     record.edadLabel || contact.edad || (record.edad != null ? `${record.edad} años` : ''),
@@ -221,7 +263,7 @@ function renderDx() {
   if (a?.alergias.length || ficha?.ram.length) html += h4('Alergias / RAM') + [...a.alergias, ...ficha.ram].map(x =>
     `<div class="pp-row"><span class="pp-row-t">${esc(x.label)}</span><span class="pp-row-m">${esc(x.details.join(' · '))}</span></div>`).join('');
   if (ficha?.programas.length) html += h4('Programas de salud') + ficha.programas.map(p =>
-    `<div class="pp-row"><span class="pp-row-t">${esc(p.nombre)}</span><span class="pp-row-m">${p.vigente ? 'ingreso' : `estado ${p.estado}`} · ${esc(p.fecha)}</span></div>`).join('');
+    `<div class="pp-row"><span class="pp-row-t">${esc(p.nombre)}</span><span class="pp-row-m">${p.vigente ? 'ingreso' : `estado ${esc(p.estado)}`} · ${esc(p.fecha)}</span></div>`).join('');
 
   $('ppPaneDx').innerHTML = html;
   setTabCount('dx', probs.length);
@@ -385,7 +427,7 @@ async function loadAndRenderFicha(force = false) {
       `<button class="btn-mini" id="ppReload" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
       (ficha.errors.length ? `<span class="al al-warn" data-tip="${esc(ficha.errors.join('\n'))}">⚠ ${ficha.errors.length}</span>` : '');
   } catch (err) {
-    if (cur === me) $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha: ${esc(err.message)}</span>`;
+    if (cur === me) $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`;
   }
 }
 
@@ -402,6 +444,8 @@ export function syncNote(record) {
 }
 
 export function openPanel(record, { allData, sics = [], contacts = new Map(), pos = null }) {
+  const wasOpen = isOpen();
+  if (!wasOpen) opener = document.activeElement; // antes de dejar inerte el fondo, que le quita el foco
   const key = patientKey(record);
   cur = {
     record, key,
@@ -421,8 +465,14 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
   $('ppNext').disabled = !pos || pos.i >= pos.n - 1;
   renderAll();
   showTab(activeTab);
-  $('patientPanel').classList.add('open');
+  const panel = $('patientPanel');
+  panel.inert = false;
+  panel.classList.add('open');
   $('panelBackdrop').classList.add('open');
-  $('patientPanel').scrollTop = 0;
+  if (!wasOpen) {
+    for (const node of shielded()) node.inert = true;
+    panel.focus({ preventScroll: true }); // el lector anuncia «diálogo, <nombre>»; Tab sigue al primer control
+  }
+  panel.scrollTop = 0;
   loadAndRenderFicha();
 }

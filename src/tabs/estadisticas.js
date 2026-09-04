@@ -17,13 +17,23 @@ export function init() {
     const i = raw.indexOf(':');
     const campo = raw.slice(0, i), valor = raw.slice(i + 1);
     if (campo === 'sicEsp') { interconsultas.applyFilter('sicEsp', valor); showTab('interconsultas'); }
-    else                    { atenciones.applyFilter(campo, valor);      showTab('atenciones'); }
+    else if (atenciones.applyFilter(campo, valor) === false) {
+      toast(`No hay un filtro de tabla para «${valor}»`, { tone: 'warn' });
+      return;
+    } else showTab('atenciones');
     toast(`Filtrado por «${valor}»`, { tone: 'info' });
   });
 
   on('data', () => {
     buildStats(state.allData, state.team);
-    if (!state.allData.length) return;
+    if (!state.allData.length) {
+      // Sin datos, los gráficos anteriores —con nombres de diagnósticos— seguían
+      // en pantalla después de «Vaciar caché». Se vuelve al estado inicial.
+      $('chartsSection').innerHTML = '';
+      ['statsBar', 'chartsSection'].forEach(id => { $(id).style.display = 'none'; });
+      $('statsEmpty').style.display = '';
+      return;
+    }
     renderCharts(state.allData, state.team, $('chartsSection'), state.sics);
     ['statsBar', 'chartsSection'].forEach(id => { $(id).style.display = ''; });
     $('statsEmpty').style.display = 'none';

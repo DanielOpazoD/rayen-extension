@@ -1,3 +1,4 @@
+import { state } from './state.js';
 import { CONFIG } from './config.js';
 import { apiPost, chunk, session, run } from './http.js';
 import { parseAtencion, matchKey, localDateStr } from './parser.js';
@@ -83,7 +84,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   store.extra.team ??= {};
 
   const min = new Date();
-  min.setMonth(min.getMonth() - CONFIG.retentionMonths);
+  min.setMonth(min.getMonth() - (state.prefs?.retentionMonths ?? CONFIG.retentionMonths));
   pruneStore(store, localDateStr(min));
 
   const todayStr = localDateStr(new Date());
@@ -156,9 +157,16 @@ export function mergeHistorial(citas, atenciones) {
   const used = new Set();
   const out  = citas.map(c => {
     // Same patient may have several atenciones that day (kinesiólogo, matrona…):
-    // prefer the one where the officer is a prestador, then the earliest unused.
+    // prefer the one where the officer is a prestador. Caer en cualquier otra
+    // sólo se permite si la cita consta como atendida: una cita en «Citado» que
+    // heredaba la atención de la matrona mostraba su diagnóstico como propio, y
+    // ese diagnóstico seguía después a Pacientes, a Hoy y a las estadísticas.
     const cands = (idx.get(matchKey(c)) ?? []).filter(x => !used.has(x.id));
-    const a = cands.find(isOfficer) ?? cands[0];
+    // «No se presentó» contiene «present»: una cita a la que el paciente no
+    // fue heredaba igual la atención de la matrona. Un estado negado no cuenta.
+    const estado = c.estado || '';
+    const attended = /complet|atendid|present/i.test(estado) && !/\bno\b/i.test(estado);
+    const a = cands.find(isOfficer) ?? (attended ? cands[0] : undefined);
     if (!a) return c;
     used.add(a.id);
     return {

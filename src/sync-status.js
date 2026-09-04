@@ -36,7 +36,23 @@ export function syncOverview(health) {
   return { text: complete ? 'Fuentes disponibles' : 'Comprobación incompleta', tone: complete ? 'ok' : 'neutral', pending };
 }
 
+/**
+ * Pinta el estado de sincronización. Nunca lanza: un fallo al leerlo se muestra
+ * en su propio sitio en vez de tumbar la carga que lo llamó. Antes cada llamada
+ * se protegía con su propio `.catch(() => {})` (ocho en total).
+ */
 export async function renderSyncStatus(health = null) {
+  try {
+    await renderSyncStatusBody(health);
+  } catch {
+    const panel = $('syncHealth');
+    panel.hidden = false;
+    $('syncOverall').textContent = 'No se pudo leer el estado de sincronización.';
+    $('syncOverall').className = 'sync-overall warn';
+  }
+}
+
+async function renderSyncStatusBody(health) {
   const data = health ?? await loadSyncHealth();
   const panel = $('syncHealth');
   const any = SYNC_SOURCES.some(source => data[source]);
@@ -70,8 +86,9 @@ export function initSyncStatus(onRetry) {
     const open = details.hidden;
     details.hidden = !open;
     $('btnSyncDetails').setAttribute('aria-expanded', String(open));
-    $('btnSyncDetails').textContent = open ? 'Ocultar detalle' : 'Ver detalle';
+    $('btnSyncDetails').textContent = open ? 'Ocultar' : 'Detalle';
   });
   $('btnRetrySync').addEventListener('click', onRetry);
-  recoverStaleSyncSources().then(() => renderSyncStatus()).catch(() => {});
+  // Si no se pudo recuperar una fuente colgada, se pinta lo que haya: renderSyncStatus no lanza.
+  recoverStaleSyncSources().catch(() => {}).then(() => renderSyncStatus());
 }

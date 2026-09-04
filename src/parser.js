@@ -87,6 +87,24 @@ export function computeDv(body) {
  * @returns {{ run: string|null, runStr: string, dvOk: boolean }}
  *   run    = "25106217K" (canonical key), runStr = "25.106.217-K"
  */
+/**
+ * Los laboratorios entregan todo en mayúsculas («PEREZ SOTO, JUAN», «PERFIL
+ * LIPIDICO»). En pantalla se lee mejor en caja de oración. Sólo actúa sobre
+ * texto que venga íntegramente en mayúsculas; lo ya mixto se respeta. Con
+ * `siglas` las palabras de hasta tres letras se conservan en mayúscula (VHS,
+ * TSH, PCR), útil para exámenes pero no para nombres (Ana, Luz).
+ */
+export function humanCase(s = '', { siglas = false } = {}) {
+  const t = String(s).trim();
+  if (!t || t !== t.toUpperCase() || !/[A-ZÁÉÍÓÚÑ]/.test(t)) return t;
+  const minusculas = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y', 'e', 'con', 'por', 'en', 'a']);
+  return t.toLowerCase().replace(/\p{L}[\p{L}\p{M}]*/gu, (w, i) => {
+    if (i > 0 && minusculas.has(w)) return w;
+    if (siglas && w.length <= 3) return w.toUpperCase();
+    return w[0].toUpperCase() + w.slice(1);
+  });
+}
+
 export function formatRun(raw) {
   if (raw == null) return { run: null, runStr: '', dvOk: false };
   const s = String(raw).replace(/[.\-\s]/g, '').toUpperCase();

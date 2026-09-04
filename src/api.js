@@ -1,3 +1,4 @@
+import { state } from './state.js';
 import { CONFIG } from './config.js';
 import { getToken } from './auth.js';
 import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from './http.js';
@@ -74,7 +75,7 @@ export async function loadData(months, onProgress = () => {}, {
   const previousSync = await loadSyncHealth();
 
   const min = new Date(today);
-  min.setMonth(min.getMonth() - CONFIG.retentionMonths);
+  min.setMonth(min.getMonth() - (state.prefs?.retentionMonths ?? CONFIG.retentionMonths));
   const minDate8 = localDateStr(min);
   pruneStore(store, minDate8);
 

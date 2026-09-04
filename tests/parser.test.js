@@ -2,8 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatRun, computeDv, decodeEdadExacta, fmtDate, fmtHora, dateToInt,
-  parseCita, parseAtencion, parseDiagnostico, matchKey, dateRange,
-} from '../src/parser.js';
+  parseCita, parseAtencion, parseDiagnostico, matchKey, dateRange, humanCase } from '../src/parser.js';
 
 // ── RUN ───────────────────────────────────────────────────────
 
@@ -130,4 +129,17 @@ test('matchKey links a cita and an atención by RUN + day, name as fallback', ()
   assert.equal(matchKey(parseCita(CITA)), matchKey(parseAtencion(ATENCION)));
   const noRun = { run: null, nombre: 'Ana   Pérez ', fecha8: '20260902' };
   assert.equal(matchKey(noRun), 'ana pérez|20260902');
+});
+
+// Los laboratorios gritan: «PACIENTE EJEMPLO, ROSA», «QUÍMICA». En pantalla se
+// lee en caja de oración, sin tocar lo que ya viene mixto ni las siglas de exámenes.
+test('humanCase pasa a caja de oración sólo lo que llega íntegramente en mayúsculas', () => {
+  assert.equal(humanCase('PEREZ SOTO, JUAN'), 'Perez Soto, Juan');
+  assert.equal(humanCase('ANA DE LA CRUZ'), 'Ana de la Cruz');
+  assert.equal(humanCase('QUÍMICA SANGUÍNEA'), 'Química Sanguínea');
+  assert.equal(humanCase('Rosa Ejemplo'), 'Rosa Ejemplo', 'lo mixto se respeta');
+  assert.equal(humanCase('PERFIL LIPIDICO, VHS, TSH', { siglas: true }), 'Perfil Lipidico, VHS, TSH');
+  assert.equal(humanCase('ANA', { siglas: false }), 'Ana', 'sin siglas, un nombre corto es un nombre');
+  assert.equal(humanCase(''), '');
+  assert.equal(humanCase('123-4'), '123-4', 'sin letras no hay nada que cambiar');
 });

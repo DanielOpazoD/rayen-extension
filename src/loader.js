@@ -1,3 +1,4 @@
+import { humanError } from './errors.js';
 import { loadData } from './api.js';
 import { attachNotes } from './notes.js';
 import { savePrefs } from './cache.js';
@@ -29,7 +30,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
   state.loadedMonths = parseInt($('months').value);
   const selectedHistorial = $('optHistorial').checked;
   const historial = selectedHistorial || forceHistorial;
-  savePrefs({ months: state.loadedMonths, historial: selectedHistorial }).catch(() => {});
+  savePrefs({ months: state.loadedMonths, historial: selectedHistorial }).catch(() => setStatus('No se pudo guardar la preferencia de período en este perfil de Chrome.', 'warn'));
 
   btn.disabled = true;
   $('btnRetrySync').disabled = true;
@@ -55,8 +56,8 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
     }, { historial, retryOnly, operationId });
   } catch (err) {
     await failRunningSyncSources(operationId).catch(() => {});
-    await renderSyncStatus().catch(() => {});
-    setStatus(`Error al cargar: ${err.message}`, 'err');
+    await renderSyncStatus();
+    setStatus(humanError(err, 'Eloisa'), 'err');
     result = null;
   } finally {
     prog.style.display = 'none';
@@ -73,7 +74,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
     return;
   }
 
-  await renderSyncStatus(result.sync).catch(() => {});
+  await renderSyncStatus(result.sync);
   await applyResult(result);
   if (result.sessionExpired) { showExpired(); return; }
   if (result.cancelled) {
@@ -121,10 +122,27 @@ export function armRefresh() {
   refreshTimer = min > 0 ? setInterval(silentRefresh, min * 60 * 1000) : null;
 }
 
-async function silentRefresh() {
+/**
+ * El refresco comparte el mismo cerrojo que la carga manual. Sin él, un tick de
+ * 15 minutos podía entrar encima de una carga en curso —o de una recién
+ * cancelada, descancelándola— y dos cargas concurrentes se pisaban el store.
+ */
+function silentRefresh() {
+  if (fetchInFlight) return fetchInFlight;
+  fetchInFlight = silentRefreshBody().finally(() => { fetchInFlight = null; });
+  return fetchInFlight;
+}
+
+async function silentRefreshBody() {
   let result;
   try { result = await loadData(state.loadedMonths, () => {}, { historial: $('optHistorial').checked }); }
-  catch { return; }
+  catch (err) {
+    // Antes se tragaba el error y la barra seguía diciendo «N atenciones» como si
+    // los datos estuvieran al día.
+    const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    setStatus(`${state.allData.length} atenciones · sin actualizar desde las ${hora}: ${humanError(err, 'Eloisa')}`, 'warn');
+    return;
+  }
   if (!result) return;
   if (result.sessionExpired) { showExpired(); return; }
   const scrollY = window.scrollY;
@@ -132,7 +150,7 @@ async function silentRefresh() {
   window.scrollTo(0, scrollY);
   const s = summarizeLoad(state.allData.length, result);
   setStatus(s.text, s.cls);
-  await renderSyncStatus(result.sync).catch(() => {});
+  await renderSyncStatus(result.sync);
 }
 
 async function openEloisa() {

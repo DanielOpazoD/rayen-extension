@@ -31,7 +31,10 @@ export function parseSIC(raw, contrarrefs = []) {
     fechaCreacion:  raw.FechaHoraCreacion ?? '',
     fechaEnvio:     raw.FechaHoraEnvioFormateado ?? '',
     fechaCita:      raw.FechaHoraCita ?? '',
-    antiguedadDias: raw.AntiguedadDias ?? 0,
+    // null cuando la API no lo trae: con `?? 0` las reglas de pendientes nunca
+    // llegaban a calcular los días por su cuenta y una SIC de ocho meses sin
+    // contrarreferencia no aparecía.
+    antiguedadDias: Number.isFinite(raw.AntiguedadDias) ? raw.AntiguedadDias : null,
     prioridad:      raw.Prioridad ?? si.Prioridad ?? 0,
 
     estadoId,
@@ -187,8 +190,13 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     for (const rows of res) {
       if (rows === null) { failed++; continue; }
       for (const c of rows) {
-        if (!byId.has(c.IdSolicitud)) byId.set(c.IdSolicitud, []);
-        byId.get(c.IdSolicitud).push(c);
+        // Misma clave que la búsqueda de abajo: Number(). Si el endpoint devuelve
+        // el id como texto —como ya hace su hermano con NumeroSolicitud— un Map
+        // indexado por el tipo crudo no cruza nada y toda SIC atendida pasa a
+        // «sin contrarreferencia» sin ningún error.
+        const key = Number(c.IdSolicitud);
+        if (!byId.has(key)) byId.set(key, []);
+        byId.get(key).push(c);
       }
     }
     cdone += batch.length;

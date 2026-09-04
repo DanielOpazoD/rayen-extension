@@ -260,9 +260,12 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
     }), 'Historial'),
     soft(apiGet(token, `/API/api/rayen/FichaClinica/RecuperarAntecedentes/${id}`), 'Antecedentes'),
     soft(apiGet(token, `/API/api/rayen/inscripcion/HistorialUsuarioApsEnProgramaSalud/IdUsuarioAps=${id}`), 'Programas'),
-    apiGet(token, `/API/api/rayen/fichaclinica/VigenciaExamenesUsuario/${id}`).catch(() => []),
-    apiGet(token, `/API/api/rayen/FichaClinica/RiesgoMultiMorbilidad/IdUsuarioAPS=${id}`).catch(() => []),
-    apiGet(token, `/API/api/rayen/FichaClinica/EventoAdverso/AlertaRAM/${id}`).catch(() => []),
+    // Estas tres también pasan por soft(): antes devolvían [] en silencio, y un
+    // paciente con RAM registrada se veía idéntico a uno sin ella cuando el
+    // endpoint fallaba, sin que el contador de errores del panel lo supiera.
+    soft(apiGet(token, `/API/api/rayen/fichaclinica/VigenciaExamenesUsuario/${id}`), 'Vigencias PAP/EMP'),
+    soft(apiGet(token, `/API/api/rayen/FichaClinica/RiesgoMultiMorbilidad/IdUsuarioAPS=${id}`), 'Riesgo multimorbilidad'),
+    soft(apiGet(token, `/API/api/rayen/FichaClinica/EventoAdverso/AlertaRAM/${id}`), 'Alergias y RAM'),
   ]);
 
   if (session.expired) errors.push('Sesión de Eloisa vencida — vuelve a iniciar sesión');

@@ -1,3 +1,5 @@
+import { CONFIG } from './config.js';
+import { humanError } from './errors.js';
 import { savePrefs, clearAllCaches, clearEverything } from './cache.js';
 import { diffWatched } from './watch.js';
 import { esc, $ } from './dom.js';
@@ -21,6 +23,7 @@ function fillSettings() {
   const { refreshMin, umbrales } = state.prefs;
   $('setRefresh').value = String(refreshMin);
   $('setLock').value    = String(lockCtl?.minutes ?? 15);
+  $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
   $('setCr').value = umbrales.crDias;     $('setNueva').value   = umbrales.nuevaDias;
   $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
 }
@@ -28,6 +31,8 @@ function fillSettings() {
 export function init({ lock }) {
   lockCtl = lock;
   initMenu('btnSettings', 'settingsMenu', 'settingsWrap', () => { fillSettings(); buildWatchList(); });
+  // Bajo 1100 px la cabecera pliega período, ficha, exportar y preferencias tras «⋯».
+  initMenu('btnMore', 'hdrMore', 'hdrWrap');
 
   $('settingsMenu').addEventListener('change', async e => {
     const t = e.target;
@@ -43,6 +48,11 @@ export function init({ lock }) {
       await savePrefs({ lockMin: m });
     }
     if (t.id === 'setStartTab') await savePrefs({ startTab: t.value });
+    if (t.id === 'setRetention') {
+      const m = Number(t.value) || CONFIG.retentionMonths;
+      setPrefs({ retentionMonths: m });
+      await savePrefs({ retentionMonths: m });
+    }
     if (['setCr', 'setNueva', 'setCita', 'setControl'].includes(t.id)) {
       const umbrales = { crDias: +$('setCr').value || 1, nuevaDias: +$('setNueva').value || 1, citaDias: +$('setCita').value || 0, controlDias: +$('setControl').value || 0 };
       setPrefs({ umbrales }, { rerender: true });
@@ -77,7 +87,7 @@ export function init({ lock }) {
       setData({ allData: [], team: {}, sics: [], novedades: null });
       setStatus(all ? 'Todos los datos borrados.' : 'Caché borrado. Pulsa Actualizar para recargar desde la red.', 'idle');
     } catch (err) {
-      setStatus(`No se pudo borrar: ${err.message}`, 'err');
+      setStatus(`No se pudo borrar. ${humanError(err, 'Chrome')}`, 'err');
     }
   });
 

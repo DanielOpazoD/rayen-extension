@@ -12,7 +12,7 @@ assert.equal(manifest.manifest_version, 3, 'manifest.json must use Manifest V3')
 assert.equal(manifest.version, pkg.version, 'manifest.json and package.json versions differ');
 assert.equal(lock.version, pkg.version, 'package-lock.json and package.json versions differ');
 assert.equal(lock.packages?.['']?.version, pkg.version, 'root package-lock version differs');
-assert.deepEqual(manifest.host_permissions, ['https://clinicohangaroa.eloisa.cl/*'], 'unexpected host permission');
+assert.deepEqual(manifest.host_permissions, ['https://clinicohangaroa.eloisa.cl/*', 'https://examenesusuarios.hsalvador.cl/*', 'http://10.4.69.90/*'], 'unexpected host permission');
 
 const required = [
   'app.html', 'app.js', 'popup.html', 'popup-init.js', 'report.html', 'report.js',

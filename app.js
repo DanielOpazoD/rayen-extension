@@ -15,6 +15,7 @@ import * as atenciones from './src/tabs/atenciones.js';
 import * as pacientes from './src/tabs/pacientes.js';
 import * as estadisticas from './src/tabs/estadisticas.js';
 import * as interconsultas from './src/tabs/interconsultas.js';
+import * as laboratorio from './src/tabs/laboratorio.js';
 import * as explorador from './src/tabs/explorador.js';
 
 /**
@@ -27,6 +28,7 @@ setPrefs({
   refreshMin: Number.isFinite(+prefs.refreshMin) ? +prefs.refreshMin : 15,
   watchEsp:   Array.isArray(prefs.watchEsp) && prefs.watchEsp.length ? prefs.watchEsp : [...CONFIG.watchEspecialidades],
   umbrales:   prefs.umbrales && typeof prefs.umbrales === 'object' ? { ...CONFIG.pendientes, ...prefs.umbrales } : { ...CONFIG.pendientes },
+  retentionMonths: Number.isFinite(+prefs.retentionMonths) && +prefs.retentionMonths > 0 ? +prefs.retentionMonths : CONFIG.retentionMonths,
 });
 state.loadedMonths = prefs.months;
 
@@ -36,6 +38,7 @@ const showTab = initTablist(document.querySelector('.tabs'), name => {
   if (name === 'hoy')            hoy.refresh();
   if (name === 'pacientes')      pacientes.onShow();
   if (name === 'interconsultas') interconsultas.ensureSICs();
+  if (name === 'laboratorio')    laboratorio.onShow();
   if (name === 'explorador')     explorador.renderExtras();
   remeasure();
 }, 'tab');
@@ -47,6 +50,7 @@ atenciones.init(prefs);
 pacientes.init();
 estadisticas.init();
 interconsultas.init();
+laboratorio.init();
 explorador.init();
 
 const lockMin = Number.isFinite(+prefs.lockMin) ? +prefs.lockMin : 15;
@@ -61,6 +65,10 @@ initPanel({
     const i    = list.findIndex(p => patientKey(p) === patientKey(current));
     const next = list[i + dir];
     if (next) openPatient(next);
+  },
+  onLabSearch(run) {                        // Lab button → switch tab and search
+    showTab('laboratorio');
+    laboratorio.searchFromPatient(run);
   },
 });
 on('notes', syncNote);                      // undo from a toast must reach the open panel

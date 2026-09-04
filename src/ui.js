@@ -7,6 +7,7 @@ export function setStatus(msg, cls = 'idle') {
   const el = $('statusBar');
   el.textContent = msg;
   el.className = cls;
+  el.title = msg; // en el riel el texto puede recortarse; el completo queda a mano
 }
 
 export const debounce = (fn, ms) => { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; };
@@ -51,17 +52,42 @@ export function initFilterFold(btnId, panelId, ids, perId) {
   };
 }
 
-/** A dropdown that opens on its button, closes on outside click, keeps aria-expanded honest. */
+/**
+ * Menús desplegables con un solo registro. Abrir uno cierra los demás que no
+ * lo contengan; cerrar uno cierra los que anidan dentro (Preferencias dentro
+ * del panel «⋯» quedaba marcado abierto e invisible); Escape cierra el más
+ * interno y devuelve el foco a su botón. Cada menú mantiene `aria-expanded`.
+ */
+const MENUS = [];
+function closeMenu(m) {
+  if (!m.menu.classList.contains('open')) return;
+  for (const o of MENUS) if (o !== m && m.menu.contains(o.menu)) closeMenu(o);
+  m.menu.classList.remove('open');
+  m.btn.setAttribute('aria-expanded', 'false');
+}
 export function initMenu(btnId, menuId, wrapId, onOpen = null) {
-  $(btnId).addEventListener('click', e => {
+  const m = { btn: $(btnId), menu: $(menuId), wrap: wrapId ? $(wrapId) : null };
+  MENUS.push(m);
+  m.btn.addEventListener('click', e => {
     e.stopPropagation();
-    const open = $(menuId).classList.toggle('open');
-    e.currentTarget.setAttribute('aria-expanded', String(open));
-    if (open) onOpen?.();
+    if (m.menu.classList.contains('open')) { closeMenu(m); return; }
+    for (const o of MENUS) if (o !== m && !o.menu.contains(m.menu)) closeMenu(o);
+    m.menu.classList.add('open');
+    m.btn.setAttribute('aria-expanded', 'true');
+    onOpen?.();
   });
-  $(menuId).addEventListener('click', e => e.stopPropagation());
+  m.menu.addEventListener('click', e => e.stopPropagation());
+  if (MENUS.length > 1) return;
   document.addEventListener('click', e => {
-    if (!wrapId || !e.target.closest(`#${wrapId}`)) { $(menuId).classList.remove('open'); $(btnId).setAttribute('aria-expanded', 'false'); }
+    for (const o of MENUS) if (!o.wrap || !o.wrap.contains(e.target)) closeMenu(o);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const open = MENUS.filter(o => o.menu.classList.contains('open'));
+    if (!open.length) return;
+    const inner = open.find(o => !open.some(p => p !== o && o.menu.contains(p.menu))) ?? open[open.length - 1];
+    closeMenu(inner);
+    inner.btn.focus();
   });
 }
 
