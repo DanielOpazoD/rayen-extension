@@ -108,3 +108,9 @@ test('buildDetails acota la concurrencia para no saturar SysLab', async () => {
   assert.equal(errors.length, 9);
   assert.ok(peak <= 3, `no más de 3 descargas simultáneas, hubo ${peak}`);
 });
+
+test('buildDetail entrega el sexo al parser para elegir la referencia por grupo', async () => {
+  const text = 'Rut/Fic: 16.940.645-6\nHEMATOLOGIA\nHemoglobina: 13,0 g/dL Mujeres: 12,0 - 16,0 Hombres: 13,5 - 17,5';
+  const d = await buildDetail({ examId: 'x', expectedRutBody: '16940645', loadBytes: async () => new Uint8Array(), toText: async () => text, sexo: 'Masculino' });
+  assert.equal(d.findings[0].refGroup, 'Hombres');
+});

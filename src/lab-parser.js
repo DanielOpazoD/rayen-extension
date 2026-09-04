@@ -174,6 +174,10 @@ export function referenceBounds(value, context) {
 
 /** ¿Este hallazgo está fuera de rango? Cubre comparadores y resultados cualitativos. */
 export function findingAlert(finding) {
+  // El laboratorio ya lo marcó como anormal: eso manda sobre cualquier cálculo.
+  if (finding && finding.flag) return true;
+  // Referencia elegida sin saber el sexo del paciente: no se alerta por ella.
+  if (finding && finding.refUncertain) return false;
   const result = cleanText(finding && finding.result);
   const measurement = parseMeasurement(result, finding);
   const bounds = referenceBounds(finding && finding.refValue, finding);
@@ -208,7 +212,8 @@ export function findingAlert(finding) {
 const REPORT_SKIP_PATTERNS = [
   /^HOSPITAL\s+DE\s+/i, /^Laboratorio\s+Cl[íi]nico/i, /^Nombre\s*:/i,
   /^Rut\/?Fic\s*:/i, /^Fecha\s+de\s+Nac/i, /^Procedencia\s*:/i,
-  /^Fecha\s+y\s+Hora/i, /^Fecha\s+de\s+impresi[óo]n/i,
+  /^Fecha\s+y\s+Hora/i, /^Fecha\s+de\s+impresi[óo]n/i, /^Fecha\s+de\s+(?:toma|recepci[óo]n|informe|validaci[óo]n|ingreso|emisi[óo]n)/i,
+  /^Toma\s+de\s+muestra/i, /^M[ée]dico\s+(?:tratante|solicitante)/i, /^Solicitado\s+por/i,
   /^E\s+X\s+A\s+M\s+E\s+N\s+E\s+S\s*$/, /^Director\s+T[ée]cnico/i,
   /^Resultado\s+Via\s+WEB/i, /^Resultado\s+Unidad\s+Valor\s+de\s+Referencia/i,
   /^Nota\s*:/i, /^Valores?\s+(de\s+)?[Rr]eferencia/i, /^Ni[ñn]os?.*\s\d/i,
@@ -216,7 +221,7 @@ const REPORT_SKIP_PATTERNS = [
 ];
 const REPORT_SECTION_REGEX = /^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9\s+\-/#.]{2,60}$/;
 const REPORT_NUMERIC_REGEX = /^(.+?)\s*:\s*\|?\s*((?:[<>]=?|[≤≥])?\s*[+-]?\s*[\d.,]+)(.*)$/;
-const REPORT_QUALITATIVE_REGEX = /^(.+?)\s*:\s*(NEGATIVO|POSITIVO|NORMAL|AUSENTE|PRESENTE|REACTIVO|NO\s+REACTIVO|DETECTADO|NO\s+DETECTADO|ESCASA|MODERADA|ABUNDANTE|NO\s+SE\s+OBSERVA(?:N)?)\s*$/i;
+const REPORT_QUALITATIVE_REGEX = /^(.+?)\s*:\s*(NEGATIVO|POSITIVO|NORMAL|AUSENTE|PRESENTE|REACTIVO|NO\s+REACTIVO|DETECTADO|NO\s+DETECTADO|ESCASAS?|MODERADAS?|ABUNDANTES?|REGULAR(?:ES)?|NO\s+SE\s+OBSERVA(?:N)?)\s*$/i;
 const REPORT_NON_ANALYTIC_PATTERNS = [
   /^Edad$/i, /^Valor\s+de\s+referencia$/i, /^Profilaxis\s+trombosis\s+venosa$/i,
   /^Prevenci[oó]n\s+tromb\./i, /^Profilaxis\s+arteriales/i, /^Equipo\s+analizador$/i,
@@ -247,19 +252,60 @@ const UNIT_TRAILING_LABEL = /\s*\b(?:Adultos?|Ni[ñn][oa]s?|Hombres?|Mujeres|Emb
 // la hay, la primera. Antes sólo se pelaba el último rótulo y el resto quedaba
 // dentro de la unidad, partiendo la variable en dos filas.
 const GROUP_LABEL_ANY = /\b(?:Adultos?|Ni[ñn][oa]s?|Hombres?|Mujeres|Embarazadas?|Lactantes?|Reci[ée]n\s+nacidos?)\s*:/i;
-const ANY_REFERENCE = new RegExp(`((?:[<>]=?|[≤≥])\\s*${LOCALIZED_NUMBER_SOURCE}|${LOCALIZED_NUMBER_SOURCE}\\s*[-–]\\s*${LOCALIZED_NUMBER_SOURCE})`);
-const ADULT_REFERENCE = new RegExp(`Adultos?\\s*:\\s*((?:[<>]=?|[≤≥])\\s*${LOCALIZED_NUMBER_SOURCE}|${LOCALIZED_NUMBER_SOURCE}\\s*[-–]\\s*${LOCALIZED_NUMBER_SOURCE})`, 'i');
 
-function splitReportUnitAndReference(rest) {
+// Marca de anormalidad que el laboratorio imprime al final de la línea: «*»,
+// «(*)», «H»/«L», «Alto»/«Bajo», flechas. Antes quedaba pegada a la referencia,
+// la referencia se perdía y el valor salía sin alerta: justo lo que el
+// laboratorio marcó como anormal.
+// Las letras exigen espacio delante: la «L» de «mEq/L» no es una marca.
+const TRAILING_FLAG = /(?:\s*(\(\*\)|\*+|↑+|↓+)|\s+(HH?|LL?|Alto|Bajo|Elevado|Disminuido))\s*$/i;
+// «Rango terapéutico: 2,0 - 3,0» no es la referencia del INR de una persona sin
+// anticoagular; se ignora todo desde ahí.
+const THERAPEUTIC_TAIL = /\s*\b(?:rango\s+)?terap[ée]utic[oa]s?\b.*$/i;
+const GROUP_REFERENCES = new RegExp(`(Adultos?|Ni[ñn][oa]s?|Hombres?|Mujeres|Embarazadas?|Lactantes?|Reci[ée]n\\s+nacidos?)\\s*:\\s*((?:[<>]=?|[≤≥])\\s*${LOCALIZED_NUMBER_SOURCE}|${LOCALIZED_NUMBER_SOURCE}\\s*[-–]\\s*${LOCALIZED_NUMBER_SOURCE})`, 'gi');
+
+/** «Femenino», «F», «Mujer» → 'mujer'; «Masculino», «M», «Hombre» → 'hombre'; otra cosa → ''. */
+export function normalizeSexo(value) {
+  const v = cleanText(value).toLowerCase();
+  if (!v) return '';
+  if (/^(f|fem|mujer|femenino)/.test(v)) return 'mujer';
+  if (/^(m|masc|hombre|masculino)/.test(v) && !/^muj/.test(v)) return 'hombre';
+  return '';
+}
+
+/**
+ * Elige la referencia entre varios grupos («Mujeres: 12 - 16 Hombres: 13,5 - 17,5»):
+ * la del sexo del paciente si se conoce; si no, la de adultos; si tampoco, la
+ * primera, marcada como incierta para que no produzca alertas por sí sola.
+ */
+function chooseGroupReference(groups, sexo) {
+  const found = [...groups.matchAll(GROUP_REFERENCES)].map(m => ({ label: m[1], ref: m[2].trim() }));
+  if (!found.length) return null;
+  const bySexo = sexo === 'mujer' ? found.find(g => /^Mujer/i.test(g.label))
+    : sexo === 'hombre' ? found.find(g => /^Hombre/i.test(g.label)) : null;
+  if (bySexo) return { ...bySexo, uncertain: false };
+  const adult = found.find(g => /^Adult/i.test(g.label));
+  if (adult) return { ...adult, uncertain: false };
+  const sexed = found.some(g => /^(Mujer|Hombre)/i.test(g.label));
+  return { ...found[0], uncertain: sexed };
+}
+
+function splitReportUnitAndReference(rest, { sexo = '' } = {}) {
   let cleaned = String(rest || '').replace(/^\s*\|+\s*|\s*\|+\s*$/g, '').trim();
   if (!cleaned) return { unit: '', refValue: '' };
+  cleaned = cleaned.replace(THERAPEUTIC_TAIL, '').trim();
+  let flag = '';
+  const flagged = cleaned.match(TRAILING_FLAG);
+  if (flagged && flagged.index > 0) { flag = flagged[1] || flagged[2]; cleaned = cleaned.slice(0, flagged.index).trim(); }
   for (const [regex, replacement] of WORDED_BOUNDS) cleaned = cleaned.replace(regex, replacement);
   const group = cleaned.search(GROUP_LABEL_ANY);
   if (group >= 0) {
-    const groups = cleaned.slice(group);
-    const chosen = groups.match(ADULT_REFERENCE)?.[1] ?? groups.match(ANY_REFERENCE)?.[1] ?? '';
-    const before = splitReportUnitAndReference(cleaned.slice(0, group));
-    return { unit: before.unit, refValue: (chosen || before.refValue).trim() };
+    const chosen = chooseGroupReference(cleaned.slice(group), sexo);
+    const before = splitReportUnitAndReference(cleaned.slice(0, group), { sexo });
+    const out = { unit: before.unit, refValue: (chosen?.ref || before.refValue).trim() };
+    if (chosen) { out.refGroup = chosen.label; if (chosen.uncertain) out.refUncertain = true; }
+    if (flag) out.flag = flag;
+    return out;
   }
   const rangeSuffix = cleaned.match(REFERENCE_SUFFIX_REGEX);
   let unit = cleaned, refValue = '';
@@ -268,7 +314,7 @@ function splitReportUnitAndReference(rest) {
     refValue = rangeSuffix[1].trim();
   }
   unit = unit.replace(UNIT_TRAILING_LABEL, '').replace(/\s*\S+:$/, '').trim();
-  return { unit, refValue };
+  return flag ? { unit, refValue, flag } : { unit, refValue };
 }
 
 const isValidAnalysis = analysis => analysis.length >= 2 && analysis.length <= 60 &&
@@ -334,7 +380,8 @@ function splitEmbeddedAnalytes(line) {
 }
 
 /** Texto plano de un informe → lista de hallazgos `{section, analysis, result, unit, refValue}`. */
-export function parseReportText(text) {
+export function parseReportText(text, { sexo = '' } = {}) {
+  const opts = { sexo: normalizeSexo(sexo) };
   const parsedData = [];
   let currentSection = 'GENERAL';
   for (let line of String(text || '').split(/\r?\n/)) {
@@ -345,14 +392,14 @@ export function parseReportText(text) {
       continue;
     }
     for (const segment of splitEmbeddedAnalytes(line)) {
-      const finding = parseAnalyteSegment(segment, currentSection);
+      const finding = parseAnalyteSegment(segment, currentSection, opts);
       if (finding) parsedData.push(finding);
     }
   }
   return parsedData;
 }
 
-function parseAnalyteSegment(segment, currentSection) {
+function parseAnalyteSegment(segment, currentSection, opts = {}) {
   let match = segment.match(REPORT_QUALITATIVE_REGEX);
   if (match) {
     const analysis = normalizeAnalysisName(match[1], currentSection);
@@ -366,10 +413,17 @@ function parseAnalyteSegment(segment, currentSection) {
   if (match) {
     const analysis = normalizeAnalysisName(match[1], currentSection);
     if (!isValidAnalysis(analysis)) return null;
-    const split = splitReportUnitAndReference(match[3]);
+    // «Leucocitos: 2 - 4 por campo»: el resultado es un rango, no el número 2.
+    if (/^\s*[-–]\s*\d/.test(match[3])) {
+      return { section: currentSection, analysis, result: cleanText(`${match[2]} ${match[3]}`), unit: '', refValue: '', qualitative: true };
+    }
+    const split = splitReportUnitAndReference(match[3], opts);
     return {
       section: currentSection, analysis, result: match[2].replace(/\s+/g, ''),
       unit: split.unit, refValue: split.refValue,
+      ...(split.flag ? { flag: split.flag } : {}),
+      ...(split.refGroup ? { refGroup: split.refGroup } : {}),
+      ...(split.refUncertain ? { refUncertain: true } : {}),
     };
   }
   return parseFreeQualitative(segment, currentSection);

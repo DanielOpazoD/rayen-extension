@@ -212,6 +212,11 @@ function sanitizeFinding(value) {
     refValue: cleanText(value.refValue),
     qualitative: Boolean(value.qualitative),
   };
+  // La marca del laboratorio y el grupo de referencia viajan con el hallazgo:
+  // sin ellos, la matriz perdía la alerta que el informe traía impresa.
+  if (value.flag) finding.flag = cleanText(value.flag);
+  if (value.refGroup) finding.refGroup = cleanText(value.refGroup);
+  if (value.refUncertain) finding.refUncertain = true;
   finding.alert = findingAlert(finding);
   return finding;
 }

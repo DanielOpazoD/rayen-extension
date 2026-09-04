@@ -46,7 +46,7 @@ export function extractAnyRutBody(text) {
  * @returns {Promise<{examId, rutBody, findings, rutVerified}>}
  * @throws si el informe declara un RUT distinto del consultado.
  */
-export async function buildDetail({ examId, loadBytes, expectedRutBody, toText = pdfBytesToText }) {
+export async function buildDetail({ examId, loadBytes, expectedRutBody, toText = pdfBytesToText, sexo = '' }) {
   const text = await toText(await loadBytes());
   const expected = normalizeRutBody(expectedRutBody);
   const rutBody = extractAnyRutBody(text);
@@ -58,7 +58,8 @@ export async function buildDetail({ examId, loadBytes, expectedRutBody, toText =
     examId: String(examId),
     rutBody: rutBody || expected,
     rutVerified: Boolean(rutBody && expected && rutBody === expected),
-    findings: parseReportText(text),
+    // El sexo elige la referencia cuando el informe trae una por grupo («Mujeres: … Hombres: …»).
+    findings: parseReportText(text, { sexo }),
   };
 }
 

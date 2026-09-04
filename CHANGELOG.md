@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.20.0 — 2026-09-04
+
+Etapa 5, punto 1: el parser ya no calla donde el laboratorio grita.
+
+- **La marca de anormalidad manda.** Un «*», «(*)», «H», «L», «Alto», «Bajo» o una flecha al final de la línea dejaba la referencia vacía y el valor sin alerta, justo lo que el laboratorio había marcado. Ahora la marca se separa, la referencia se conserva y el hallazgo queda en alerta; la matriz y el informe la muestran.
+- **Referencia por sexo con el sexo del paciente.** Con «Mujeres: 12,0 - 16,0 Hombres: 13,5 - 17,5» regía la primera: un hombre con hemoglobina 13,0 salía normal. El sexo llega desde el portal del Salvador o desde la ficha del paciente al abrir el laboratorio; sin él, la referencia se rotula como incierta y **no produce alertas** por sí sola. El grupo elegido se ve en la celda y en el informe.
+- «Rango terapéutico: 2,0 - 3,0» ya no secuestra la referencia del INR; «Fecha de toma», «Médico solicitante» y similares dejan de ser hallazgos; «Leucocitos: 2 - 4 por campo» se conserva como texto, no como el número 2; «ESCASAS» y «ABUNDANTES» en plural se reconocen.
+- Regresiones para cada caso, en el parser, en la matriz y en la lectura del informe.
+
 ## 2.19.0 — 2026-09-04
 
 Etapa 5, puntos 2 a 5 del quinto balance (4,9/7).

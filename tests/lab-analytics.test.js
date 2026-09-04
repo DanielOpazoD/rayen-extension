@@ -223,3 +223,13 @@ test('un recuento ambiguo no entra a la tendencia', () => {
   const puntos = (t?.points ?? []).filter(Boolean).map(p => p.value);
   assert.deepEqual(puntos, [6100, 5800], 'el ambiguo queda fuera; los dos claros forman la tendencia');
 });
+
+// La marca del laboratorio debe llegar a la matriz: sanitizeFinding la perdía.
+test('la matriz conserva la marca del laboratorio y alerta por ella', () => {
+  const exams = [{ id: '501', date: '01/09/2026', time: '08:00', patientName: 'PEREZ, JUAN', origin: 'MEDICINA', exams: ['Perfil'], rutBody: '16940645' }];
+  const [finding] = parseReportText('QUIMICA\nGlucosa: 105 mg/dL 70 - 100 *');
+  const a = buildAnalysis([{ examId: '501', rutBody: '16940645', findings: [finding] }], exams);
+  const rows = Array.isArray(a.comparison) ? a.comparison : a.comparison.rows;
+  const cell = rows[0].values['501'];
+  assert.equal(cell.flag, '*'); assert.equal(cell.alert, true);
+});
