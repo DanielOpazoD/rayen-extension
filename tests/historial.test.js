@@ -100,3 +100,20 @@ test('una cita «No se presentó» no hereda la atención de otro prestador ese 
   const mine = mergeHistorial([cita({ estado: 'No se presentó' })], [atencion()]);
   assert.equal(mine[0].atencionId, 1);
 });
+
+// Decisión de Daniel (03-09-2026): sólo sus diagnósticos. Una cita atendida
+// sin registro propio no hereda la atención de otro profesional; queda la
+// pista de quién atendió ese día.
+test('una cita «Atendido» sin atención propia no hereda la de otro prestador', () => {
+  const matrona = atencion({
+    Id: 902,
+    FuncionariosPrestadores: [{ Id: 777, NombreCompleto: 'Matrona X', NombreInstrumento: 'Matrona' }],
+    Diagnosticos: [{ DescripcionClasificacion: 'Embarazo- (Confirmada)', DescripcionDiagnostico: 'Embarazo' }],
+  });
+  const out = mergeHistorial([cita({ estado: 'Atendido' })], [matrona]);
+  assert.equal(out.length, 1, 'la atención ajena tampoco se añade como fila extra');
+  assert.equal(out[0].atencionId, null);
+  assert.deepEqual(out[0].diagnosticos, []);
+  assert.equal(out[0].prestador, '');
+  assert.equal(out[0].otrosEseDia, 'Matrona X', 'la pista de quién atendió ese día se conserva');
+});

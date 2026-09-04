@@ -157,17 +157,18 @@ export function mergeHistorial(citas, atenciones) {
   const used = new Set();
   const out  = citas.map(c => {
     // Same patient may have several atenciones that day (kinesiólogo, matrona…):
-    // prefer the one where the officer is a prestador. Caer en cualquier otra
-    // sólo se permite si la cita consta como atendida: una cita en «Citado» que
-    // heredaba la atención de la matrona mostraba su diagnóstico como propio, y
-    // ese diagnóstico seguía después a Pacientes, a Hoy y a las estadísticas.
+    // sólo se cruza la que registró el propio oficial. Decisión de Daniel
+    // (03-09-2026): «quiero ver sólo mis diagnósticos». Antes, una cita
+    // atendida sin registro propio heredaba la atención de la matrona y ese
+    // diagnóstico ajeno seguía a Pacientes, a Hoy, a las estadísticas y a las
+    // exportaciones como si fuera suyo. Quién más atendió ese día queda como
+    // pista (`otrosEseDia`), sin heredar nada.
     const cands = (idx.get(matchKey(c)) ?? []).filter(x => !used.has(x.id));
-    // «No se presentó» contiene «present»: una cita a la que el paciente no
-    // fue heredaba igual la atención de la matrona. Un estado negado no cuenta.
-    const estado = c.estado || '';
-    const attended = /complet|atendid|present/i.test(estado) && !/\bno\b/i.test(estado);
-    const a = cands.find(isOfficer) ?? (attended ? cands[0] : undefined);
-    if (!a) return c;
+    const a = cands.find(isOfficer);
+    if (!a) {
+      const otros = [...new Set(cands.flatMap(x => x.prestadores.map(p => p.nombre)).filter(Boolean))];
+      return otros.length ? { ...c, otrosEseDia: otros.join(', ') } : c;
+    }
     used.add(a.id);
     return {
       ...c,

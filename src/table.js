@@ -56,7 +56,12 @@ export function sortRecords(data, sortCol, sortDir) {
 
 function dxCell(p) {
   const list = p.diagnosticos ?? [];
-  if (!list.length) return `<span class="dx-none">${p.atencionId ? 'Sin diagnóstico' : '—'}</span>`;
+  if (!list.length) {
+    // Sin registro propio ese día pero con atención de otro profesional: se
+    // dice quién, sin heredar su diagnóstico.
+    const pista = p.otrosEseDia ? ` data-tip="${esc(`Sin registro tuyo. Ese día registró atención: ${p.otrosEseDia}`)}"` : '';
+    return `<span class="dx-none"${pista}>${p.atencionId ? 'Sin diagnóstico' : '—'}</span>`;
+  }
   const d0  = list[0];
   const tip = list.map(d => `${d.nombre}${d.clasificacion && d.clasificacion !== d.nombre ? ` [${d.clasificacion}]` : ''}${d.certeza ? ` (${d.certeza})` : ''}${d.esAuge ? ' GES' : ''}`).join('\n');
   return `<span class="dx-main" data-tip="${esc(tip)}">${esc(d0.nombre)}</span>` +

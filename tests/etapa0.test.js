@@ -32,10 +32,13 @@ test('una cita no atendida no hereda el diagnóstico de otro prestador', () => {
   assert.equal(c.estado, 'Citado');
 });
 
-test('una cita atendida sí puede completarse con la atención del día aunque sea de otro', () => {
+// Decisión de Daniel (03-09-2026): sólo sus diagnósticos. Ni siquiera una cita
+// atendida hereda la atención de otro prestador; queda la pista de quién fue.
+test('una cita atendida tampoco hereda la atención de otro prestador', () => {
   const [c] = mergeHistorial([cita('Completado')], [atencionAjena()]);
-  assert.equal(c.atencionId, 9, 'el comportamiento anterior se conserva cuando la cita consta como atendida');
-  assert.equal(c.diagnosticos.length, 1);
+  assert.equal(c.atencionId, null);
+  assert.deepEqual(c.diagnosticos, []);
+  assert.equal(c.otrosEseDia, 'Matrona X');
 });
 
 // El informe imprimible es una historia clínica completa guardada en disco;

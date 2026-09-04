@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 2.17.1 — 2026-09-03
+
+Decisión clínica: **sólo tus diagnósticos**.
+
+- Una cita atendida sin registro tuyo **ya no hereda la atención de otro profesional**. Antes tomaba la primera del día (la matrona, el kinesiólogo) y ese diagnóstico ajeno seguía a Pacientes, a Hoy, a las estadísticas y a las exportaciones como si fuera tuyo. La fila queda «Atendido» sin diagnóstico, y el guion del diagnóstico dice al pasar el cursor quién registró atención ese día, sin traer nada de ella.
+- Se conserva lo de siempre: si tú figuras como prestador de una atención del día, esa es la que se cruza.
+
 ## 2.17.0 — 2026-09-03
 
 UX, estética y accesibilidad: lo que el cuarto balance dejó abierto en su lente.
