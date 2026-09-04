@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.24.0 — 2026-09-04
+
+Panel de paciente, iteración 2: problemas con peso, interconsultas y recetas con el mismo lenguaje.
+
+- **Problemas con peso, no en orden de aparición** (`src/ficha-rank.js`): el mismo problema en dos redacciones es una sola fila con su recuento; GES y crónicos primero (por código CIE-10 o por nombre: diabetes, hipertensión, EPOC, asma…), luego los recurrentes, luego los recientes. Cada fila dice código, «crónico», cuántas veces y la última fecha.
+- **Interconsultas «Mías / De otros»** y **Recetas «Activas / Vencidas»**, con el mismo segmento que Medicina/Otros. La vigencia sale de la duración escrita en la receta («cada 12 horas por 6 meses») y la fecha de la atención; sin duración se asumen 30 días; las suspendidas van con las vencidas.
+- Si la ficha no se pudo leer, Recetas lo dice en vez de quedarse en «Consultando ficha…».
+
 ## 2.23.0 — 2026-09-04
 
 Atenciones con menos columnas y más sentido (iteración 1 del plan de diseño).

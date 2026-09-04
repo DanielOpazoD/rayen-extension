@@ -1,3 +1,5 @@
+import { rankProblems, prescripcionEstado } from './ficha-rank.js';
+import { isMine as isMineSic } from './sic.js';
 import { isMedicalVisit } from './patient-report.js';
 import { humanError } from './errors.js';
 import { patientKey } from './notes.js';
@@ -16,6 +18,8 @@ import { copyToClipboard } from './toast.js';
 let cur = null;          // { record, key, visits, sics, contact, ficha }
 let activeTab = 'dx';    // remembered across patients
 let atFilter = 'medicina'; // Medicina | Otros, también recordado
+let icFilter = 'mias';     // Mías | De otros
+let rxFilter = 'activas';  // Activas | Vencidas
 let navigate = null;     // (dir) => void, supplied by the host
 
 let opener = null;       // quien tenía el foco al abrir; lo recupera al cerrar
@@ -45,6 +49,8 @@ function close() {
 const isMine = v => (v.prestadores ?? []).some(p => p.id === CONFIG.officerId);
 const kv = (label, value) => value ? `<div class="kv"><span class="k">${esc(label)}</span><span class="v">${esc(value)}</span></div>` : '';
 const h4 = t => `<h4>${esc(t)}</h4>`;
+const segButton = (scope, key, label, n, active) => `<button type="button" data-scope="${scope}" data-seg="${key}" aria-pressed="${active}">${label} <span class="cnt">${n}</span></button>`;
+const segGroup = (scope, label, items, active) => `<div class="pp-seg" role="group" aria-label="${esc(label)}">${items.map(([k, l, n]) => segButton(scope, k, l, n, active === k)).join('')}</div>`;
 const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
 
 /**
@@ -112,12 +118,13 @@ export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
     $('ppAvatar').classList.toggle('on', !hidden);
     $('ppAvatar').setAttribute('aria-expanded', String(!hidden));
   });
-  // Pestañas internas Medicina / Otros dentro de Atenciones.
-  $('ppPaneAt').addEventListener('click', e => {
-    const seg = e.target.closest('[data-seg]');
+  // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas.
+  $('patientPanel').addEventListener('click', e => {
+    const seg = e.target.closest('[data-seg][data-scope]');
     if (!seg) return;
-    atFilter = seg.dataset.seg;
-    renderAt();
+    if (seg.dataset.scope === 'at') { atFilter = seg.dataset.seg; renderAt(); }
+    if (seg.dataset.scope === 'ic') { icFilter = seg.dataset.seg; renderIc(); }
+    if (seg.dataset.scope === 'rx') { rxFilter = seg.dataset.seg; renderRx(); }
   });
 
   $('ppLabBtn').addEventListener('click', () => {
@@ -245,29 +252,22 @@ function renderDatos() {
 
 // ── Panes ─────────────────────────────────────────────────────
 
-function problemList(visits) {
-  const seen = new Map();
-  for (const v of visits) for (const d of v.diagnosticos ?? []) {
-    const k = d.clasificacion || d.nombre;
-    if (!k || /no informado/i.test(k)) continue;
-    if (!seen.has(k)) seen.set(k, { ...d, fecha: v.fechaAtencion, n: 0 });
-    seen.get(k).n++;
-  }
-  return [...seen.values()];
-}
-
 function renderDx() {
   const { visits, ficha } = cur;
   const src = ficha?.visits?.length ? ficha.visits : visits;
-  const probs = problemList(src);
+  // Con peso, no en orden de aparición: GES y crónicos primero, luego los
+  // recurrentes, luego los recientes; el mismo problema en dos redacciones es
+  // una sola fila con su recuento.
+  const probs = rankProblems(src, { officerId: CONFIG.officerId });
   const a = ficha?.antecedentes;
   let html = '';
 
-  html += h4(ficha?.visits?.length ? 'Diagnósticos (historial completo, todos los profesionales)' : 'Diagnósticos (mis atenciones)');
-  html += probs.length ? probs.map(d =>
-    `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
-    `<span class="pp-row-m">${d.fecha}</span></div>`).join('')
-    : empty('Sin diagnósticos registrados');
+  html += h4(ficha?.visits?.length ? 'Problemas (historial completo, todos los profesionales)' : 'Problemas (mis atenciones)');
+  html += probs.length ? probs.map(d => {
+    const meta = [d.codigo, d.cronico ? 'crónico' : '', d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · ');
+    return `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
+      `<span class="pp-row-m">${esc(meta)}</span></div>`;
+  }).join('') : empty('Sin diagnósticos registrados');
 
   if (a?.morbidos.length) html += h4('Antecedentes mórbidos') + a.morbidos.map(m =>
     `<div class="pp-row"><span class="pp-row-t">${esc(m.label)}</span><span class="pp-row-m">${esc(m.fecha)}</span></div>`).join('');
@@ -342,16 +342,14 @@ function renderAt() {
     const medicina = ficha.visits.filter(isMedicalVisit);
     const otros = ficha.visits.filter(v => !isMedicalVisit(v));
     const shown = atFilter === 'otros' ? otros : medicina;
-    const seg = (key, label, n) => `<button type="button" data-seg="${key}" aria-pressed="${atFilter === key}">${label} <span class="cnt">${n}</span></button>`;
-    html = `<div class="pp-seg" role="group" aria-label="Tipo de atención">${seg('medicina', 'Medicina', medicina.length)}${seg('otros', 'Otros', otros.length)}</div>` +
+    html = segGroup('at', 'Tipo de atención', [['medicina', 'Medicina', medicina.length], ['otros', 'Otros', otros.length]], atFilter) +
       (shown.length ? shown.map(v => fichaVisitHTML(v, agendaByAtencion)).join('')
         : empty(atFilter === 'otros' ? 'Sin atenciones de otros profesionales' : 'Sin atenciones médicas'));
     setTabCount('at', ficha.visits.length);
   } else {
     // Sólo agenda: todas son atenciones propias, es decir, de Medicina. Las
     // pestañas internas se muestran igual para que la vista no cambie de forma.
-    const seg = (key, label, n) => `<button type="button" data-seg="${key}" aria-pressed="${atFilter === key}">${label} <span class="cnt">${n}</span></button>`;
-    html = `<div class="pp-seg" role="group" aria-label="Tipo de atención">${seg('medicina', 'Medicina', visits.length)}${seg('otros', 'Otros', 0)}</div>` +
+    html = segGroup('at', 'Tipo de atención', [['medicina', 'Medicina', visits.length], ['otros', 'Otros', 0]], atFilter) +
       (ficha ? `<div class="pp-empty">La ficha electrónica no tiene atenciones registradas; se muestra la agenda.</div>` : '') +
       (atFilter === 'otros' ? empty('Sin atenciones de otros profesionales')
         : (visits.length ? visits.map(agendaVisitHTML).join('') : empty('Sin atenciones')));
@@ -362,8 +360,10 @@ function renderAt() {
 
 function renderIc() {
   const { sics, ficha } = cur;
-  let html = '';
-  html += sics.length ? sics.map(s => `
+  const mias = sics.filter(isMineSic), ajenas = sics.filter(s => !isMineSic(s));
+  const shown = icFilter === 'otros' ? ajenas : mias;
+  let html = segGroup('ic', 'Interconsultas', [['mias', 'Mías', mias.length], ['otros', 'De otros', ajenas.length]], icFilter);
+  html += shown.length ? shown.map(s => `
       <div class="pp-sic">
         <div class="pp-sic-h"><strong>${esc(s.fecha)}</strong> ${stateDot(s.estado, { tone: sicTone(s.grupo) })}
           <span class="spacer"></span><button class="btn-mini" data-pdf="${esc(sicPdfPath(s.id))}" data-tip="Solicitud PDF">PDF</button></div>
@@ -372,7 +372,7 @@ function renderIc() {
           ${s.fundamentos ? `<p class="pp-fund">${esc(s.fundamentos)}</p>` : ''}
           </div>
       </div>`).join('')
-    : empty('Sin interconsultas en el período cargado');
+    : empty(icFilter === 'otros' ? 'Sin interconsultas de otros profesionales' : 'Sin interconsultas tuyas en el período cargado');
 
   const deriv = (ficha?.visits ?? []).flatMap(v => (v.sections.derivaciones ?? []).map(d => ({ ...d, fecha: v.fechaAtencion })));
   if (deriv.length) html += h4('Derivaciones registradas en atenciones') + deriv.map(d =>
@@ -384,35 +384,46 @@ function renderIc() {
 
 function renderRx() {
   const { ficha } = cur;
-  if (!ficha) { $('ppPaneRx').innerHTML = empty('Consultando ficha…'); return; }
-  let html = '';
-  const f = ficha.antecedentes.farmacos;
+  if (!ficha) { $('ppPaneRx').innerHTML = empty(cur.fichaFailed ? 'La ficha clínica no está disponible' : 'Consultando ficha…'); return; }
+  // Activas o vencidas por la duración escrita en la receta y la fecha de la atención.
+  const estadoDe = (texto, v, suspendido) => prescripcionEstado(texto, v.fecha8, { suspendido });
+  const conRx = ficha.visits.filter(v => v.sections.prescripciones || v.sections.recetas || v.sections.prescExtra);
+  const clasificar = v => {
+    const items = [...(v.sections.recetas ?? []).map(r => ({ kind: 'receta', r })), ...[...(v.sections.prescripciones ?? []), ...(v.sections.prescExtra ?? [])].map(p => ({ kind: 'presc', p }))];
+    return items.map(it => ({ ...it, estado: it.kind === 'receta' ? estadoDe(it.r.details.join(' '), v, false) : estadoDe(`${it.p.label} ${it.p.details.join(' ')}`, v, it.p.suspendido) }));
+  };
+  const porVisita = conRx.map(v => ({ v, items: clasificar(v) }));
+  const cuenta = estado => porVisita.reduce((n, { items }) => n + items.filter(i => (estado === 'activas' ? i.estado === 'activa' : i.estado !== 'activa')).length, 0);
+  let html = segGroup('rx', 'Recetas', [['activas', 'Activas', cuenta('activas')], ['vencidas', 'Vencidas', cuenta('vencidas')]], rxFilter);
+  const f = rxFilter === 'activas' ? ficha.antecedentes.farmacos : [];
   if (f.length) html += h4('Fármacos en uso') + f.map(x =>
     `<div class="pp-row"><span class="pp-row-t">${esc(x.label)}${x.hearts ? ' <span class="al al-info">HEARTS</span>' : ''}</span>` +
     `<span class="pp-row-m">${esc([x.posologia, x.estado ? `receta ${x.estado.toLowerCase()}` : '', x.fecha].filter(Boolean).join(' · '))}</span></div>`).join('');
 
-  const withRx = ficha.visits.filter(v => v.sections.prescripciones || v.sections.recetas || v.sections.prescExtra);
-  let n = 0;
-  if (withRx.length) {
+  let total = 0;
+  const visibles = porVisita.map(({ v, items }) => ({ v, items: items.filter(i => (rxFilter === 'activas' ? i.estado === 'activa' : i.estado !== 'activa')) })).filter(x => x.items.length);
+  for (const { items } of porVisita) total += items.filter(i => i.kind === 'receta').length;
+  if (visibles.length) {
     html += h4('Recetas por atención');
-    for (const v of withRx) {
+    for (const { v, items } of visibles) {
       const prest = v.prestadores[0]?.id ?? CONFIG.officerId;
-      const who = v.prestadores.map(p => p.nombre).join(', ');
+      const who = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : p.nombre).join(', ');
       html += `<div class="pp-rx"><div class="pp-rx-h"><strong>${esc(v.fechaAtencion)}</strong><span class="muted">${esc(who)}</span></div>`;
-      for (const r of v.sections.recetas ?? []) {
-        n++;
-        html += `<div class="pp-rx-r"><span>${esc(r.label)}</span><small>${esc(r.details.join(' · '))}</small>` +
-          `<button class="btn-mini" data-pdf="${esc(recetaPdfPath(v.id, r.raw.Id, prest))}" data-tip="Receta emitida (PDF)">PDF</button></div>`;
-      }
-      for (const p of [...(v.sections.prescripciones ?? []), ...(v.sections.prescExtra ?? [])]) {
-        html += `<div class="pp-item ${p.suspendido ? 'susp' : ''}"><span>${esc(p.label)}</span>${p.details.length ? `<small>${esc(p.details.join(' · '))}</small>` : ''}</div>`;
+      for (const it of items) {
+        if (it.kind === 'receta') {
+          html += `<div class="pp-rx-r"><span>${esc(it.r.label)}</span><small>${esc(it.r.details.join(' · '))}</small>` +
+            `<button class="btn-mini" data-pdf="${esc(recetaPdfPath(v.id, it.r.raw.Id, prest))}" data-tip="Receta emitida (PDF)">PDF</button></div>`;
+        } else {
+          html += `<div class="pp-item ${it.p.suspendido ? 'susp' : ''}"><span>${esc(it.p.label)}</span><small>${esc([...it.p.details, it.estado === 'suspendida' ? '' : it.estado].filter(Boolean).join(' · '))}</small></div>`;
+        }
       }
       html += `</div>`;
     }
+  } else if (!f.length) {
+    html += empty(rxFilter === 'activas' ? 'Sin recetas ni prescripciones activas' : 'Sin recetas vencidas');
   }
-  if (!html) html = empty('Sin recetas ni prescripciones registradas');
   $('ppPaneRx').innerHTML = html;
-  setTabCount('rx', n || f.length);
+  setTabCount('rx', total || ficha.antecedentes.farmacos.length);
 }
 
 function renderAll() {
@@ -456,7 +467,7 @@ async function loadAndRenderFicha(force = false) {
       `<button class="btn-mini" id="ppReload" aria-label="Volver a pedir la ficha a Eloisa" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
       (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : '');
   } catch (err) {
-    if (cur === me) $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`;
+    if (cur === me) { me.fichaFailed = true; renderRx(); $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`; }
   }
 }
 
