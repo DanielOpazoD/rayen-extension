@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.30.0 — 2026-09-04
+
+Captura anonimizada en el Explorador API, para estudiar la forma real de las respuestas sin datos del paciente.
+
+- **«Descargar copia anonimizada»** guarda el JSON del cuadro de respuesta sin nombres ni apellidos (también borrados dentro del texto libre), sin RUT, correos, teléfonos ni direcciones; los identificadores pasan a números correlativos que conservan las relaciones y todas las fechas se desplazan el mismo número de días, que no se informa. Los catálogos (diagnósticos, especialidades, tipos) se conservan.
+- **Comprobación final**: si algún nombre, RUT o correo sobreviviera, no se descarga y se indica qué quedó.
+- **Capturas de esta sesión**: las respuestas crudas de la ficha del último paciente abierto (HistorialAtencion, antecedentes, programas, vigencias, riesgo, RAM) y las citas de la agenda se pueden elegir sin volver a consultar. El cuadro de respuesta admite pegar cualquier JSON.
+- Módulo puro `src/anonimizar.js` con pruebas; recorrido de Playwright que descarga y verifica que el archivo no lleva datos de la muestra.
+
 ## 2.29.0 — 2026-09-04
 
 Ajustes pedidos por Daniel sobre el panel con datos reales, la navegación y el calendario.

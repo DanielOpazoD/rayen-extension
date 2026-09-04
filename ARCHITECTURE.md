@@ -151,7 +151,8 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/table.js` — columnas y renderizado de la tabla de atenciones.
 - `src/tabs/atenciones.js` — controlador de filtros y tabla de Atenciones.
 - `src/tabs/estadisticas.js` — controlador de la vista Estadísticas.
-- `src/tabs/explorador.js` — controlador del Explorador API.
+- `src/tabs/explorador.js` — controlador del Explorador API: consultas, capturas de la sesión (ficha del último paciente, citas) y descarga de la copia anonimizada.
+- `src/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/tabs/hoy.js` — controlador de fecha y jornada de Hoy.
 - `src/tabs/interconsultas.js` — carga bajo demanda y eventos de SIC.
 - `src/tabs/laboratorio.js` — controlador de la pestaña Laboratorio: Hospital Salvador (ProactiveLIS) y HHR (SysLab), análisis y solicitud de exámenes.

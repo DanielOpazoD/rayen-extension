@@ -666,6 +666,7 @@ tbody tr.flash-row td:first-child{box-shadow:inset 2px 0 0 var(--good)}
 .explorer-ql{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:var(--sp-3)}
 .ql-btn{height:var(--h-ctl-sm);padding:0 9px;display:inline-flex;align-items:center;border:1px solid var(--rule);border-radius:var(--r-full);background:var(--card);font-size:var(--t-xs);cursor:pointer;color:var(--ink-2)}
 .ql-btn:hover{border-color:var(--brand);color:var(--brand-2)}
+.explorer-anon select{height:var(--h-ctl);padding:0 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm);min-width:280px}
 .explorer-meta{font-size:var(--t-sm);margin-bottom:6px;color:var(--ink-3)}
 .explorer-meta.ok{color:var(--good)}.explorer-meta.err{color:var(--bad)}
 #explorerOut{width:100%;min-height:300px;background:var(--surface-2);color:var(--ink);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-3);font-family:var(--mono);font-size:var(--t-xs);line-height:1.6;resize:vertical;white-space:pre;overflow:auto}
