@@ -428,8 +428,13 @@
       <button class="btn btn-primary" id="btnExplorerFetch">Consultar</button>
     </div>
     <div class="explorer-ql" id="explorerQl"></div>
+    <div class="explorer-row explorer-anon">
+      <select id="explorerCaptures" aria-label="Capturas de esta sesión"><option value="">Capturas de esta sesión…</option></select>
+      <button class="btn" id="btnExplorerAnon" data-tip="Guarda el JSON del cuadro sin nombres, RUT, contactos, direcciones ni identificadores reales; las fechas se desplazan">Descargar copia anonimizada</button>
+    </div>
     <div class="explorer-meta" id="explorerMeta" role="status"></div>
-    <textarea id="explorerOut" readonly placeholder="La respuesta JSON aparecerá aquí…" aria-label="Respuesta"></textarea>
+    <textarea id="explorerOut" placeholder="La respuesta JSON aparecerá aquí. También puedes pegar una respuesta para anonimizarla." aria-label="Respuesta" spellcheck="false"></textarea>
+    <div class="explorer-meta" id="explorerAnonMeta" role="status"></div>
     <div class="extra-fields" id="extraFields" style="display:none">
       <h3>Campos de cita no mapeados</h3>
       <table class="ef-table">
