@@ -3,10 +3,10 @@
  * are exactly what the extension writes. Deterministic: same data every load.
  * Every name, RUN and phone here is invented.
  */
-import { parseCita, parseAtencion, dateRange, localDateStr, computeDv } from '../src/parser.js';
-import { parseSIC } from '../src/sic.js';
-import { aggregateTeam } from '../src/historial.js';
-import { CONFIG } from '../src/config.js';
+import { parseCita, parseAtencion, dateRange, localDateStr, computeDv } from '../src/core/parser.js';
+import { parseSIC } from '../src/io/sic.js';
+import { aggregateTeam } from '../src/io/historial.js';
+import { CONFIG } from '../src/core/config.js';
 
 const MONTHS = 6;
 const OFFICER = { Id: CONFIG.officerId, NombreCompleto: 'Daniel Opazo Damiani', NombreInstrumento: 'Consulta Médica' };

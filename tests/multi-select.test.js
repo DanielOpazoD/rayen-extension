@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeMultiValue } from '../src/multi-select.js';
+import { decodeMultiValue } from '../src/ui/multi-select.js';
 
 test('decodeMultiValue conserva selecciones múltiples únicas', () => {
   assert.deepEqual(decodeMultiValue('["Control","Morbilidad","Control"]'), ['Control', 'Morbilidad']);

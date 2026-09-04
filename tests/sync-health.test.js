@@ -4,8 +4,8 @@ import { installFakeChrome } from './helpers/fake-chrome.js';
 import {
   beginSyncSource, failRunningSyncSources, finishSyncSource, hasRetryableSync, loadSyncHealth,
   pendingSyncItems, recoverStaleSyncSources,
-} from '../src/sync-health.js';
-import { syncOverview } from '../src/sync-status.js';
+} from '../src/io/sync-health.js';
+import { syncOverview } from '../src/ui/sync-status.js';
 
 beforeEach(() => installFakeChrome());
 

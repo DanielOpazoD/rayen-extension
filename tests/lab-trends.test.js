@@ -8,8 +8,8 @@ import {
   groupReferenceBand,
   groupSeriesByScale,
   latestTrendTimestamp,
-} from '../src/lab-trends.js';
-import { buildAnalysis } from '../src/lab-analytics.js';
+} from '../src/ui/lab-trends.js';
+import { buildAnalysis } from '../src/core/lab-analytics.js';
 
 const HORA = 60 * 60 * 1000;
 const DIA = 24 * HORA;

@@ -1,11 +1,11 @@
 import { test } from 'node:test';
-import { parseReportText } from '../src/lab-parser.js';
+import { parseReportText } from '../src/core/lab-parser.js';
 import assert from 'node:assert/strict';
 import {
   buildAnalysis, comparisonClipboard, sanitizeExamList,
   normalizePatientRutBody, normalizeRutBody, examRowsMatchRut, rutInputAmbiguous,
   IMPORTANT_ANALYSES, MAX_SELECTED_EXAMS,
-} from '../src/lab-analytics.js';
+} from '../src/core/lab-analytics.js';
 
 const EXAMS = [
   { id: '101', date: '01/09/2026', time: '08:00', patientName: 'PEREZ, JUAN', origin: 'URGENCIA', exams: ['Hemograma'], rutBody: '16940645' },

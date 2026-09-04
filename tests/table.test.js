@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sexLetter, sicRole, whenLabel, sortRecords, row, atencionLabel, COLUMNS } from '../src/table.js';
-import { CONFIG } from '../src/config.js';
+import { sexLetter, sicRole, whenLabel, sortRecords, row, atencionLabel, COLUMNS } from '../src/ui/table.js';
+import { CONFIG } from '../src/core/config.js';
 
 test('sexLetter reduces Rayen sex labels to one letter', () => {
   assert.equal(sexLetter('Mujer'), 'M');

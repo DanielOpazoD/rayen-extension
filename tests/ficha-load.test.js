@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { loadFicha } from '../src/ficha.js';
+import { loadFicha } from '../src/io/ficha-load.js';
 
 /**
  * loadFicha reúne seis fuentes por paciente. Lo que importa aquí no es el

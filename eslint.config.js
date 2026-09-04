@@ -20,6 +20,23 @@ export default [
       'no-console': 'off',
     },
   },
+  // Capas: core no toca DOM, red ni Chrome y no importa io/ui; io no importa ui; ai no importa ui.
+  // La valla la hace cumplir el lint, no la disciplina.
+  {
+    files: ['src/core/**/*.js'],
+    rules: {
+      'no-restricted-globals': ['error', 'document', 'window', 'chrome', 'fetch', 'localStorage', 'sessionStorage', 'navigator', 'location'],
+      'no-restricted-imports': ['error', { patterns: [{ group: ['**/io/**', '**/ui/**', '**/ai/**'], message: 'core es puro: sin io, ui ni ai.' }] }],
+    },
+  },
+  {
+    files: ['src/io/**/*.js'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [{ group: ['**/ui/**'], message: 'io no conoce la interfaz.' }] }] },
+  },
+  {
+    files: ['src/ai/**/*.js'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [{ group: ['**/ui/**'], message: 'ai produce datos y texto; la interfaz los pinta.' }] }] },
+  },
   {
     files: ['report.js', 'popup-init.js'],
     languageOptions: { sourceType: 'script' },

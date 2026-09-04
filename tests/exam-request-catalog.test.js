@@ -5,7 +5,7 @@ import {
   PROCEDENCIA_OPTIONS,
   FONASA_LEVELS,
   getExamCategoryById,
-} from '../src/exam-request-catalog.js';
+} from '../src/core/exam-request-catalog.js';
 
 // Recuentos clavados a mano contra el impreso: si alguien borra un examen al
 // reordenar el catálogo, esto lo delata antes de que llegue a una solicitud.

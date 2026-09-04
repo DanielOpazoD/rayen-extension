@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createLabSearch, withinRange } from '../src/lab-search.js';
+import { createLabSearch, withinRange } from '../src/io/lab-search.js';
 
 // La búsqueda vivía en la pestaña, mezclada con el DOM: el token que descarta
 // respuestas tardías, la cancelación y el filtro de período no tenían prueba.

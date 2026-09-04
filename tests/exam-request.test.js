@@ -1,22 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  EXAM_REQUEST_TEXTS,
-  PRAIS_PREVISION,
-  buildExamRequestLayout,
-  buildExamRequestOpenState,
-  examRequestKey,
-  previsionForFonasaLevel,
-  previsionMarks,
-  resolveExamRequestPrevision,
-  runExamRequestPrint,
-  toggleExamSelection,
-} from '../src/exam-request.js';
+import { EXAM_REQUEST_TEXTS, PRAIS_PREVISION, buildExamRequestLayout, buildExamRequestOpenState, examRequestKey, previsionForFonasaLevel, previsionMarks, resolveExamRequestPrevision, toggleExamSelection } from '../src/core/exam-request.js';
+import { runExamRequestPrint } from '../src/ui/exam-request-view.js';
 import {
   EXAM_CATEGORIES,
   FONASA_LEVELS,
   PROCEDENCIA_OPTIONS,
-} from '../src/exam-request-catalog.js';
+} from '../src/core/exam-request-catalog.js';
 
 /** Todas las filas del impreso: secciones, pie de columna y pie de página. */
 function filasDeLaMaqueta(layout) {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPatients, filterPatients, sortPatients, setPatientSort } from '../src/patients.js';
+import { buildPatients, filterPatients, sortPatients, setPatientSort } from '../src/ui/patients.js';
 
 const rec = (over = {}) => ({
   id: 1, run: '1K', runStr: '1-K', nombre: 'Ana Pérez', edad: 40, sexo: 'Mujer',

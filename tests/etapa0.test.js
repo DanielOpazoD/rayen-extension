@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSIC } from '../src/sic.js';
-import { computePendientes } from '../src/pendientes.js';
-import { applyFilters } from '../src/stats.js';
-import { mergeHistorial } from '../src/historial.js';
-import { parseAtencion } from '../src/parser.js';
-import { clearAllCaches, storageSet, storageGet } from '../src/cache.js';
+import { parseSIC } from '../src/io/sic.js';
+import { computePendientes } from '../src/core/pendientes.js';
+import { applyFilters } from '../src/ui/stats.js';
+import { mergeHistorial } from '../src/io/historial.js';
+import { parseAtencion } from '../src/core/parser.js';
+import { clearAllCaches, storageSet, storageGet } from '../src/io/cache.js';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { CONFIG } from '../src/config.js';
+import { CONFIG } from '../src/core/config.js';
 
 // El cruce cita↔atención caía en cualquier atención del día, de cualquier
 // prestador: una cita en «Citado» heredaba el diagnóstico de la matrona y lo

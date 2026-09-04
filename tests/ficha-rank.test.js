@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rankProblems, prescripcionEstado, proximoControlSugerido } from '../src/ficha-rank.js';
+import { rankProblems, prescripcionEstado, proximoControlSugerido } from '../src/core/ficha-rank.js';
 
 const dx = (nombre, over = {}) => ({ nombre, clasificacion: nombre, codigo: '', certeza: 'Confirmada', esAuge: false, ...over });
 const visita = (fechaAtencion, diagnosticos, prestadores = []) => ({ fechaAtencion, fecha8: fechaAtencion.split('-').reverse().join(''), diagnosticos, prestadores });

@@ -1,22 +1,22 @@
-import { loadPrefs, DEFAULT_PREFS } from './src/cache.js';
-import { initPanel, syncNote } from './src/patient-panel.js';
-import { initPalette } from './src/palette.js';
-import { initLock } from './src/lock.js';
-import { $, initTooltips, initTablist, activateOnKey } from './src/dom.js';
-import { state, setPrefs, on } from './src/state.js';
-import { remeasure } from './src/ui.js';
-import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/actions.js';
-import { CONFIG } from './src/config.js';
-import { patientKey } from './src/notes.js';
-import * as loader from './src/loader.js';
-import * as ajustes from './src/ajustes.js';
-import * as hoy from './src/tabs/hoy.js';
-import * as atenciones from './src/tabs/atenciones.js';
-import * as pacientes from './src/tabs/pacientes.js';
-import * as estadisticas from './src/tabs/estadisticas.js';
-import * as interconsultas from './src/tabs/interconsultas.js';
-import * as laboratorio from './src/tabs/laboratorio.js';
-import * as explorador from './src/tabs/explorador.js';
+import { loadPrefs, DEFAULT_PREFS } from './src/io/cache.js';
+import { initPanel, syncNote } from './src/ui/patient-panel.js';
+import { initPalette } from './src/ui/palette.js';
+import { initLock } from './src/ui/lock.js';
+import { $, initTooltips, initTablist, activateOnKey } from './src/ui/dom.js';
+import { state, setPrefs, on } from './src/io/state.js';
+import { remeasure } from './src/ui/ui.js';
+import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
+import { CONFIG } from './src/core/config.js';
+import { patientKey } from './src/io/notes.js';
+import * as loader from './src/ui/loader.js';
+import * as ajustes from './src/ui/ajustes.js';
+import * as hoy from './src/ui/tabs/hoy.js';
+import * as atenciones from './src/ui/tabs/atenciones.js';
+import * as pacientes from './src/ui/tabs/pacientes.js';
+import * as estadisticas from './src/ui/tabs/estadisticas.js';
+import * as interconsultas from './src/ui/tabs/interconsultas.js';
+import * as laboratorio from './src/ui/tabs/laboratorio.js';
+import * as explorador from './src/ui/tabs/explorador.js';
 
 /**
  * Composition root. Data lives in state.js; each tab wires its own DOM and

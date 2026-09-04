@@ -1,8 +1,8 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { CONFIG } from '../src/config.js';
-import { patientKey, saveNote, restoreNote, attachNotes, addNote, updateNote, noteEntries } from '../src/notes.js';
+import { CONFIG } from '../src/core/config.js';
+import { patientKey, saveNote, restoreNote, attachNotes, addNote, updateNote, noteEntries } from '../src/io/notes.js';
 
 let fake;
 beforeEach(() => { fake = installFakeChrome(); });

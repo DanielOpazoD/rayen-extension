@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { anonimizar, resumenInforme } from '../src/anonimizar.js';
+import { anonimizar, resumenInforme } from '../src/core/anonimizar.js';
 
 const muestra = () => ({
   Id: 500439, IdUsuarioAps: 77123, Rut: '14407675-3', NombreFormateado: 'Napoleón Alexis Icka Pakarati',

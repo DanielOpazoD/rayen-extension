@@ -1,11 +1,11 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { CONFIG } from '../src/config.js';
-import { loadSICs } from '../src/sic.js';
-import { cancelRun, resetRun } from '../src/http.js';
-import { setPrefs } from '../src/state.js';
-import { pruneByRetention } from '../src/sic.js';
+import { CONFIG } from '../src/core/config.js';
+import { loadSICs } from '../src/io/sic.js';
+import { cancelRun, resetRun } from '../src/io/http.js';
+import { setPrefs } from '../src/io/state.js';
+import { pruneByRetention } from '../src/io/sic.js';
 
 /**
  * loadSICs hace tres listados y baja los detalles por grupos. (El cruce de

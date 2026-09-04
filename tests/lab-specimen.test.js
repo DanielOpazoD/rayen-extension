@@ -8,8 +8,8 @@ import {
   isLabComparisonEligible,
   isLabTrendSpecimenEligible,
   isTrendVariable,
-} from '../src/lab-specimen.js';
-import { COMPARISON_ORDER } from '../src/lab-catalog.js';
+} from '../src/core/lab-specimen.js';
+import { COMPARISON_ORDER } from '../src/core/lab-catalog.js';
 
 const hallazgo = (valores = {}) => ({
   section: 'GENERAL',
