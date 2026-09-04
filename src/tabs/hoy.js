@@ -49,7 +49,7 @@ function renderCalendar(allData, shown) {
   $('calGrid').innerHTML = `<div class="cal-row cal-dow" role="row">${DIAS_CORTOS.map(d => `<span role="columnheader">${d}</span>`).join('')}</div>` +
     weeks.map(w => `<div class="cal-row" role="row">${w.map(c => {
       const label = `${c.day} · ${c.count ? `${c.count} ${c.count === 1 ? 'atención' : 'atenciones'}` : 'sin atenciones'}`;
-      const cls = ['cal-d', c.inMonth ? '' : 'out', c.count ? 'has' : '', c.isToday ? 'today' : '', c.weekend ? 'we' : ''].filter(Boolean).join(' ');
+      const cls = ['cal-d', c.inMonth ? '' : 'out', c.count ? 'has' : '', c.isToday ? 'is-today' : '', c.weekend ? 'we' : ''].filter(Boolean).join(' ');
       return `<button type="button" role="gridcell" class="${cls}" data-date8="${c.date8}" aria-pressed="${c.isSelected}" aria-label="${esc(label)}"><span class="cal-n">${c.day}</span>${c.count ? `<span class="cal-c">${c.count}</span>` : ''}</button>`;
     }).join('')}</div>`).join('');
 }

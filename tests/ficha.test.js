@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster } from '../src/ficha.js';
+import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster, textosLibres } from '../src/ficha.js';
 
 test('parseMaster maps the UsuarioApsRut record (contact, family, prevision, flags)', () => {
   const m = parseMaster({
@@ -116,4 +116,20 @@ test('describe falls back to the first meaningful string field', () => {
   assert.equal(describe({ Id: 9 }).label, '(sin descripción)');
   assert.equal(describe({ Tipo: { Nombre: 'Receta magistral' } }).label, 'Receta magistral');
   assert.deepEqual(describe({ Nombre: 'X', FechaInicio: '20260901 000000' }).details, ['FechaInicio: 01-09-2026']);
+});
+
+test('textosLibres rescata la evolución y el examen físico de una atención de urgencia sin sección conocida', () => {
+  const a = {
+    Id: 9, Motivo: 'Consulta', FechaAtencion: '20260731 105900', NombreFuncionario: 'Juana Luna Atamu',
+    Anamnesis: [{ MotivoConsulta: 'Cefalea', HistoriaEnfermedadActual: '', Evolucion: 'Paciente evoluciona sin cefalea tras analgesia, sin focalidad.', ExamenFisico: 'Vigil, orientado, sin signos meníngeos.' }],
+    EpisodioAtencion: [{ Categorizacion: 'C3 · sin riesgo vital, atención diferible', IdEpisodio: 12 }],
+    Indicaciones: [{ Descripcion: 'Hidratación, dieta liviana y control en policlínico' }],
+    Observaciones: 'Sin observaciones de enfermería relevantes',
+  };
+  const x = textosLibres(a);
+  assert.deepEqual(x.map(e => e.label), ['Evolución', 'Examen físico', 'Categorización', 'Observaciones']);
+  assert.equal(x[0].text, 'Paciente evoluciona sin cefalea tras analgesia, sin focalidad.');
+  const v = parseFichaAtencion(a);
+  assert.equal(v.extras.length, 4);
+  assert.ok(!v.extras.some(e => /Indicaciones|Motivo|Nombre/.test(e.key)), 'lo que ya tiene sección o es identidad no se repite');
 });

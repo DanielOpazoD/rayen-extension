@@ -157,6 +157,13 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
     const inside = await page.evaluate(() => document.getElementById('patientPanel').contains(document.activeElement));
     expect(inside, `Tab nº ${i + 1} salió del diálogo`).toBe(true);
   }
+  // El estado de la ficha queda detrás de un botón discreto; el botón describe el estado.
+  await expect(page.locator('#ppFichaStatus')).toBeHidden();
+  await page.locator('#ppFichaToggle').click();
+  await expect(page.locator('#ppFichaStatus')).toBeVisible();
+  await expect(page.locator('#ppFichaToggle')).toHaveAttribute('aria-label', /Estado de la ficha clínica: /);
+  await page.locator('#ppFichaToggle').click();
+  await expect(page.locator('#ppFichaStatus')).toBeHidden();
   // Portada clínica primero, con sus secciones y «Ver todo».
   await expect(page.locator('.pp-tab[data-pt="res"]')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#ppPaneRes h4').first()).toHaveText(/Problemas activos/);

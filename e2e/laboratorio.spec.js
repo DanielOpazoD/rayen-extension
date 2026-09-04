@@ -45,7 +45,7 @@ test('busca en el Salvador, muestra las órdenes con su detalle y ofrece analiza
 
   await page.goto('/dev/');
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
-  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Laboratorio' }).click();
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Exámenes complementarios' }).click();
 
   await expect(page.locator('#labHsrStatus')).toHaveText('HSR conectado');
   await expect(page.locator('#labHhrStatus')).toContainText('SysLab');

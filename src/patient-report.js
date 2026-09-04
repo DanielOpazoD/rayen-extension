@@ -89,6 +89,7 @@ function visitHTML(v, officerId) {
     ${(v.diagnosticos ?? []).map(d => `<div class="dx">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <span class="muted">· ${esc(d.clasificacion)}</span>` : ''}${d.certeza ? ` <span class="muted">(${esc(d.certeza)})</span>` : ''}${d.esAuge ? '<span class="ges">GES</span>' : ''}</div>`).join('')}
     ${v.anamnesis?.motivo   ? `<div class="sec"><span class="sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}
     ${v.anamnesis?.historia ? `<div class="sec"><span class="sec-l">Historia / evolución</span><p>${esc(v.anamnesis.historia)}</p></div>` : ''}
+    ${(v.extras ?? []).map(x => `<div class="sec"><span class="sec-l">${esc(x.label)}</span><p>${esc(x.text)}</p></div>`).join('')}
     ${secs.map(([id, items]) => `<div class="sec"><span class="sec-l">${esc(SECTION_LABELS[id] ?? id)}</span>` +
         items.map(it => `<div class="item">${esc(it.label)}${it.suspendido ? ' <span class="muted">(suspendido)</span>' : ''}${it.details?.length ? `<small>${esc(it.details.join(' · '))}</small>` : ''}</div>`).join('') + `</div>`).join('')}
     ${(v.actividades ?? []).length ? `<div class="sec"><span class="sec-l">Actividades</span><p>${v.actividades.map(a => esc(a.descripcion || a.codigo)).join(' · ')}</p></div>` : ''}
