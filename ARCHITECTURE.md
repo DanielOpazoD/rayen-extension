@@ -120,6 +120,8 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/lab-parser.js` — interpretación clínica del texto de un informe y detección de fuera de rango.
 - `src/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
 - `src/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
+- `src/lab-search.js` — búsqueda en los dos laboratorios sin DOM: RUT buscado, token de ejecución, cancelación, filtro de período y resultados por callbacks.
+- `src/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
 - `src/lab-specimen.js` — clasifica la muestra biológica y decide qué entra en cada vista y en qué orden.
 - `src/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
 - `src/lab-trends.js` — agrupa las series en tarjetas clínicas y las filtra por período, texto y alteración.

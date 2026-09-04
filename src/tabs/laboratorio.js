@@ -1,20 +1,13 @@
-import { humanCase } from '../parser.js';
+import { humanCase, formatRun } from '../parser.js';
 import { humanError } from '../errors.js';
 import { esc, $ } from '../dom.js';
-import { on } from '../state.js';
-import {
-  checkLabSession, buscarOrdenesPorRut, normalizeOrden, ordersMatchRut,
-  informeResultado, resetLabSession, LAB_ORIGIN,
-} from '../lab-api.js';
-import {
-  checkSyslabSession, buscarExamenesPorRut, normalizeSyslabExam,
-  syslabPdfUrl, syslabReportBytes, resetSyslabSession, SYSLAB_BASE,
-} from '../syslab-api.js';
+import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN } from '../lab-api.js';
+import { checkSyslabSession, syslabPdfUrl, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../syslab-api.js';
+import { createSessionMonitor } from '../lab-session.js';
+import { createLabSearch } from '../lab-search.js';
 import { mergePdfs } from '../pdf-merge.js';
 import { buildDetails } from '../lab-report.js';
-import {
-  buildAnalysis, comparisonClipboard, normalizePatientRutBody, rutInputAmbiguous, MAX_SELECTED_EXAMS,
-} from '../lab-analytics.js';
+import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../lab-analytics.js';
 import { renderTrendGroups } from '../lab-charts.js';
 import {
   buildTrendGroups, filterTrendGroups, latestTrendTimestamp, countTrendVariables,
@@ -39,7 +32,6 @@ const selected = new Set();
  * laboratorio de un paciente y pasar al siguiente antes de que respondiera
  * pintaba las órdenes del primero bajo el RUT del segundo.
  */
-let searchRun = 0;
 let searchRutBody = '';
 let searching = false;
 let searchRutDisplay = '';
@@ -56,8 +48,8 @@ export function init() {
   $('labRut').addEventListener('keyup', e => { if (e.key === 'Enter') doSearch(); });
   $('labRut').addEventListener('input', markStaleIfRutChanged);
   $('labClear').addEventListener('click', clearResults);
-  $('labCheckHsr').addEventListener('click', () => { lastCheck.at = 0; updateHsrSession(); });
-  $('labCheckHhr').addEventListener('click', () => { lastCheck.at = 0; updateHhrSession(); });
+  $('labCheckHsr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHsr(); });
+  $('labCheckHhr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHhr(); });
   $('labDownloadAll').addEventListener('click', () => downloadAllPdfs());
   $('labAnalyze').addEventListener('click', () => analyzeSelected());
   $('labCloseAnalysis').addEventListener('click', closeAnalysis);
@@ -86,75 +78,26 @@ export function init() {
     if (view) showView(view);
   });
 
-  on('data', () => {});
 }
 
 export async function onShow() {
-  await checkSessions();
+  await sessions.check();
 }
 
-/**
- * Comprueba ambas sesiones, reutilizando el resultado durante unos segundos.
- *
- * Abrir el laboratorio desde el panel del paciente dispara la comprobación por
- * dos caminos a la vez, y la de SysLab inyecta un script en la pestaña del
- * usuario. Sin esta ventana, un clic costaba cuatro comprobaciones.
- */
-const SESSION_CACHE_MS = 5000;
-let lastCheck = { at: 0, result: null };
+// ── Estado de sesión ── (la política vive en lab-session.js; aquí sólo se pinta)
 
-async function checkSessions() {
-  const now = Date.now();
-  if (lastCheck.result && now - lastCheck.at < SESSION_CACHE_MS) return lastCheck.result;
-  const [hsr, hhr] = await Promise.all([updateHsrSession(), updateHhrSession()]);
-  lastCheck = { at: now, result: { hsr, hhr } };
-  return lastCheck.result;
-}
-
-// ── Estado de sesión ──
-
-async function updateHsrSession() {
-  const el = $('labHsrStatus');
-  el.textContent = 'Verificando…';
-  el.className = 'lab-session checking';
-  try {
-    const ok = await checkLabSession();
-    if (ok) {
-      el.textContent = 'HSR conectado';
-      el.className = 'lab-session ok';
-      resetLabSession();
-      return true;
-    }
-    el.innerHTML = `HSR sin sesión — <a href="${esc(LAB_ORIGIN)}" target="_blank" rel="noopener">abrir</a>`;
-    el.className = 'lab-session expired';
-  } catch (err) {
-    el.textContent = 'HSR no responde';
-    el.title = humanError(err, 'el portal del Hospital Salvador');
-    el.className = 'lab-session expired';
-  }
-  return false;
-}
-
-async function updateHhrSession() {
-  const el = $('labHhrStatus');
-  el.textContent = 'Verificando…';
-  el.className = 'lab-session checking';
-  try {
-    await checkSyslabSession();
-    el.textContent = 'HHR conectado';
-    el.className = 'lab-session ok';
-    resetSyslabSession();
-    return true;
-  } catch (err) {
-    if (err.name === 'SyslabAuthError') {
-      el.innerHTML = `HHR: ${esc(humanError(err, 'SysLab'))} — <a href="${esc(SYSLAB_BASE)}" target="_blank" rel="noopener">abrir</a>`;
-    } else {
-      el.textContent = `HHR: ${humanError(err, 'SysLab')}`;
-    }
-    el.className = 'lab-session expired';
-  }
-  return false;
-}
+const sessions = createSessionMonitor({
+  checkHsr: checkLabSession, checkHhr: checkSyslabSession,
+  resetHsr: resetLabSession, resetHhr: resetSyslabSession,
+  links: { hsr: LAB_ORIGIN, hhr: SYSLAB_BASE },
+  paint(source, state) {
+    const el = $(source === 'hsr' ? 'labHsrStatus' : 'labHhrStatus');
+    el.className = `lab-session ${state.status}`;
+    el.title = state.title || '';
+    if (state.href) el.innerHTML = `${esc(state.text)} — <a href="${esc(state.href)}" target="_blank" rel="noopener">abrir</a>`;
+    else el.textContent = state.text;
+  },
+})
 
 // ── Período ──
 
@@ -178,21 +121,6 @@ function applyPeriodo() {
 }
 
 /**
- * SysLab no admite filtro de fechas en el servidor: devuelve todas las órdenes
- * del RUT. Para que ambas tablas muestren el mismo período, el rango se aplica
- * aquí sobre lo que ya llegó.
- */
-function withinRange(fechaDdMmAaaa, desde, hasta) {
-  if (!desde && !hasta) return true;
-  const m = String(fechaDdMmAaaa || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!m) return true; // Sin fecha legible no se oculta: es peor perder un examen.
-  const iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  if (desde && iso < desde) return false;
-  if (hasta && iso > hasta) return false;
-  return true;
-}
-
-/**
  * Avisa cuando el buscador ya no corresponde a lo que hay en pantalla.
  *
  * Editar el RUT sin volver a buscar dejaba las tablas del paciente anterior sin
@@ -200,24 +128,55 @@ function withinRange(fechaDdMmAaaa, desde, hasta) {
  * de una persona bajo el identificador de otra.
  */
 function markStaleIfRutChanged() {
-  const vigente = searchRutDisplay &&
-    normalizePatientRutBody($('labRut').value) === searchRutBody;
   const hayResultados = hsrResults.length > 0 || hhrResults.length > 0;
-  const desfasada = Boolean(hayResultados && !vigente);
+  const desfasada = hayResultados && search.isStale($('labRut').value);
   $('labResults').classList.toggle('stale', desfasada);
   $('labStale').hidden = !desfasada;
   // Con la tabla desfasada no se genera el PDF único: llevaría el RUT de una
   // persona y los informes de otra.
   $('labDownloadAll').disabled = desfasada;
-  if (hayResultados && !vigente) {
+  if (desfasada) {
     $('labStale').textContent =
       `En pantalla siguen los exámenes de ${searchRutDisplay}. Pulsa Buscar para el RUT que escribiste.`;
   }
 }
 
-// ── Búsqueda ──
+// ── Búsqueda ── (RUT, token, cancelación y período viven en lab-search.js; aquí sólo se pinta)
 
-function setSearching(on) {
+const search = createLabSearch({
+  onState({ searching: on, rutBody, rutDisplay }) {
+    if (rutBody !== undefined) { searchRutBody = rutBody; searchRutDisplay = rutDisplay; }
+    if (on !== undefined) paintSearching(on);
+  },
+  onHsr(r) {
+    hsrResults = r.results;
+    const el = $('labHsrCount');
+    if (r.status === 'empty') el.textContent = 'HSR: 0 órdenes';
+    else if (r.status === 'mismatch') el.textContent = 'HSR: la respuesta no corresponde al RUN consultado';
+    else if (r.status === 'auth') { el.textContent = 'HSR: sin sesión en el portal del Hospital Salvador. Ábrelo e inicia sesión.'; sessions.refreshHsr(); }
+    else if (r.status === 'error') el.textContent = `HSR: ${humanError(r.error, 'el portal del Hospital Salvador')}`;
+    else {
+      if (r.message) { $('labError').textContent = r.message; $('labError').className = 'lab-msg info'; }
+      el.textContent = `HSR: ${hsrResults.length} ${hsrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}`;
+      renderHsrResults(hsrResults);
+    }
+  },
+  onHhr(r) {
+    hhrResults = r.results;
+    const el = $('labHhrCount');
+    if (r.status === 'empty') el.textContent = 'HHR: 0 órdenes';
+    else if (r.status === 'auth') { el.textContent = 'HHR: sin sesión en SysLab. Abre SysLab en una pestaña e inicia sesión.'; sessions.refreshHhr(); }
+    else if (r.status === 'error') el.textContent = `HHR: ${humanError(r.error, 'SysLab')}`;
+    else {
+      el.textContent = `HHR: ${hhrResults.length} ${hhrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}` +
+        (r.ocultas ? ` · ${r.ocultas} fuera del período` : '');
+      renderHhrResults(hhrResults);
+    }
+  },
+});
+
+// El mismo botón busca o cancela.
+function paintSearching(on) {
   searching = on;
   const btn = $('labSearchBtn');
   btn.textContent = on ? 'Cancelar' : 'Buscar';
@@ -225,10 +184,8 @@ function setSearching(on) {
   btn.setAttribute('aria-label', on ? 'Cancelar la búsqueda en curso' : 'Buscar exámenes');
 }
 
-/** Invalida la búsqueda en curso: lo que llegue después se descarta por el token `searchRun`. */
 function cancelSearch() {
-  searchRun += 1;
-  setSearching(false);
+  search.cancel();
   if (!$('labHsrCount').textContent) $('labHsrCount').textContent = 'HSR: búsqueda cancelada.';
   if (!$('labHhrCount').textContent) $('labHhrCount').textContent = 'HHR: búsqueda cancelada.';
 }
@@ -236,14 +193,14 @@ function cancelSearch() {
 async function doSearch() {
   const rut = $('labRut').value.trim();
   if (!rut) return;
-  // Sin guion ni verificador, 7 u 8 dígitos pueden ser dos personas distintas.
-  // Antes se resolvía por módulo 11 y una de cada once veces buscaba a otra.
-  if (rutInputAmbiguous(rut)) {
+  const outcome = search.start(rut, { desde: $('labDesde').value, hasta: $('labHasta').value });
+  if (outcome.rejected === 'ambiguous') {
+    // Sin guion ni verificador, 7 u 8 dígitos pueden ser dos personas distintas.
     $('labError').textContent = 'Escribe el RUT completo, con guion y dígito verificador (por ejemplo 11.957.001-8). Sin él podría buscarse a otra persona.';
     return;
   }
+  if (outcome.rejected) return;
 
-  setSearching(true);
   $('labError').textContent = '';
   $('labHsrBody').innerHTML = '';
   $('labHhrBody').innerHTML = '';
@@ -253,88 +210,13 @@ async function doSearch() {
   selected.clear();
   closeAnalysis();
 
-  // El dígito verificador se quita sólo si de verdad lo es: cortar el último
-  // carácter a ciegas mutila el RUT de quien lo escribe sin verificador.
-  const rutBodyOnly = normalizePatientRutBody(rut);
-  const run = ++searchRun;
-  searchRutBody = rutBodyOnly;
-  searchRutDisplay = rut;
-
-  await Promise.allSettled([
-    searchHsr(run, rut, rutBodyOnly, $('labDesde').value, $('labHasta').value),
-    searchHhr(run, rutBodyOnly, $('labDesde').value, $('labHasta').value),
-  ]);
-
-  if (run !== searchRun) return; // Otra búsqueda tomó el relevo, o se canceló.
-  setSearching(false);
+  const { superseded } = await outcome.done;
+  if (superseded) return; // Otra búsqueda tomó el relevo, o se canceló.
   const printable = hsrResults.filter(o => o.puedeImprimir).length +
     hhrResults.filter(o => o.puedeImprimir).length;
   $('labDownloadAll').hidden = printable < 2;
   markStaleIfRutChanged();
   updateSelectionUI();
-}
-
-async function searchHsr(run, rut, rutBody, desde, hasta) {
-  try {
-    const raw = await buscarOrdenesPorRut(rut, { desde: desde || undefined, hasta: hasta || undefined });
-    if (run !== searchRun) return; // Respuesta de una búsqueda ya reemplazada.
-    if (!Array.isArray(raw) || raw.length === 0) {
-      hsrResults = [];
-      $('labHsrCount').textContent = 'HSR: 0 órdenes';
-      return;
-    }
-    if (!ordersMatchRut(raw, rutBody)) {
-      hsrResults = [];
-      $('labHsrCount').textContent = 'HSR: la respuesta no corresponde al RUN consultado';
-      return;
-    }
-    hsrResults = raw.map(normalizeOrden);
-    const msg = raw[0]?.mensajeBusqueda;
-    if (msg) {
-      $('labError').textContent = msg;
-      $('labError').className = 'lab-msg info';
-    }
-    $('labHsrCount').textContent =
-      `HSR: ${hsrResults.length} ${hsrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}`;
-    renderHsrResults(hsrResults);
-  } catch (err) {
-    if (run !== searchRun) return;
-    hsrResults = [];
-    if (err.name === 'LabAuthError') {
-      $('labHsrCount').textContent = 'HSR: sin sesión en el portal del Hospital Salvador. Ábrelo e inicia sesión.';
-      await updateHsrSession();
-    } else {
-      $('labHsrCount').textContent = `HSR: ${humanError(err, 'el portal del Hospital Salvador')}`;
-    }
-  }
-}
-
-async function searchHhr(run, rutBody, desde, hasta) {
-  try {
-    const raw = await buscarExamenesPorRut(rutBody);
-    if (run !== searchRun) return; // Respuesta de una búsqueda ya reemplazada.
-    if (!Array.isArray(raw) || raw.length === 0) {
-      hhrResults = [];
-      $('labHhrCount').textContent = 'HHR: 0 órdenes';
-      return;
-    }
-    const todas = raw.map(normalizeSyslabExam);
-    hhrResults = todas.filter(o => withinRange(o.fecha, desde, hasta));
-    const ocultas = todas.length - hhrResults.length;
-    $('labHhrCount').textContent =
-      `HHR: ${hhrResults.length} ${hhrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}` +
-      (ocultas ? ` · ${ocultas} fuera del período` : '');
-    renderHhrResults(hhrResults);
-  } catch (err) {
-    if (run !== searchRun) return;
-    hhrResults = [];
-    if (err.name === 'SyslabAuthError') {
-      $('labHhrCount').textContent = 'HHR: sin sesión en SysLab. Abre SysLab en una pestaña e inicia sesión.';
-      await updateHhrSession();
-    } else {
-      $('labHhrCount').textContent = `HHR: ${humanError(err, 'SysLab')}`;
-    }
-  }
 }
 
 // ── Tablas ──
@@ -820,8 +702,7 @@ function clearResults() {
   $('labPickAllHhr').checked = false;
   hsrResults = [];
   hhrResults = [];
-  searchRutBody = '';
-  searchRutDisplay = '';
+  search.reset();
   selected.clear();
   closeAnalysis();
   updateSelectionUI();
@@ -836,9 +717,9 @@ function clearResults() {
  */
 export async function searchFromPatient(run) {
   if (!run) return;
-  $('labRut').value = formatRut(run);
+  $('labRut').value = formatRun(run).runStr || run;
   $('labError').textContent = '';
-  const { hsr, hhr } = await checkSessions();
+  const { hsr, hhr } = await sessions.check();
   if (!hsr && !hhr) {
     $('labError').textContent =
       'Ningún laboratorio conectado. Abre ProactiveLIS o SysLab, inicia sesión y vuelve a intentar.';
@@ -846,14 +727,6 @@ export async function searchFromPatient(run) {
     return;
   }
   await doSearch();
-}
-
-function formatRut(run) {
-  const clean = String(run).replace(/[^0-9kK]/g, '');
-  if (clean.length < 2) return run;
-  const body = clean.slice(0, -1);
-  const dv = clean.slice(-1).toUpperCase();
-  return `${body.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
 }
 
 function fmtFecha(d) {

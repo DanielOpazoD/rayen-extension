@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.18.0 — 2026-09-04
+
+Laboratorio: el orquestador se parte por sus costuras reales.
+
+- **`src/lab-search.js`**: la búsqueda sin DOM. RUT buscado, token que descarta respuestas tardías o canceladas, filtro de período para SysLab y resultados por origen entregados por callbacks. Nueve pruebas: RUT sin verificador rechazado antes de tocar la red, respuesta tardía de una búsqueda reemplazada descartada, cancelación, respuesta discordante del Salvador, período, sesión vs. red, desfase del campo.
+- **`src/lab-session.js`**: el estado de sesión sin DOM. Qué se muestra por cada resultado (conectado, sin sesión con enlace, no responde con causa) y la ventana de cinco segundos que evita comprobar cuatro veces por un clic. Cuatro pruebas.
+- La pestaña ([src/tabs/laboratorio.js](src/tabs/laboratorio.js)) baja de 863 a 737 líneas y sólo pinta: pierde el token propio, la comprobación de sesión, el filtro de fechas y un formateador de RUT duplicado (usa `formatRun`). Sin cambio de comportamiento: los mismos textos, el mismo recorrido de Playwright.
+
 ## 2.17.1 — 2026-09-03
 
 Decisión clínica: **sólo tus diagnósticos**.
