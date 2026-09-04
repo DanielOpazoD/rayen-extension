@@ -17,7 +17,7 @@ test('rankProblems agrupa por problema y ordena por peso: GES, crónicos, recurr
   assert.deepEqual(r.map(p => p.nombre), ['Diabetes mellitus tipo 2', 'Hipertensión arterial', 'Lumbago', 'Resfrío común']);
   const dm = r[0];
   assert.equal(dm.n, 2); assert.equal(dm.ultima, '20-08-2026'); assert.equal(dm.primera, '10-08-2026'); assert.equal(dm.cronico, true);
-  assert.equal(r[2].n, 2); assert.equal(r[2].cronico, false, 'dos episodios de lumbago no lo hacen crónico');
+  assert.equal(r[2].n, 2); assert.equal(r[2].cronico, false, 'dos episodios de lumbago no lo hacen crónico'); assert.equal(r[2].recurrente, false);
   assert.equal(r[3].cronico, false);
 });
 
@@ -42,4 +42,10 @@ test('prescripcionEstado lee la duración escrita y asume 30 días si no la hay'
   assert.equal(prescripcionEstado('Paracetamol 500 mg', '20260701', { hoy }), 'vencida');
   assert.equal(prescripcionEstado('Metformina por 12 meses', '20260101', { hoy, suspendido: true }), 'suspendida');
   assert.equal(prescripcionEstado('X', '', { hoy }), 'activa', 'sin fecha no se da por vencida');
+});
+
+test('la frecuencia rotula «recurrente», no «crónico»: siete bronquitis agudas siguen siendo agudas', () => {
+  const v = n => ({ fechaAtencion: `0${n}-08-2026`, diagnosticos: [{ nombre: 'Bronquitis aguda', codigo: 'J20.9' }] });
+  const [b] = rankProblems([v(1), v(2), v(3)], {});
+  assert.equal(b.n, 3); assert.equal(b.cronico, false); assert.equal(b.recurrente, true);
 });

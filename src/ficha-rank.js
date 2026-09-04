@@ -17,7 +17,9 @@ const problemKey = d => cleanText(d.codigo || d.clasificacion || d.nombre).toLow
 /**
  * @param {Array<{fechaAtencion:string, fecha8?:string, diagnosticos?:object[], prestadores?:object[]}>} visits
  * @param {{officerId?: number}} [opts]
- * @returns {Array<{nombre, clasificacion, codigo, esAuge, cronico, n, primera, ultima, mio}>}
+ * @returns {Array<{nombre, clasificacion, codigo, esAuge, cronico, recurrente, n, primera, ultima, mio}>}
+ * `cronico` sale del código CIE o del nombre; `recurrente` (≥3 registros) pesa
+ * casi igual pero se rotula aparte: una bronquitis aguda siete veces no es crónica.
  */
 export function rankProblems(visits, { officerId = null } = {}) {
   const seen = new Map();
@@ -44,9 +46,10 @@ export function rankProblems(visits, { officerId = null } = {}) {
   }
   const out = [...seen.values()].map(p => ({
     ...p,
-    cronico: CHRONIC_CIE.test(p.codigo) || CHRONIC_WORDS.test(`${p.clasificacion} ${p.nombre}`) || p.n >= 3,
+    cronico: CHRONIC_CIE.test(p.codigo) || CHRONIC_WORDS.test(`${p.clasificacion} ${p.nombre}`),
+    recurrente: p.n >= 3,
   }));
-  out.sort((a, b) => (b.esAuge - a.esAuge) || (b.cronico - a.cronico) || (b.n - a.n) || b.stampUltima.localeCompare(a.stampUltima));
+  out.sort((a, b) => (b.esAuge - a.esAuge) || ((b.cronico || b.recurrente) - (a.cronico || a.recurrente)) || (b.n - a.n) || b.stampUltima.localeCompare(a.stampUltima));
   for (const p of out) { delete p.stampUltima; delete p.stampPrimera; }
   return out;
 }

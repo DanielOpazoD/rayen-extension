@@ -16,7 +16,7 @@ import { copyToClipboard } from './toast.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
-let activeTab = 'dx';    // remembered across patients
+let activeTab = 'res';   // remembered across patients; la portada primero
 let atFilter = 'medicina'; // Medicina | Otros, también recordado
 let icFilter = 'mias';     // Mías | De otros
 let rxFilter = 'activas';  // Activas | Vencidas
@@ -141,8 +141,10 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     $('ppAvatar').classList.toggle('on', !hidden);
     $('ppAvatar').setAttribute('aria-expanded', String(!hidden));
   });
-  // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas.
+  // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas; y los «Ver todo» de la portada.
   $('patientPanel').addEventListener('click', e => {
+    const goto = e.target.closest('button[data-goto]');
+    if (goto) { showTab(goto.dataset.goto); return; }
     const seg = e.target.closest('[data-seg][data-scope]');
     if (!seg) return;
     if (seg.dataset.scope === 'at') { atFilter = seg.dataset.seg; renderAt(); }
@@ -287,7 +289,7 @@ function renderDx() {
 
   html += h4(ficha?.visits?.length ? 'Problemas (historial completo, todos los profesionales)' : 'Problemas (mis atenciones)');
   html += probs.length ? probs.map(d => {
-    const meta = [d.codigo, d.cronico ? 'crónico' : '', d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · ');
+    const meta = [d.codigo, pesoLabel(d), d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · ');
     return `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
       `<span class="pp-row-m">${esc(meta)}</span></div>`;
   }).join('') : empty('Sin diagnósticos registrados');
@@ -452,10 +454,48 @@ function renderRx() {
 function renderAll() {
   renderHeader();
   renderDatos();
+  renderResumen();
   renderDx();
   renderAt();
   renderIc();
   renderRx();
+}
+
+const OPEN_SIC = new Set(['pendiente', 'enviada']);
+const pesoLabel = d => d.cronico ? 'crónico' : d.recurrente ? 'recurrente' : '';
+const hoy8 = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+const seccion = (titulo, goto, cuerpo) =>
+  `<h4>${esc(titulo)}${goto ? ` <button type="button" class="pp-link" data-goto="${goto}">Ver todo</button>` : ''}</h4>${cuerpo}`;
+
+/**
+ * Portada clínica: lo que conviene saber antes de entrar a la consulta, en una
+ * pantalla. Problemas activos con peso, tus últimas atenciones, interconsultas
+ * abiertas, próximo control sugerido y alertas. El detalle vive en las otras
+ * pestañas; las notas, en el diario que queda siempre a la vista bajo ellas.
+ */
+function renderResumen() {
+  const { visits, sics, ficha } = cur;
+  const src = ficha?.visits?.length ? ficha.visits : visits;
+  const probs = rankProblems(src, { officerId: CONFIG.officerId }).slice(0, 6);
+  const mias = (ficha?.visits?.length ? ficha.visits.filter(isMine) : visits.filter(v => v.atencionId || v.origen !== 'cita')).slice(0, 3);
+  const abiertas = sics.filter(s => OPEN_SIC.has(s.grupo));
+  const h = hoy8();
+  const proximo = src.flatMap(v => (v.proximoControl ?? []).map(c => ({ ...c, desde: v.fechaAtencion })))
+    .filter(c => c.fecha8 && c.fecha8 >= h).sort((a, b) => a.fecha8.localeCompare(b.fecha8))[0];
+  const chips = ficha ? alertChips(ficha) : [];
+
+  let html = chips.length ? `<div class="pp-chips pp-res-chips">${chips.join('')}</div>` : '';
+  html += seccion('Problemas activos', 'dx', probs.length
+    ? probs.map(d => `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span><span class="pp-row-m">${esc([pesoLabel(d), d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · '))}</span></div>`).join('')
+    : empty(ficha ? 'Sin diagnósticos registrados' : 'Sin diagnósticos en tus atenciones'));
+  html += seccion('Tus últimas atenciones', 'at', mias.length
+    ? mias.map(v => `<div class="pp-row"><span class="pp-row-t">${esc(v.tipoAtencion || v.razon || 'Atención')}${(v.diagnosticos ?? [])[0] ? ` <em>${esc(v.diagnosticos[0].nombre)}</em>` : ''}</span><span class="pp-row-m">${esc(v.fechaAtencion)}</span></div>`).join('')
+    : empty('Todavía no lo has atendido'));
+  html += seccion('Interconsultas abiertas', 'ic', abiertas.length
+    ? abiertas.map(s => `<div class="pp-row"><span class="pp-row-t">${esc(s.especialidad)}</span><span class="pp-row-m">${esc([s.estado, s.antiguedadDias != null ? `${s.antiguedadDias} d` : ''].filter(Boolean).join(' · '))}</span></div>`).join('')
+    : empty('Ninguna abierta'));
+  if (proximo) html += seccion('Próximo control sugerido', null, `<div class="pp-row"><span class="pp-row-t">${esc(proximo.fecha)}</span><span class="pp-row-m">indicado el ${esc(proximo.desde)}</span></div>`);
+  $('ppPaneRes').innerHTML = html;
 }
 
 // ── Ficha loading ─────────────────────────────────────────────

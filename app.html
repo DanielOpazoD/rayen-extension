@@ -471,13 +471,15 @@
   </div>
   <div class="pp-datos" id="ppDatos" hidden></div>
   <nav class="pp-tabs" role="tablist" aria-label="Ficha del paciente">
-    <button class="pp-tab active" role="tab" aria-selected="true" data-pt="dx" aria-controls="ppPaneDx">Diagnósticos <span class="cnt"></span></button>
+    <button class="pp-tab active" role="tab" aria-selected="true" data-pt="res" aria-controls="ppPaneRes">Resumen</button>
+    <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="dx" aria-controls="ppPaneDx">Problemas <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="at" aria-controls="ppPaneAt">Atenciones <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="ic" aria-controls="ppPaneIc">Interconsultas <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="rx" aria-controls="ppPaneRx">Recetas <span class="cnt"></span></button>
   </nav>
   <div class="pp-ficha-status" id="ppFichaStatus" role="status"></div>
-  <div class="pp-pane active" data-pt="dx" id="ppPaneDx" role="tabpanel"></div>
+  <div class="pp-pane active" data-pt="res" id="ppPaneRes" role="tabpanel"></div>
+  <div class="pp-pane" data-pt="dx" id="ppPaneDx" role="tabpanel"></div>
   <div class="pp-pane" data-pt="at" id="ppPaneAt" role="tabpanel"></div>
   <div class="pp-pane" data-pt="ic" id="ppPaneIc" role="tabpanel"></div>
   <div class="pp-pane" data-pt="rx" id="ppPaneRx" role="tabpanel"></div>
