@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.33.0 — 2026-09-04
+
+Botón «Informe» en el panel del paciente: el flujo con IA, usable desde hoy con el proveedor manual.
+
+- **Hoja «Informe con IA»** sobre el panel: plantilla (resumen clínico, epicrisis, interconsulta, exámenes), ventana de meses, fechas reales o relativas, estado de cada fuente, el contexto exacto que se enviará (visible antes de copiar), «Copiar prompt», pegar la respuesta del modelo autorizado, «Armar informe» con la identidad repuesta en local, «Imprimir / PDF» y «Copiar Markdown».
+- Con un nombre o RUN que sobreviva en el contexto, la hoja lo dice y no deja copiar.
+- Escape cierra la hoja sin cerrar el panel; el cambio de paciente la cierra.
+- Recorrido de Playwright: el contexto no contiene el apellido ni RUN del paciente y el informe final sí lleva su nombre.
+
 ## 2.32.0 — 2026-09-04
 
 Núcleo de IA (`src/ai/`), segundo paso del saneamiento. Sin interfaz todavía; sin cambios de comportamiento visibles.

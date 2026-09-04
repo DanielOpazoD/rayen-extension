@@ -167,6 +167,7 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 - `src/ui/dom.js` — utilidades DOM, escape, teclado, tooltips y esqueletos.
 - `src/ui/exam-request-view.js` — dibujo del formulario de solicitud, en pantalla y para imprimir.
 - `src/ui/export.js` — exportación filtrada a CSV, XLS, HTML, JSON y PDF.
+- `src/ui/ia-panel.js` — hoja «Informe con IA» del panel: plantilla, ventana, fuentes, contexto visible, copiar prompt, pegar respuesta, informe e impresión (proveedor manual).
 - `src/ui/ic-tab.js` — presentación, filtros y orden de interconsultas.
 - `src/ui/lab-charts.js` — series de tendencia en SVG, con las alteraciones destacadas.
 - `src/ui/lab-trends.js` — agrupa las series en tarjetas clínicas y las filtra por período, texto y alteración.

@@ -780,3 +780,29 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 /* Al final a propósito: los campos que apagan el outline nativo (`outline:none`
    con la misma especificidad) lo recuperan al foco por teclado. */
 .toolbar input:focus-visible,.toolbar select:focus-visible,.fp-grid select:focus-visible,.fp-grid input:focus-visible,.lab input:focus-visible,.lab select:focus-visible,.explorer input:focus-visible,#ppNoteText:focus-visible,#palInput:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+
+/* ── Hoja «Informe con IA», encima del contenido del panel ── */
+.ia-sheet{position:absolute;inset:0;z-index:6;background:var(--card);overflow:auto;padding:var(--sp-3) var(--sp-4) var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ia-head{display:flex;align-items:center;justify-content:space-between}
+.ia-head h2{font-size:var(--t-lg);font-weight:600}
+.ia-nota{font-size:var(--t-sm);color:var(--ink-2);line-height:1.45}
+.ia-row{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center}
+.ia-row label{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-sm);color:var(--ink-2)}
+.ia-row select{height:var(--h-ctl-sm);border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);padding:0 6px;font-size:var(--t-sm)}
+.ia-fuentes{display:flex;flex-wrap:wrap;gap:6px}
+.ia-fuente{font-size:var(--t-xs);padding:1px 7px;border-radius:999px;border:1px solid var(--rule);color:var(--ink-3)}
+.ia-fuente.completa{border-color:var(--brand-line);color:var(--brand-2)}
+.ia-fuente.parcial,.ia-fuente.fallida{border-color:var(--warn);color:var(--warn)}
+.ia-meta{font-size:var(--t-xs);color:var(--ink-3)}
+.ia-meta.err{color:var(--bad)}
+.ia-details summary{font-size:var(--t-xs);color:var(--ink-3);cursor:pointer}
+.ia-sheet textarea{width:100%;min-height:120px;font-family:var(--mono);font-size:var(--t-xs);border:1px solid var(--rule);border-radius:var(--r-sm);padding:8px;resize:vertical}
+.ia-label{display:block;font-size:var(--t-sm);color:var(--ink-2)}
+.ia-label textarea{margin-top:4px;font-family:inherit;font-size:var(--t-sm)}
+.ia-informe{font-size:var(--t-sm);line-height:1.5}
+.ia-informe:empty{display:none}
+.ia-informe h1{font-size:var(--t-lg);margin:var(--sp-2) 0}
+.ia-informe h2{font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:var(--sp-3) 0 4px}
+.ia-informe p,.ia-informe li{margin:2px 0}
+.ia-informe ul,.ia-informe ol{padding-left:18px}
+.ia-informe hr{border:0;border-top:1px solid var(--rule);margin:var(--sp-3) 0}
