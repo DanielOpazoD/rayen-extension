@@ -159,6 +159,11 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
   await expect(page.locator('#ppPaneAt .pp-seg button[data-seg="medicina"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#ppPaneAt .pp-seg button[data-seg="otros"]').click();
   await expect(page.locator('#ppPaneAt .pp-seg button[data-seg="otros"]')).toHaveAttribute('aria-pressed', 'true');
+  // Interconsultas con «Mías / De otros» y Recetas con «Activas / Vencidas».
+  await page.locator('.pp-tab[data-pt="ic"]').click();
+  await expect(page.locator('#ppPaneIc .pp-seg button[data-seg="mias"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#ppPaneIc .pp-seg button[data-seg="otros"]').click();
+  await expect(page.locator('#ppPaneIc .pp-seg button[data-seg="otros"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('.pp-tab[data-pt="dx"]').click();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();

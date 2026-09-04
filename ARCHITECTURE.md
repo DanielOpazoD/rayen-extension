@@ -104,6 +104,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/explorer.js` — consultas controladas del Explorador API.
 - `src/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/export.js` — exportación filtrada a CSV, XLS, HTML, JSON y PDF.
+- `src/ficha-rank.js` — orden clínico sin DOM: problemas con peso (GES, crónicos, recurrentes) y vigencia de prescripciones.
 - `src/ficha.js` — ficha longitudinal, antecedentes y programas del paciente.
 - `src/historial.js` — historial diario y cruce con la agenda.
 - `src/http.js` — transporte autenticado, cancelación y guardia de origen.
