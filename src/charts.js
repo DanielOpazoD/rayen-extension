@@ -6,7 +6,7 @@ const MONTHS_ES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct',
 // Colours come from the page's CSS tokens so the SVGs follow light/dark mode.
 // Las barras van en neutro: el verde de marca queda para acción y estado activo,
 // no para un gráfico. El valor se lee en el número, no en el color.
-const GREEN = 'var(--ink-3)', BLUE = 'var(--ink-4)', TXT = 'var(--ink)', TXT2 = 'var(--ink-3)', TXT3 = 'var(--ink-3)', VAL = 'var(--ink)';
+const GREEN = 'var(--ink-3)', BLUE = 'var(--ink-4)', TXT2 = 'var(--ink-3)', TXT3 = 'var(--ink-3)', VAL = 'var(--ink)';
 
 const pct = (v, total) => total > 0 ? Math.round(v / total * 100) : 0;
 
@@ -25,7 +25,7 @@ function barSVG({ labels, values, title, width = 300, height = 190, color = GREE
     const op = (0.4 + 0.6 * v / max).toFixed(2);
     return [
       `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${color}" opacity="${op}"/>`,
-      v > 0 ? `<text x="${x+bw/2}" y="${y-11}" text-anchor="middle" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>` +
+      v > 0 ? `<text x="${x+bw/2}" y="${y-11}" text-anchor="middle" font-size="8.5" fill="${VAL}" font-weight="500">${v}</text>` +
               `<text x="${x+bw/2}" y="${y-2}" text-anchor="middle" font-size="7" fill="${TXT3}">${pct(v,total)}%</text>` : '',
       `<text x="${x+bw/2}" y="${height-6}" text-anchor="middle" font-size="8" fill="${TXT2}">${esc(lbl.length > 5 ? lbl.slice(0, 4) : lbl)}</text>`,
     ].join('');
@@ -36,9 +36,12 @@ function barSVG({ labels, values, title, width = 300, height = 190, color = GREE
 
 // Un título más largo que el ancho se comprime en vez de recortarse («% sin
 // contrarreferencia por especialidad (≥3 atendidas)» perdía el paréntesis).
+// Mismo nivel «título» que las cabeceras de tabla y los h4 del panel: versalita, 600, gris.
 function titleSVG(title, width) {
-  const fit = title.length * 6.2 > width - 16 ? ` textLength="${width - 16}" lengthAdjust="spacingAndGlyphs"` : '';
-  return `<text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}"${fit}>${esc(title)}</text>`;
+  const label = title.toUpperCase();
+  // El SVG se escala al ancho de la tarjeta (×1,3–1,5): 7,5 aquí son ~11 px en pantalla.
+  const fit = label.length * 5.3 > width - 16 ? ` textLength="${width - 16}" lengthAdjust="spacingAndGlyphs"` : '';
+  return `<text x="8" y="13" font-size="7.5" font-weight="600" letter-spacing="0.45" fill="${TXT2}"${fit}>${esc(label)}</text>`;
 }
 
 function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96, filter = null }) {
@@ -54,7 +57,7 @@ function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 9
     return [wrap[0],
       `<text x="${PAD.left-4}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8.5" fill="${TXT2}"><title>${esc(lbl)}</title>${esc(short)}</text>`,
       `<rect x="${PAD.left}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${color}" opacity="${op}"/>`,
-      `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="${VAL}" font-weight="600">${v}</text>`,
+      `<text x="${PAD.left+bw+4}" y="${y+barH/2+3.5}" font-size="8.5" fill="${VAL}" font-weight="500">${v}</text>`,
       `<text x="${width-2}" y="${y+barH/2+3.5}" text-anchor="end" font-size="8" fill="${TXT3}">${pct(v,total)}%</text>`,
     wrap[1]].join('');
   }).join('');
