@@ -10,8 +10,9 @@ export async function getToken() {
     const tabs = await chrome.tabs.query({ url: `${CONFIG.base}/*` });
     if (tabs.length > 0) {
       const [result] = await chrome.scripting.executeScript({
+        // Mundo aislado: localStorage es del origen y se lee igual, pero la
+        // página ya no puede interceptar la lectura del token.
         target: { tabId: tabs[0].id },
-        world: 'MAIN',
         func: () => {
           try {
             return JSON.parse(localStorage.getItem('userSession') || '{}').accessToken ?? null;

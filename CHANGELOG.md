@@ -1,5 +1,15 @@
 # Historial de cambios
 
+## 2.21.0 — 2026-09-04
+
+Etapa 6: lo que los balances dejaron abierto y no necesita la red del hospital.
+
+- **Identidad más estricta en el Salvador**: un lote donde unas órdenes declaran documento y otras no se rechaza entero; antes las sin documento se aceptaban por no poder desmentirse.
+- **El token de Eloisa se lee en mundo aislado**: `localStorage` es del origen y se lee igual, pero la página ya no puede interceptar la lectura.
+- **Cancelar aborta de verdad**: cada búsqueda lleva su `AbortController`; la petición al Salvador se corta y la cadena de pasos en la pestaña de SysLab se detiene entre paso y paso. Antes «Cancelar» sólo descartaba la respuesta.
+- **«Al día · sin ficha»** cuando la ficha clínica está desactivada: «Al día» a secas prometía más de lo comprobado.
+- `src/text.js` reúne `cleanText` y `nameOf`, que vivían repetidos en cuatro módulos; la fecha ISO del laboratorio sale de un solo sitio. Bajo 700 px la cabecera del panel de paciente envuelve sus controles en vez de aplastar el nombre.
+
 ## 2.20.0 — 2026-09-04
 
 Etapa 5, punto 1: el parser ya no calla donde el laboratorio grita.

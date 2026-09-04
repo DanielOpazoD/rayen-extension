@@ -2,7 +2,7 @@ import { normalizeSexo } from '../lab-parser.js';
 import { humanCase, formatRun } from '../parser.js';
 import { humanError } from '../errors.js';
 import { esc, $ } from '../dom.js';
-import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN } from '../lab-api.js';
+import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN, fmtDate as isoDate } from '../lab-api.js';
 import { checkSyslabSession, syslabPdfUrl, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../syslab-api.js';
 import { createSessionMonitor } from '../lab-session.js';
 import { createLabSearch } from '../lab-search.js';
@@ -101,9 +101,6 @@ const sessions = createSessionMonitor({
 
 // ── Período ──
 
-const isoDate = d => d.getFullYear() + '-' +
-  String(d.getMonth() + 1).padStart(2, '0') + '-' +
-  String(d.getDate()).padStart(2, '0');
 
 /** El selector rellena las fechas; editarlas a mano sigue mandando. */
 function applyPeriodo() {

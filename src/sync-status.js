@@ -35,7 +35,9 @@ export function syncOverview(health) {
   const checked = rows.filter(row => row.value.status !== 'disabled');
   const complete = rows.length === SYNC_SOURCES.length && checked.length > 0
     && checked.every(row => ['ok', 'cached'].includes(row.value.status));
-  return { text: complete ? 'Al día' : 'Sin comprobar', tone: complete ? 'ok' : 'neutral', pending };
+  // Con la ficha desactivada, «Al día» a secas prometía más de lo comprobado.
+  const sinFicha = rows.some(row => row.value.status === 'disabled');
+  return { text: complete ? (sinFicha ? 'Al día · sin ficha' : 'Al día') : 'Sin comprobar', tone: complete ? 'ok' : 'neutral', pending };
 }
 
 /**

@@ -154,6 +154,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/tabs/interconsultas.js` — carga bajo demanda y eventos de SIC.
 - `src/tabs/laboratorio.js` — controlador de la pestaña Laboratorio: Hospital Salvador (ProactiveLIS) y HHR (SysLab), análisis y solicitud de exámenes.
 - `src/tabs/pacientes.js` — controlador de agregación, filtros y tabla de pacientes.
+- `src/text.js` — `cleanText` y `nameOf`, que vivían repetidos en varios módulos.
 - `src/toast.js` — confirmaciones transitorias y acciones de deshacer.
 - `src/today.js` — novedades y agenda diaria con antecedentes.
 - `src/ui.js` — estado general, filtros comunes y medición del área útil.

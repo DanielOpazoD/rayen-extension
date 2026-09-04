@@ -136,3 +136,12 @@ test('la búsqueda reemplazada no apaga «buscando» mientras la nueva sigue en 
   await segunda.done;
   assert.equal(s.searching, false);
 });
+
+test('cancelar aborta de verdad las peticiones en curso', async () => {
+  let seen = null;
+  const { s } = harness({ fetchHsr: async (rut, range) => { seen = range.signal; return later(80, [orden()]); } });
+  s.start(RUT);
+  assert.equal(seen?.aborted, false);
+  s.cancel();
+  assert.equal(seen.aborted, true);
+});

@@ -96,7 +96,7 @@ test('overview never presents a partial or failed source as healthy', () => {
     historial: { status: 'disabled', failedItems: [] },
     sics: { status: 'cached', failedItems: [] },
   }), {
-    text: 'Al día', tone: 'ok', pending: 0,
+    text: 'Al día · sin ficha', tone: 'ok', pending: 0,
   });
   assert.equal(syncOverview({ agenda: { status: 'ok', failedItems: [] } }).tone, 'neutral');
   assert.equal(syncOverview({ agenda: { status: 'partial', failedItems: ['20260901'] } }).tone, 'warn');

@@ -267,15 +267,18 @@ export async function syslabStatus() {
 }
 
 /** Conduce la pestaña SysLab a través de la búsqueda por RUT y lee el resultado. */
-export async function syslabSearchByRut(rutBody) {
+export async function syslabSearchByRut(rutBody, { signal } = {}) {
+  // Cancelar corta la cadena de pasos: no se sigue conduciendo la pestaña del
+  // usuario para una búsqueda que ya nadie espera.
+  const check = () => { if (signal?.aborted) throw new DOMException('Búsqueda cancelada.', 'AbortError'); };
   const { tabId } = await findAuthenticatedTab();
-
+  check();
   const prepared = guardSession(await inject(tabId, stepPrepareSearch));
   if (prepared.navigated) await waitForLoad(tabId);
-
+  check();
   const submitted = guardSession(await inject(tabId, stepSubmitSearch, [rutBody]));
   if (submitted.navigated) await waitForLoad(tabId);
-
+  check();
   return guardSession(await inject(tabId, stepReadResults)).exams;
 }
 

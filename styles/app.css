@@ -401,6 +401,8 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pp-header{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4);background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:3}
 .pp-avatar{width:38px;height:38px;border-radius:var(--r-full);background:var(--surface-2);color:var(--ink-2);display:flex;align-items:center;justify-content:center;font-size:var(--t-sm);font-weight:600;flex-shrink:0}
 .pp-info{flex:1;min-width:0}
+/* En estrecho los cinco controles bajan a una segunda línea y el nombre respira. */
+@media(max-width:700px){.pp-header{flex-wrap:wrap}.pp-info{flex:1 1 200px}}
 /* El nombre del paciente no se recorta: puede ocupar dos líneas. */
 .pp-info h2{font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em;line-height:1.25;text-wrap:balance;overflow-wrap:anywhere}
 .pp-info p{font-size:var(--t-sm);color:var(--ink-2);line-height:1.4}

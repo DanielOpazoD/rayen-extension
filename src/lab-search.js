@@ -35,7 +35,7 @@ export function withinRange(fechaDdMmAaaa, desde, hasta) {
  */
 export function createLabSearch({
   fetchHsr = (rut, range) => buscarOrdenesPorRut(rut, range),
-  fetchHhr = rutBody => buscarExamenesPorRut(rutBody),
+  fetchHhr = (rutBody, range) => buscarExamenesPorRut(rutBody, { signal: range.signal }),
   onState = () => {}, onHsr = () => {}, onHhr = () => {},
 } = {}) {
   let run = 0;
@@ -44,12 +44,13 @@ export function createLabSearch({
   let rutDisplay = '';
   let hsr = [];
   let hhr = [];
+  let controller = null; // aborta de verdad las peticiones de la búsqueda en curso
 
   const setSearching = on => { searching = on; onState({ searching: on }); };
 
   async function searchHsr(token, rut, range) {
     try {
-      const raw = await fetchHsr(rut, { desde: range.desde || undefined, hasta: range.hasta || undefined });
+      const raw = await fetchHsr(rut, { desde: range.desde || undefined, hasta: range.hasta || undefined, signal: range.signal });
       if (token !== run) return;
       if (!Array.isArray(raw) || raw.length === 0) { hsr = []; onHsr({ status: 'empty', results: hsr }); return; }
       if (!ordersMatchRut(raw, rutBody)) { hsr = []; onHsr({ status: 'mismatch', results: hsr }); return; }
@@ -64,7 +65,7 @@ export function createLabSearch({
 
   async function searchHhr(token, range) {
     try {
-      const raw = await fetchHhr(rutBody);
+      const raw = await fetchHhr(rutBody, { signal: range.signal });
       if (token !== run) return;
       if (!Array.isArray(raw) || raw.length === 0) { hhr = []; onHhr({ status: 'empty', results: hhr }); return; }
       const todas = raw.map(normalizeSyslabExam);
@@ -91,10 +92,13 @@ export function createLabSearch({
     rutBody = normalizePatientRutBody(rut);
     rutDisplay = rut;
     hsr = []; hhr = [];
+    controller?.abort();
+    controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const scoped = { ...range, signal: controller?.signal };
     const token = ++run;
     onState({ rutBody, rutDisplay });
     setSearching(true);
-    const done = Promise.allSettled([searchHsr(token, rut, range), searchHhr(token, range)]).then(() => {
+    const done = Promise.allSettled([searchHsr(token, rut, scoped), searchHhr(token, scoped)]).then(() => {
       if (token !== run) return { superseded: true }; // otra búsqueda tomó el relevo, o se canceló
       setSearching(false);
       return { superseded: false };
@@ -105,6 +109,7 @@ export function createLabSearch({
   /** Invalida la búsqueda en curso: lo que llegue después se descarta por el token. */
   function cancel() {
     run += 1;
+    controller?.abort();
     setSearching(false);
   }
 
@@ -113,6 +118,7 @@ export function createLabSearch({
 
   function reset() {
     run += 1;
+    controller?.abort();
     searching = false;
     rutBody = ''; rutDisplay = ''; hsr = []; hhr = [];
     onState({ searching: false, rutBody, rutDisplay });

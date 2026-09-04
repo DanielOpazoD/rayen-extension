@@ -45,7 +45,7 @@ export async function checkLabSession() {
  * @param {string} [opts.hasta] — yyyy-MM-dd (defaults to today)
  * @returns {Promise<Array>} array of order view-models
  */
-export async function buscarOrdenesPorRut(rut, { desde, hasta } = {}) {
+export async function buscarOrdenesPorRut(rut, { desde, hasta, signal } = {}) {
   if (!hasta) {
     const d = new Date();
     hasta = fmtDate(d);
@@ -72,7 +72,7 @@ export async function buscarOrdenesPorRut(rut, { desde, hasta } = {}) {
     hasta,
     verConDoc: 'false',
   });
-  return labGet(`/BuscarOrdenes/buscarOrdenes?${params}`);
+  return labGet(`/BuscarOrdenes/buscarOrdenes?${params}`, { signal });
 }
 
 /**
@@ -109,12 +109,13 @@ export function ordenRutBody(orden) {
 export function ordersMatchRut(ordenes, expectedRutBody) {
   const expected = normalizePatientRutBody(expectedRutBody);
   if (!/^\d{5,9}$/.test(expected) || !Array.isArray(ordenes)) return false;
-  return ordenes.every(orden => {
-    const declarado = ordenRutBody(orden);
-    // Una orden que no declara documento no puede desmentirse; se acepta, pero
-    // no es la que puede colar a otro paciente.
-    return !declarado || declarado === expected;
-  });
+  const declarados = ordenes.map(ordenRutBody);
+  // Una orden sin documento no puede desmentirse. Si ninguna lo trae, se
+  // acepta el lote; si el resto sí lo declara, la que no lo trae desentona y
+  // el lote entero se rechaza: no se muestra lo que no se puede atribuir.
+  const conDocumento = declarados.filter(Boolean);
+  if (conDocumento.length && conDocumento.length !== declarados.length) return false;
+  return conDocumento.every(declarado => declarado === expected);
 }
 
 // ── Parsing helpers ──
@@ -156,7 +157,7 @@ export function normalizeOrden(raw) {
   };
 }
 
-function fmtDate(d) {
+export function fmtDate(d) {
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
