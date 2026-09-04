@@ -240,8 +240,8 @@ col.c-fecha{width:var(--w-fecha)}
 /* Nombre y RUN completos a 1440; Razón sin «Morbili…». La tabla ya se desplaza
    en horizontal: es preferible a recortar el identificador del paciente. */
 col.c-nombre{width:250px} col.c-edad{width:56px} col.c-sexo{width:42px}
-col.c-razon{width:130px} col.c-tipo{width:140px} col.c-dx{width:190px}
-col.c-estado{width:100px} col.c-ic{width:180px} col.c-nota{width:110px}
+col.c-razon{width:130px} col.c-tipo{width:135px} col.c-dx{width:190px}
+col.c-estado{width:136px} col.c-ic{width:170px} col.c-nota{width:100px}
 thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);color:var(--ink-3);padding:8px 10px;text-align:left;font-size:var(--t-xs);font-weight:600;cursor:pointer;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
 thead th:hover,thead th:focus-visible{color:var(--ink)}
 thead th.ns{cursor:default}
@@ -267,6 +267,12 @@ tbody tr:last-child td{border-bottom:none}
 .sticky{position:sticky;z-index:2}
 .s1{left:0}
 .s2{left:var(--w-fecha)}
+/* En estrecho, Fecha + Nombre fijas ocupaban 445 de 548 px: sólo el nombre queda fijo. */
+@media(max-width:700px){.s1{position:static}.s2{left:0}}
+/* Hay más columnas a la derecha: sombra interior en el borde (la barra de
+   desplazamiento de macOS es invisible hasta que se toca). */
+.tbl-wrap.more-right{box-shadow:inset -14px 0 12px -12px rgba(0,0,0,.22)}
+.tbl-wrap{scrollbar-width:thin}
 .tbl-wrap.scrolled .s2::after{content:'';position:absolute;right:0;top:0;bottom:0;width:6px;background:linear-gradient(90deg,rgba(0,0,0,.07),transparent);pointer-events:none}
 td.sex{text-align:center;color:var(--ink-2)}
 td.num{text-align:right;padding-right:14px;font-variant-numeric:tabular-nums}
@@ -281,7 +287,7 @@ td.num{text-align:right;padding-right:14px;font-variant-numeric:tabular-nums}
 .pat-link{cursor:pointer}
 .pat-link:hover .pname,.pat-link:focus-visible .pname{color:var(--brand-2);text-decoration:underline;text-underline-offset:2px}
 td.pat-link:focus-visible{outline-offset:-2px}
-.tip{cursor:help;border-bottom:1px dotted var(--ink-4)}
+.tip{cursor:help}
 [data-tip]{cursor:help}
 button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
 #tt{position:fixed;z-index:1000;background:var(--ink);color:var(--card);font:400 var(--t-xs)/1.4 var(--font);padding:6px 9px;border-radius:var(--r-sm);white-space:pre-line;max-width:340px;box-shadow:var(--shadow-pop);pointer-events:none}
@@ -302,13 +308,22 @@ button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
 .flag-adj{background:var(--surface-2);color:var(--ink-2);cursor:help}
 .prest-other{display:block;font-size:var(--t-xs);color:var(--warn);margin-top:2px}
 .dx-main{color:var(--ink)}
+/* Un flex dentro de la celda (no la celda: rompería su alto): el nombre cede y
+   se recorta; las chapas GES, «+n» y la certeza no ceden nunca. */
+.dx{display:flex;align-items:center;gap:5px;min-width:0}
+.dx .dx-main{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dx .bges,.dx .dx-more,.dx .dx-cert{flex:none;margin-left:0}
 .dx-cert{font-size:var(--t-xs);color:var(--ink-3);margin-left:5px;font-style:italic}
 .dx-more{font-size:var(--t-xs);color:var(--ink-3);margin-left:5px;cursor:help}
 .dx-none{color:var(--ink-3)}
 
 /* IC cell */
-.ic-cell{line-height:1.4;max-width:280px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
-.ic-cell .ic-line{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;margin:0;font-size:var(--t-xs);color:var(--ink-2);border-radius:var(--r-sm)}
+/* Celda de tabla, no flex: como flex, una celda vacía medía 19 px en una fila de 39
+   y su borde inferior dibujaba una línea a media altura. */
+.ic-cell{line-height:1.4;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic-cell .ic-line+.ic-line,.ic-cell .ic-line+.ic-chip,.ic-cell .ic-chip+.ic-line{margin-left:6px}
+.ic-cell .ic-chip{vertical-align:middle}
+.ic-cell .ic-line{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;margin:0;font-size:var(--t-xs);color:var(--ink-2);border-radius:var(--r-sm)}
 .ic-cell .ic-line.sic-link:hover{background:var(--surface-2)}
 .ic-cell .ic-esp{color:var(--ink);font-weight:500;font-size:var(--t-sm)}
 .rol{font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
@@ -476,6 +491,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pac-dx b{font-weight:500;color:var(--ink)}
 .pac-more{color:var(--ink-3)}
 .pac-sic{display:flex;flex-wrap:wrap;gap:4px}
+.pac-sic .ic-line{display:inline-flex;align-items:center;gap:6px}
 .pac-pend{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);color:var(--warn);font-weight:600}
 .pac-pend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
 .pac-none{color:var(--ink-3)}

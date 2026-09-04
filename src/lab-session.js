@@ -67,12 +67,18 @@ export function createSessionMonitor({ checkHsr, checkHhr, resetHsr, resetHhr, l
    * caminos a la vez y la de SysLab inyecta un script en la pestaña del
    * usuario: sin esta ventana un clic costaba cuatro comprobaciones.
    */
-  async function check() {
+  let inflight = null;
+  function check() {
     const t = now();
-    if (last.result && t - last.at < cacheMs) return last.result;
-    const [hsr, hhr] = await Promise.all([refreshHsr(), refreshHhr()]);
-    last = { at: t, result: { hsr, hhr } };
-    return last.result;
+    if (last.result && t - last.at < cacheMs) return Promise.resolve(last.result);
+    // Dos llamadas simultáneas (panel del paciente + pestaña) comparten la
+    // misma comprobación: la caché sólo se llenaba al resolver, y mientras
+    // tanto SysLab recibía cuatro inyecciones por un clic.
+    if (inflight) return inflight;
+    inflight = Promise.all([refreshHsr(), refreshHhr()])
+      .then(([hsr, hhr]) => { last = { at: t, result: { hsr, hhr } }; return last.result; })
+      .finally(() => { inflight = null; });
+    return inflight;
   }
 
   const invalidate = () => { last = { at: 0, result: null }; };

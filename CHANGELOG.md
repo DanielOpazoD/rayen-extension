@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.19.0 — 2026-09-04
+
+Etapa 5, puntos 2 a 5 del quinto balance (4,9/7).
+
+- **Tabla de Atenciones**: la columna Estado deja de recortar «Confirmado» en todas las filas; la celda de interconsulta vuelve a ser celda de tabla (como flex, vacía medía media fila y su borde dibujaba una línea fantasma); con chapa GES o «+n» al lado, lo que se recorta es el nombre del diagnóstico, nunca la chapa; sombra interior en el borde derecho mientras queden columnas fuera de la vista; bajo 700 px sólo el nombre queda fijo (Fecha + Nombre ocupaban 445 de 548 px).
+- **Tooltips que el lector de pantalla oye**: `role="tooltip"` y `aria-describedby` mientras está visible. Fuera el subrayado punteado en todas las edades y prioridades.
+- **Laboratorio**: dos comprobaciones simultáneas de sesión comparten una sola (SysLab recibía cuatro inyecciones por un clic); la pestaña deja de espejar el estado del buscador y lee sus getters; la descarga de informes de SysLab y la inyección de scripts tienen tiempo límite (20 y 25 s); tres pruebas de mutación que antes sobrevivían; la prueba de retención de interconsultas usa fechas que sólo pasan con la preferencia.
+- **Voz**: «Prior.» sin contradicción entre cabecera y celda; «Desde la ficha clínica» en vez de la ruta interna; «La primera carga tarda más» en vez de megabytes; «Equipo · tú 86 %»; «79 años»; el indicador «Mías» sólo cuando no son todas; fechas de sincronización en un solo formato; pie «289 atenciones»; el chip de fuentes fallidas no repite el número; espacios en las interconsultas de Pacientes; «13 meses» completo en Preferencias.
+
 ## 2.18.0 — 2026-09-04
 
 Laboratorio: el orquestador se parte por sus costuras reales.

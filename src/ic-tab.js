@@ -73,8 +73,9 @@ function summary(all, shown) {
     `<div class="stat-n">${n}</div><div class="stat-l">${esc(l)}</div></div>`;
 
   return [
-    tile(all.length, 'Total SIC', 'reset'),
-    tile(all.filter(isMine).length, 'Mías', 'quien:mias'),
+    tile(all.length, 'Interconsultas', 'reset'),
+    // «Mías» sólo informa cuando no son todas.
+    ...(all.filter(isMine).length !== all.length ? [tile(all.filter(isMine).length, 'Mías', 'quien:mias')] : []),
     tile(counts.pendiente, 'Pendientes', 'grupo:pendiente'),
     tile(counts.enviada, 'En curso', 'grupo:enviada'),
     tile(counts.atendida + counts.cerrada, 'Atendidas', 'grupo:atendida'),

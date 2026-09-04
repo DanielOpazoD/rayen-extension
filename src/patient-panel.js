@@ -433,7 +433,7 @@ async function loadAndRenderFicha(force = false) {
     $('ppFichaStatus').innerHTML =
       `<span>${estado} · ${n} ${n === 1 ? 'atención' : 'atenciones'} (${mineN} mías)${n ? ` desde ${esc(ficha.visits[n - 1].fechaAtencion)}` : ''} · ${hora}</span>` +
       `<button class="btn-mini" id="ppReload" aria-label="Volver a pedir la ficha a Eloisa" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
-      (fallos ? `<span class="al al-warn" tabindex="0" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠ ${fallos}</span>` : '');
+      (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : '');
   } catch (err) {
     if (cur === me) $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`;
   }

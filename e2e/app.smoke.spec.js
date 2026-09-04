@@ -62,7 +62,7 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
 
   const countText = await page.locator('#countRow').innerText();
   // «N en pantalla · M de T registros», «M de T registros» o «T registros».
-  const count = countText.match(/^(?:(\d+) en pantalla · )?(?:(\d+) de )?(\d+) registros?$/);
+  const count = countText.match(/^(?:(\d+) en pantalla · )?(?:(\d+) de )?(\d+) (?:atención|atenciones)$/);
   expect(count, `contador inesperado: ${countText}`).not.toBeNull();
   const all = Number(count[3]), matching = Number(count[2] ?? count[3]), visible = Number(count[1] ?? matching);
   expect(visible).toBeLessThanOrEqual(matching);

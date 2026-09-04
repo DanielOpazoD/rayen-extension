@@ -137,7 +137,7 @@ export function row(p, ctx) {
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>
     <td data-c="razon">${esc(p.razon)}</td>
     <td data-c="tipoAtencion" class="wrap" data-tip="${esc(p.tipoAtencion)}">${esc(p.tipoAtencion)}${flags}${prest}</td>
-    <td data-c="diagnostico" class="wrap dx-cell">${dxCell(p)}</td>
+    <td data-c="diagnostico" class="wrap dx-cell"><span class="dx">${dxCell(p)}</span></td>
     <td data-c="estado">${stateDot(p.estado)}</td>
     <td data-c="ic" class="wrap ic-cell">${icCell(p, ctx)}</td>
     <td data-c="nota" class="note-cell" data-id="${esc(p.id)}">${noteEl}</td>
@@ -185,7 +185,7 @@ function updateCount(total = null) {
   const all = Number(el.dataset.total ?? pending.length);
   const matching = pending.length;
   const shown = rendered < matching ? `${rendered} en pantalla · ` : '';
-  const conteo = matching < all ? `${matching} de ${all} registros` : `${all} ${all === 1 ? 'registro' : 'registros'}`;
+  const conteo = matching < all ? `${matching} de ${all} atenciones` : `${all} ${all === 1 ? 'atención' : 'atenciones'}`;
   el.textContent = `${shown}${conteo}`;
 }
 

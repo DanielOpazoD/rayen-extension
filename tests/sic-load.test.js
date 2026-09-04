@@ -105,10 +105,17 @@ test('las interconsultas guardadas se podan con la retención de Preferencias', 
   setPrefs({ retentionMonths: 3 });
   const hoy = new Date();
   const reciente = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getDate()).padStart(2, '0')}`;
-  const kept = pruneByRetention([{ id: 1, fecha8: '20200101' }, { id: 2, fecha8: reciente }, { id: 3 }]);
-  assert.deepEqual(kept.map(r => r.id), [2, 3], 'la vieja se va; sin fecha se conserva por prudencia');
+  // Cinco meses: vieja con retención de 3, vigente con la de 13. Una fecha de
+  // 2020 se iría con cualquiera y no probaría que la preferencia manda.
+  const hace5 = new Date(hoy.getFullYear(), hoy.getMonth() - 5, 15);
+  const cincoMeses = `${hace5.getFullYear()}${String(hace5.getMonth() + 1).padStart(2, '0')}${String(hace5.getDate()).padStart(2, '0')}`;
+  const kept = pruneByRetention([{ id: 1, fecha8: cincoMeses }, { id: 2, fecha8: reciente }, { id: 3 }]);
+  assert.deepEqual(kept.map(r => r.id), [2, 3], 'con 3 meses, la de hace 5 se va; sin fecha se conserva por prudencia');
+  setPrefs({ retentionMonths: 13 });
+  assert.deepEqual(pruneByRetention([{ id: 1, fecha8: cincoMeses }]).map(r => r.id), [1], 'con 13 meses, la de hace 5 se queda');
+  setPrefs({ retentionMonths: 3 });
 
-  globalThis.chrome.storage.local.set({ [CONFIG.sicKey]: { records: [{ id: 1, fecha8: '20200101' }, { id: 2, fecha8: reciente }], savedAt: Date.now(), months: 6 } });
+  globalThis.chrome.storage.local.set({ [CONFIG.sicKey]: { records: [{ id: 1, fecha8: cincoMeses }, { id: 2, fecha8: reciente }], savedAt: Date.now(), months: 6 } });
   scriptFetch(() => { throw new Error('no debería llamarse'); });
   const res = await loadSICs('tok', 3);
   assert.equal(res.fromCache, true);
