@@ -111,16 +111,22 @@
 <main id="mainContent" tabindex="-1">
 <!-- Tab: Hoy -->
 <div class="tab-pane active" id="tab-hoy" role="tabpanel">
-  <div class="day-nav" id="dayNav" style="display:none">
-    <button class="btn-mini" id="dayPrev" aria-label="Día anterior">◀</button>
-    <input type="date" id="dayPick" aria-label="Elegir día">
-    <button class="btn-mini" id="dayNext" aria-label="Día siguiente">▶</button>
-    <button class="btn-mini" id="dayToday">Hoy</button>
+  <div class="hoy-layout">
+  <aside class="cal" id="dayNav" style="display:none" aria-label="Calendario de atenciones">
+    <div class="cal-h">
+      <button class="btn-mini ghost" id="calPrev" aria-label="Mes anterior">‹</button>
+      <strong id="calTitle" class="cal-title"></strong>
+      <button class="btn-mini ghost" id="calNext" aria-label="Mes siguiente">›</button>
+      <button class="btn-mini" id="dayToday">Hoy</button>
+    </div>
+    <div class="cal-grid" id="calGrid" role="grid" aria-label="Días del mes"></div>
+    <input type="date" id="dayPick" aria-label="Elegir día" class="cal-pick">
     <span class="muted" id="dayHint"></span>
-  </div>
+  </aside>
   <div class="today" id="todayContent">
     <div class="today-empty"><b>Carga los datos para ver la jornada</b>La agenda de hoy y los cambios recientes en tus interconsultas.
       <button class="btn btn-primary empty-cta" data-act="fetch">Cargar datos</button></div>
+  </div>
   </div>
 </div>
 

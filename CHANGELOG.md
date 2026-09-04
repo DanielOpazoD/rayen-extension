@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 2.26.0 — 2026-09-04
+
+Hoy con calendario mensual (iteración 3 del plan de diseño).
+
+- **Calendario del mes a la izquierda de la jornada**, con el número de atenciones de cada día, hoy con contorno y el día mostrado con fondo. Clic en un día lo abre; ‹ › cambian de mes; «Hoy» vuelve. En estrecho, el calendario va encima de la jornada.
+- Módulo puro `src/calendar.js` (semanas de lunes a domingo, recuentos, marcas) con pruebas; el recorrido de Playwright elige un día desde el calendario.
+
 ## 2.25.0 — 2026-09-04
 
 Nota clínica como diario.

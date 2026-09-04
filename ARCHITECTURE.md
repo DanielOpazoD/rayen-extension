@@ -97,6 +97,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/ajustes.js` — preferencias, umbrales y gestión de datos locales.
 - `src/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/auth.js` — recuperación segura de la sesión activa de Eloisa.
+- `src/calendar.js` — rejilla mensual de atenciones para Hoy, sin DOM.
 - `src/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
 - `src/charts.js` — gráficos SVG accesibles y accionables.
 - `src/config.js` — origen permitido, catálogos y valores de negocio configurables.
