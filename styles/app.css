@@ -119,8 +119,9 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
    cuatro bandas (cabecera, estado, sincronización, pestañas): 174 px de cromo. */
 .rail{display:flex;align-items:stretch;gap:var(--sp-3);padding:0 var(--gutter);background:var(--card);border-bottom:1px solid var(--rule);position:relative;flex-wrap:wrap}
 .rail-status{display:flex;align-items:center;gap:var(--sp-2);margin-left:auto;min-width:0;font-size:var(--t-xs);padding:4px 0}
-#statusBar{display:flex;align-items:center;gap:6px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
-#statusBar::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--good);flex-shrink:0}
+/* Bloque, no flex: un texto suelto dentro de un flex no admite «…». */
+#statusBar{display:block;position:relative;padding-left:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+#statusBar::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--good)}
 #statusBar.idle{color:var(--ink-3)}
 #statusBar.idle::before{background:var(--ink-4)}
 #statusBar.err{color:var(--bad)}#statusBar.err::before{background:var(--bad)}
@@ -158,8 +159,9 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .tab-pane{display:none}.tab-pane.active{display:block}
 
 /* ═══ Stats ═══ */
-.stats{display:flex;gap:var(--sp-2);padding:var(--sp-4) var(--gutter);flex-wrap:wrap}
-.stat{background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:10px 14px;flex:1 1 120px;min-width:92px;max-width:240px}
+/* Rejilla: todos los indicadores del mismo ancho, también el que queda solo en su fila. */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:var(--sp-2);padding:var(--sp-4) var(--gutter)}
+.stat{background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:10px 14px;min-width:0}
 .stat-muted{opacity:.65}
 .stat-n{font-size:var(--t-xl);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.02em}
 .stat-l{font-size:var(--t-xs);color:var(--ink-3);margin-top:2px}
@@ -279,8 +281,6 @@ td.num{text-align:right;padding-right:14px;font-variant-numeric:tabular-nums}
 .pat-link{cursor:pointer}
 .pat-link:hover .pname,.pat-link:focus-visible .pname{color:var(--brand-2);text-decoration:underline;text-underline-offset:2px}
 td.pat-link:focus-visible{outline-offset:-2px}
-.info{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;margin-left:5px;border-radius:50%;border:1px solid var(--ink-4);color:var(--ink-3);font-size:9px;font-style:italic;font-family:Georgia,serif;cursor:help;vertical-align:1px;line-height:1}
-.info:hover,.info:focus-visible{border-color:var(--brand);color:var(--brand-2)}
 .tip{cursor:help;border-bottom:1px dotted var(--ink-4)}
 [data-tip]{cursor:help}
 button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
@@ -347,6 +347,8 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 /* ═══ Charts ═══ */
 .chart-h3{font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-4) var(--gutter) 0}
 .chart-section{display:flex;gap:var(--sp-3);padding:var(--sp-2) var(--gutter) var(--sp-3);flex-wrap:wrap}
+/* Bajo 760 px, una columna: a dos, el texto de los SVG bajaba a 7 px. */
+@media(max-width:760px){.chart-section{flex-direction:column}.chart-card{max-width:none}}
 .chart-card{flex:1;min-width:240px;max-width:520px;background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);color:var(--ink)}
 
 /* ═══ Hoy ═══ */
@@ -459,7 +461,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pp-note label{display:block;font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 #ppNoteText{width:100%;border:1px solid var(--rule);border-radius:var(--r-sm);padding:8px;font-size:var(--t-sm);resize:vertical;min-height:64px;outline:none;background:var(--card)}
 #ppNoteText:focus{border-color:var(--brand)}
-#ppSaveNote{margin-top:6px;height:var(--h-ctl);padding:0 14px;background:var(--brand);color:#fff;border:none;border-radius:var(--r-sm);font-size:var(--t-sm);font-weight:600;cursor:pointer;width:100%}
+#ppSaveNote{margin-top:6px;margin-left:auto;display:block;height:var(--h-ctl);padding:0 16px;background:var(--brand);color:var(--on-brand);border:none;border-radius:var(--r-sm);font-size:var(--t-sm);font-weight:600;cursor:pointer}
 #ppSaveNote:hover{background:var(--brand-2)}
 
 /* ═══ Pacientes ═══ */

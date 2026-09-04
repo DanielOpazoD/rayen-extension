@@ -22,13 +22,17 @@ export async function checkLabSession() {
     const res = await fetch(`${LAB_ORIGIN}/BuscarOrdenes`, {
       credentials: 'include',
       redirect: 'follow',
+      signal: AbortSignal.timeout(20_000), // sin esto la píldora quedaba en «Verificando…» para siempre
     });
     if (!res.ok) return false;
     const url = new URL(res.url);
     if (url.pathname.startsWith('/Login')) return false;
     const text = await res.text();
     return !text.includes('Acceso Usuario');
-  } catch {
+  } catch (err) {
+    // «Sin sesión» y «no responde» son cosas distintas: la red o el tiempo
+    // límite se propagan para que la píldora diga «no disponible».
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError' || /fetch|network/i.test(err?.message ?? '')) throw err;
     return false;
   }
 }

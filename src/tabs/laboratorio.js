@@ -127,8 +127,9 @@ async function updateHsrSession() {
     }
     el.innerHTML = `HSR sin sesión — <a href="${esc(LAB_ORIGIN)}" target="_blank" rel="noopener">abrir</a>`;
     el.className = 'lab-session expired';
-  } catch {
-    el.textContent = 'HSR no disponible';
+  } catch (err) {
+    el.textContent = 'HSR no responde';
+    el.title = humanError(err, 'el portal del Hospital Salvador');
     el.className = 'lab-session expired';
   }
   return false;
@@ -238,7 +239,7 @@ async function doSearch() {
   // Sin guion ni verificador, 7 u 8 dígitos pueden ser dos personas distintas.
   // Antes se resolvía por módulo 11 y una de cada once veces buscaba a otra.
   if (rutInputAmbiguous(rut)) {
-    $('labError').textContent = 'Escribe el RUT con guion y dígito verificador (por ejemplo 11.957.001-8): sin él no se sabe si la última cifra es parte del RUT y se buscaría a otra persona.';
+    $('labError').textContent = 'Escribe el RUT completo, con guion y dígito verificador (por ejemplo 11.957.001-8). Sin él podría buscarse a otra persona.';
     return;
   }
 

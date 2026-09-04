@@ -115,9 +115,10 @@ export function row(p, ctx) {
     ? `<span class="note-text" data-tip="${esc(p.note)}">${esc(p.note)}</span>`
     : `<span class="note-empty">—</span>`;
   const flags = [
-    p.esUrgencia   ? `<span class="flag flag-urg" data-tip="Urgencia">U</span>` : '',
-    p.esEspontanea ? `<span class="flag flag-esp" data-tip="Espontánea (sin cita)">E</span>` : '',
-    p.adjuntos?.length ? `<span class="flag flag-adj" data-tip="${esc(p.adjuntos.map(a => a.nombre).join('\n'))}">📎${p.adjuntos.length}</span>` : '',
+    // Los iconos de una letra llevan nombre accesible: el tooltip sólo lo lee quien ve.
+    p.esUrgencia   ? `<span class="flag flag-urg" role="img" aria-label="Urgencia" data-tip="Urgencia">U</span>` : '',
+    p.esEspontanea ? `<span class="flag flag-esp" role="img" aria-label="Espontánea, sin cita" data-tip="Espontánea (sin cita)">E</span>` : '',
+    p.adjuntos?.length ? `<span class="flag flag-adj" role="img" aria-label="${p.adjuntos.length} ${p.adjuntos.length === 1 ? 'adjunto' : 'adjuntos'}" data-tip="${esc(p.adjuntos.map(a => a.nombre).join('\n'))}">📎${p.adjuntos.length}</span>` : '',
   ].join('');
   const prest = p.prestador && !/opazo/i.test(p.prestador)
     ? `<span class="prest-other" data-tip="Atendido por ${esc(p.prestador)}">${esc(p.prestador)}</span>` : '';
@@ -125,7 +126,7 @@ export function row(p, ctx) {
   const edadTip = [p.dob ? `Nac. ${p.dob}` : '', p.edadLabel].filter(Boolean).join(' · ');
 
   return `<tr data-id="${esc(p.id)}" class="${rowCls}" tabindex="-1">
-    <td data-c="fechaAtencion" class="sticky s1"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}<span class="info" tabindex="-1" data-tip="${esc(whenLabel(p))}">i</span></td>
+    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}</td>
     <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="-1" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run copy-run" data-run="${esc(p.runStr)}" role="button" tabindex="-1" data-tip="Copiar RUN">${p.runStr}</span>` : ''}</td>
     <td data-c="edad" class="num"><span class="tip" data-tip="${esc(edadTip)}">${p.edad ?? ''}</span></td>
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>

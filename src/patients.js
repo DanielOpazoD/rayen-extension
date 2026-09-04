@@ -157,7 +157,7 @@ export function renderPatients(all, shown) {
     : `<tr><td colspan="8" class="empty">Sin pacientes para este filtro.</td></tr>`;
   const conSic  = all.filter(p => p.abiertas.length).length;
   const conPend = all.filter(p => p.pend.length).length;
-  $('pacFoot').textContent = `${shown.length} de ${all.length} pacientes`;
+  $('pacFoot').textContent = shown.length === all.length ? `${all.length} pacientes` : `${shown.length} de ${all.length} pacientes`;
   $('pacCount').textContent = `${all.length} pacientes · ${conSic} con IC abierta · ${conPend} con pendientes`;
 }
 

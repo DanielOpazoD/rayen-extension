@@ -66,7 +66,8 @@ const topEntries = (counts, n) => Object.entries(counts).sort((a, b) => b[1] - a
 const count = (records, keyFn) => records.reduce((acc, r) => { const k = keyFn(r); if (k) acc[k] = (acc[k] || 0) + 1; return acc; }, {});
 const card = svg => svg ? `<div class="chart-card">${svg}</div>` : '';
 const hb = (counts, title, n = 10, opts = {}) => {
-  const e = topEntries(counts, n);
+  // `ordered`: categorías ordinales («1 visita», «2», «3–4», «5+») en su orden, no por valor.
+  const e = opts.ordered ? Object.entries(counts).slice(0, n) : topEntries(counts, n);
   return e.length ? hBarSVG({ labels: e.map(([k]) => k), values: e.map(([, v]) => v), title, ...opts }) : '';
 };
 
@@ -126,7 +127,7 @@ export function renderCharts(records, team, container, sics = []) {
   const mine = [
     `<h3 class="chart-h3">Mis atenciones · ${records.length} atenciones · ${unicos} pacientes</h3>`,
     `<div class="chart-section">${card(cDow)}${card(cMonth)}${card(cHour)}</div>`,
-    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4, { filter: 'filtSexo' }))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4))}</div>`,
+    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4, { filter: 'filtSexo' }))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4, { ordered: true }))}</div>`,
     `<div class="chart-section">${card(hb(byEstado, 'Por estado', 6, { filter: 'filtEstado' }))}${card(hb(byRazon, 'Por razón', 6))}${card(hb(byGes, 'GES', 2))}</div>`,
     `<div class="chart-section">${card(hb(byTipo, 'Tipos de atención', 15, { labelW: 130, filter: 'filtTipo' }))}${card(hb(byDx, 'Diagnósticos más frecuentes', 15, { labelW: 140, filter: 'search' }))}${card(hb(byCert, 'Certeza del diagnóstico principal', 5))}</div>`,
     Object.keys(byPrest).length ? `<div class="chart-section">${card(hb(byPrest, 'Atendidas por otro prestador', 8, { labelW: 130, filter: 'filtPrest' }))}</div>` : '',

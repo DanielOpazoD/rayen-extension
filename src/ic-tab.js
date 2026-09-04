@@ -124,7 +124,8 @@ function detailRow(s) {
 function mainRow(s) {
   const open = expanded.has(s.id);
   const ges  = s.esAuge ? `<span class="bges">GES</span>` : '';
-  const mine = isMine(s) ? `<span class="mine" data-tip="Registrada o ejecutada por ti">★</span>` : '';
+  // Si todas las filas visibles son tuyas (filtro «Mías»), la estrella no informa nada.
+  const mine = isMine(s) && !allMine ? `<span class="mine" data-tip="Registrada o ejecutada por ti">★</span>` : '';
   const age  = s.antiguedadDias > 60 && ['pendiente', 'enviada'].includes(s.grupo) ? 'age-old' : '';
   return `<tr class="sic-row ${open ? 'open' : ''}" data-id="${s.id}" tabindex="0" aria-expanded="${open}">
     <td><span class="caret">${open ? '▾' : '▸'}</span> <strong>${esc(s.fecha)}</strong><br><small class="run">#${s.id}</small></td>
@@ -143,13 +144,16 @@ function mainRow(s) {
  * @param {object[]} all    every SIC loaded
  * @param {object[]} shown  filtered subset
  */
+let allMine = false;
+
 export function renderSICTab(all, shown) {
+  allMine = shown.length > 0 && shown.every(isMine);
   $('sicSummary').innerHTML = summary(all, shown.length);
   const tbody = $('sicBody');
   tbody.innerHTML = shown.length
     ? shown.map(mainRow).join('')
     : `<tr><td colspan="8" class="empty">Sin interconsultas para estos filtros.</td></tr>`;
-  $('sicCount').textContent = `${shown.length} de ${all.length} solicitudes`;
+  $('sicCount').textContent = shown.length === all.length ? `${all.length} interconsultas` : `${shown.length} de ${all.length} interconsultas`;
 }
 
 export function toggleSIC(id) {

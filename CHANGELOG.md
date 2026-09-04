@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.17.0 — 2026-09-03
+
+UX, estética y accesibilidad: lo que el cuarto balance dejó abierto en su lente.
+
+- **Desaparece la «i» de 9 px** que en cada fila sólo decía el día de la semana: ese dato va en el tooltip de la fecha, y la hora ya está a la vista. Los iconos de una letra (U, E, adjuntos) llevan nombre accesible.
+- **Estadísticas**: indicadores en rejilla, todos del mismo ancho, también el que queda solo en su fila; a menos de 760 px los gráficos van a una columna en vez de encogerse a texto de 7 px; «Visitas por paciente» en su orden natural (1, 2, 3–4, 5+).
+- **Interconsultas**: la estrella «tuya» desaparece cuando el filtro ya muestra sólo las tuyas; el tooltip de «Prior.» explica P1/P2/P3 sin hablar de la API; el pie dice «28 interconsultas» o «5 de 28 interconsultas», como en Atenciones y Pacientes.
+- **La barra de estado se recorta con «…»** en anchos medios en vez de cortarse a cuchillo («90 días no se pud»).
+- **Laboratorio**: la comprobación de sesión del Hospital Salvador tiene tiempo límite y distingue «no responde» de «sin sesión»; el aviso del RUT incompleto cabe en dos frases.
+- «Guardar nota» deja de ser un botón a todo el ancho que competía con «Actualizar».
+
 ## 2.16.0 — 2026-09-03
 
 Etapa 4: lo que el cuarto balance (4,8/7) encontró abierto, verificado ejecutando.
