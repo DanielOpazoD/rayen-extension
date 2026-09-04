@@ -45,6 +45,16 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   await page.locator('#btnSyncDetails').click();
   await expect(page.locator('#syncDetails')).toBeHidden();
 
+  // Calendario mensual: un día con atenciones se elige con un clic y queda marcado.
+  await expect(page.locator('#calGrid .cal-d.has').first()).toBeVisible();
+  const antesSel = await page.locator('#calGrid .cal-d[aria-pressed="true"]').getAttribute('data-date8');
+  const otro = page.locator('#calGrid .cal-d.has').filter({ hasNot: page.locator('[aria-pressed="true"]') }).first();
+  const otroFecha = await otro.getAttribute('data-date8');
+  if (otroFecha && otroFecha !== antesSel) {
+    await otro.click();
+    await expect(page.locator('#calGrid .cal-d[aria-pressed="true"]')).toHaveAttribute('data-date8', otroFecha);
+    await page.locator('#dayToday').click();
+  }
   await expect(page.locator('#todayContent')).not.toContainText('Citas pasadas sin resolver');
   await expect(page.locator('#todayContent')).not.toContainText('Sin contrarreferencia');
 
