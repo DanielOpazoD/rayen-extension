@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.28.0 — 2026-09-04
+
+Un solo nivel de énfasis en las siete pestañas y el panel (iteración 5, última del plan de diseño).
+
+- **Contrato de tres niveles**, documentado al inicio de `styles/app.css`: título (versalita 12 px, 600, gris), dato (400 en tinta; la clave de cada fila a 500) y secundario (12 px gris, sin versalita). Las negritas del marcado dentro de las vistas pesan 500.
+- Fuera los 600/700 dentro de datos: fecha y hora de la tabla y de la jornada, fechas del panel, «EMITÍ/RECIBÍ», «n pendientes», chapas de laboratorio y valores fuera de rango (el color ya es la señal).
+- Cabeceras de tabla, bloques de la jornada, preferencias y títulos de los gráficos comparten el mismo estilo de título; los valores de los gráficos a 500; Novedades sin monoespaciada; claves de Datos sin versalita.
+
 ## 2.27.0 — 2026-09-04
 
 Portada clínica del paciente (iteración 4 del plan de diseño).
