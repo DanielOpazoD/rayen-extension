@@ -1,12 +1,15 @@
-import { esc, stateDot, sicTone } from './dom.js';
+import { esc, stateDot, stateTone, sicTone } from './dom.js';
 import { dateToInt } from './parser.js';
 import { CONFIG } from './config.js';
 
 /** Column ids in display order. Fecha and Nombre are sticky and always visible. */
+// Ocho columnas. Razón y Tipo van juntas («Consulta Médica · Morbilidad») y el
+// estado es un punto de color junto a la hora: la tabla cabe en 1280 px sin
+// desplazamiento horizontal. Los valores siguen enteros en filtros, tooltips y
+// exportaciones.
 export const COLUMNS = [
   ['fechaAtencion', 'Fecha'], ['nombre', 'Nombre'], ['edad', 'Edad'], ['sexo', 'Sexo'],
-  ['razon', 'Razón'], ['tipoAtencion', 'Tipo de atención'], ['diagnostico', 'Diagnóstico'],
-  ['estado', 'Estado'], ['ic', 'Interconsulta'], ['nota', 'Notas'],
+  ['atencion', 'Atención'], ['diagnostico', 'Diagnóstico'], ['ic', 'Interconsulta'], ['nota', 'Notas'],
 ];
 const COLUMN_COUNT = COLUMNS.length;
 export const ALWAYS_VISIBLE = new Set(['fechaAtencion', 'nombre']);
@@ -52,6 +55,20 @@ export function sortRecords(data, sortCol, sortDir) {
     const va = sortValue(a, sortCol), vb = sortValue(b, sortCol);
     return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir || String(a.hora).localeCompare(String(b.hora));
   });
+}
+
+/** «Consulta Médica · Morbilidad»; si la razón ya está dentro del tipo («Control Crónico» / «Control»), sólo el tipo. */
+export function atencionLabel(p) {
+  const tipo = String(p.tipoAtencion || '').trim(), razon = String(p.razon || '').trim();
+  if (!tipo) return razon;
+  if (!razon || tipo.toLowerCase().includes(razon.toLowerCase())) return tipo;
+  return `${tipo} · ${razon}`;
+}
+function atencionCell(p) {
+  const tipo = String(p.tipoAtencion || '').trim(), razon = String(p.razon || '').trim();
+  if (!tipo) return esc(razon);
+  if (!razon || tipo.toLowerCase().includes(razon.toLowerCase())) return esc(tipo);
+  return `${esc(tipo)}<span class="sec"> · ${esc(razon)}</span>`;
 }
 
 function dxCell(p) {
@@ -130,14 +147,12 @@ export function row(p, ctx) {
   const edadTip = [p.dob ? `Nac. ${p.dob}` : '', p.edadLabel].filter(Boolean).join(' · ');
 
   return `<tr data-id="${esc(p.id)}" class="${rowCls}" tabindex="-1">
-    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}</td>
+    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}${p.estado ? ` · ${esc(p.estado)}` : ''}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}${p.estado ? `<span class="sdot st-${stateTone(p.estado)}" role="img" aria-label="${esc(p.estado)}"></span>` : ''}</td>
     <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="-1" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run copy-run" data-run="${esc(p.runStr)}" role="button" tabindex="-1" data-tip="Copiar RUN">${p.runStr}</span>` : ''}</td>
     <td data-c="edad" class="num"><span class="tip" data-tip="${esc(edadTip)}">${p.edad ?? ''}</span></td>
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>
-    <td data-c="razon">${esc(p.razon)}</td>
-    <td data-c="tipoAtencion" class="wrap" data-tip="${esc(p.tipoAtencion)}">${esc(p.tipoAtencion)}${flags}${prest}</td>
+    <td data-c="atencion" class="wrap" data-tip="${esc([p.tipoAtencion, p.razon].filter(Boolean).join(' · '))}">${atencionCell(p)}${flags}${prest}</td>
     <td data-c="diagnostico" class="wrap dx-cell"><span class="dx">${dxCell(p)}</span></td>
-    <td data-c="estado">${stateDot(p.estado)}</td>
     <td data-c="ic" class="wrap ic-cell">${icCell(p, ctx)}</td>
     <td data-c="nota" class="note-cell" data-id="${esc(p.id)}">${noteEl}</td>
   </tr>`;

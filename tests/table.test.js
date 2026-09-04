@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sexLetter, sicRole, whenLabel, sortRecords, row } from '../src/table.js';
+import { sexLetter, sicRole, whenLabel, sortRecords, row, atencionLabel, COLUMNS } from '../src/table.js';
 import { CONFIG } from '../src/config.js';
 
 test('sexLetter reduces Rayen sex labels to one letter', () => {
@@ -76,4 +76,16 @@ test('la celda de interconsultas muestra una sola SIC y agrupa las demás en «+
 
   const sinSIC = row(paciente(), ctx(null, []));
   assert.doesNotMatch(sinSIC, /ic-line|sic-run/);
+});
+
+// Ocho columnas: Razón y Tipo juntas, estado como punto junto a la hora.
+test('la fila fusiona tipo y razón y lleva el estado como punto con nombre accesible', () => {
+  assert.equal(COLUMNS.length, 8);
+  assert.equal(atencionLabel({ tipoAtencion: 'Consulta Médica', razon: 'Morbilidad' }), 'Consulta Médica · Morbilidad');
+  assert.equal(atencionLabel({ tipoAtencion: 'Control Crónico', razon: 'Control' }), 'Control Crónico', 'la razón contenida en el tipo no se repite');
+  assert.equal(atencionLabel({ tipoAtencion: '', razon: 'Control' }), 'Control');
+  const html = row(paciente({ tipoAtencion: 'Consulta Médica', razon: 'Morbilidad', estado: 'Completado' }), ctx(null, []));
+  assert.match(html, /data-c="atencion"[^>]*>Consulta Médica<span class="sec"> · Morbilidad<\/span>/);
+  assert.match(html, /class="sdot st-ok" role="img" aria-label="Completado"/);
+  assert.doesNotMatch(html, /data-c="razon"|data-c="tipoAtencion"|data-c="estado"/);
 });

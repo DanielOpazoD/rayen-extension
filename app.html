@@ -181,21 +181,19 @@
 <table id="mainTable" aria-label="Atenciones">
   <colgroup>
     <col class="c-fecha"><col class="c-nombre"><col class="c-edad"><col class="c-sexo">
-    <col class="c-razon"><col class="c-tipo"><col class="c-dx"><col class="c-estado"><col class="c-ic"><col class="c-nota">
+    <col class="c-atencion"><col class="c-dx"><col class="c-ic"><col class="c-nota">
   </colgroup>
   <thead><tr>
-    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" tabindex="0" aria-sort="descending" data-tip="Ordenar por fecha">Fecha</th>
+    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" tabindex="0" aria-sort="descending" data-tip="Ordenar por fecha · el punto es el estado de la cita: verde completada, gris confirmada, rojo no se presentó">Fecha</th>
     <th data-col="nombre" data-c="nombre" class="sticky s2" tabindex="0" aria-sort="none">Nombre</th>
     <th data-col="edad" data-c="edad" tabindex="0" aria-sort="none" data-tip="Ordenar · al pasar el cursor se ve la fecha de nacimiento">Edad</th>
     <th data-col="sexo" data-c="sexo" tabindex="0" aria-sort="none" data-tip="M = mujer · H = hombre">Sx</th>
-    <th data-col="razon" data-c="razon" tabindex="0" aria-sort="none">Razón</th>
-    <th data-col="tipoAtencion" data-c="tipoAtencion" tabindex="0" aria-sort="none">Tipo de atención</th>
+    <th data-col="tipoAtencion" data-c="atencion" tabindex="0" aria-sort="none" data-tip="Tipo de atención y razón. El estado de la cita es el punto junto a la hora">Atención</th>
     <th data-col="diagnostico" data-c="diagnostico" tabindex="0" aria-sort="none" data-tip="Desde la ficha clínica">Diagnóstico</th>
-    <th data-col="estado" data-c="estado" tabindex="0" aria-sort="none">Estado</th>
     <th class="ns" data-c="ic" data-tip="SIC que originó la cita (solicitante real, especialidad, estado) y otras SIC del paciente">Interconsulta</th>
     <th class="ns" data-c="nota" data-tip="Clic en una celda para editar">Notas</th>
   </tr></thead>
-  <tbody id="tbody"><tr><td colspan="10" class="empty"><div class="empty-state"><b>Carga los datos para ver tus atenciones</b>Pulsa «Cargar datos» arriba a la derecha: se traen la agenda y, si está activada, la ficha clínica del período elegido.</div></td></tr></tbody>
+  <tbody id="tbody"><tr><td colspan="8" class="empty"><div class="empty-state"><b>Carga los datos para ver tus atenciones</b>Pulsa «Cargar datos» arriba a la derecha: se traen la agenda y, si está activada, la ficha clínica del período elegido.</div></td></tr></tbody>
   <tfoot><tr><td colspan="10" id="countRow"></td></tr></tfoot>
 </table>
 </div>
