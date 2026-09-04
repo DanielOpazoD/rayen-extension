@@ -122,6 +122,44 @@ const SECTIONS = [
   ['enmendaciones',  'Enmendaciones',                  ['Enmendaciones'],                        describe],
 ];
 export const SECTION_LABELS = Object.fromEntries(SECTIONS.map(([id, label]) => [id, label]));
+const SECTION_KEYS = new Set(SECTIONS.flatMap(([, , keys]) => keys));
+
+// ── Textos libres que la ficha no modela todavía ──
+// Las atenciones de urgencia traen la evolución médica, el examen físico o la
+// categorización en campos que HistorialAtencion no anuncia en ninguna lista
+// conocida. En vez de perderlos en silencio, se recoge todo texto libre (con
+// espacios, ≥ 20 caracteres) de la anamnesis, del episodio y del nivel superior
+// que no esté ya en una sección, con su nombre de campo legible.
+const TEXT_LABELS = {
+  Evolucion: 'Evolución', EvolucionMedica: 'Evolución médica', ExamenFisico: 'Examen físico', Diagnostico: 'Diagnóstico',
+  Hipotesis: 'Hipótesis diagnóstica', HipotesisDiagnostica: 'Hipótesis diagnóstica', Plan: 'Plan', Indicacion: 'Indicación',
+  Observacion: 'Observación', Observaciones: 'Observaciones', Epicrisis: 'Epicrisis', Categorizacion: 'Categorización',
+  Triage: 'Triage', MotivoIngreso: 'Motivo de ingreso', Anamnesis: 'Anamnesis', Comentario: 'Comentario', Comentarios: 'Comentarios',
+};
+const SKIP_TEXT_KEY = /^(Id|Codigo|Rut|Fecha|Hora|Nombre|Apellido|Usuario|Funcionario|Token|Url|Path|Guid|Estado)$|Id$|Rut$|Fecha|Nombre|Apellido/i;
+const USED_ANAMNESIS = new Set(['MotivoConsulta', 'HistoriaEnfermedadActual']);
+const humanKey = k => TEXT_LABELS[k] ?? k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
+const isFreeText = v => typeof v === 'string' && v.trim().length >= 20 && /\s/.test(v.trim()) && !isRayenDate(v);
+
+export function textosLibres(a) {
+  const out = [];
+  const seen = new Set();
+  const take = (obj, skip = new Set()) => {
+    if (!obj || typeof obj !== 'object') return;
+    for (const [k, v] of Object.entries(obj)) {
+      if (skip.has(k) || SKIP_TEXT_KEY.test(k) || !isFreeText(v)) continue;
+      const text = cleanText(v);
+      if (seen.has(text)) continue;
+      seen.add(text);
+      out.push({ key: k, label: humanKey(k), text });
+    }
+  };
+  for (const an of a.Anamnesis ?? []) take(an, USED_ANAMNESIS);
+  const ep = a.EpisodioAtencion;
+  for (const e of Array.isArray(ep) ? ep : ep ? [ep] : []) take(e);
+  take(a, new Set([...SECTION_KEYS, 'Anamnesis', 'EpisodioAtencion', 'Motivo']));
+  return out;
+}
 
 /** Full per-visit ficha record: parseAtencion() + every clinical section. */
 export function parseFichaAtencion(a) {
@@ -139,6 +177,7 @@ export function parseFichaAtencion(a) {
       historia: (anam.HistoriaEnfermedadActual ?? '').trim(),
     },
     sections,
+    extras: textosLibres(a),
   };
 }
 

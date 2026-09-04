@@ -106,6 +106,9 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 /* Bajo 1100 px la cabecera es una sola línea: título, Actualizar y «⋯». Período,
    ficha clínica, exportar y preferencias se pliegan en un panel bajo el botón.
    Desplegados piden ~1080 px; antes se apilaban en una segunda línea. */
+/* «Exámenes complementarios» no cabe en el riel bajo 1200 px: se muestra «Exámenes»; el nombre accesible (aria-label) no cambia. */
+.tab-btn .lbl-short{display:none}
+@media(max-width:1200px){.tab-btn .lbl-full{display:none}.tab-btn .lbl-short{display:inline}}
 @media(max-width:1100px){
   header{gap:var(--sp-3)}
   .brand{flex:1 1 auto}
@@ -228,16 +231,16 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .cal-grid{display:flex;flex-direction:column;gap:2px}
 .cal-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cal-dow span{text-align:center;font-size:var(--t-xs);color:var(--ink-3);padding:2px 0}
-.cal-d{position:relative;height:36px;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;font:inherit;font-size:var(--t-sm);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:0}
+.cal-d{position:relative;height:38px;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;font:inherit;font-size:var(--t-sm);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;padding:0 0 6px}
 .cal-d.out{color:var(--ink-4)}
 .cal-d.we .cal-n{color:var(--ink-3)}
 .cal-d.has{background:var(--surface-2)}
 .cal-d:hover{border-color:var(--rule)}
-.cal-d.today{border-color:var(--brand)}
+.cal-d.is-today{border-color:var(--brand)}
 .cal-d[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand-2);font-weight:600}
 .cal-n{line-height:1}
-.cal-c{font-size:10px;line-height:1;color:var(--ink-3);font-variant-numeric:tabular-nums}
-.cal-d[aria-pressed="true"] .cal-c{color:var(--brand-2)}
+.cal-c{position:absolute;top:2px;right:2px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;font-size:10px;line-height:15px;font-weight:500;text-align:center;background:var(--brand-soft);color:var(--brand-2);font-variant-numeric:tabular-nums}
+.cal-d[aria-pressed="true"] .cal-c{background:var(--brand);color:#fff}
 .cal-pick{margin-top:var(--sp-2);width:100%;height:var(--h-ctl-sm);padding:0 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-xs);color:var(--ink-2)}
 .cal .muted{display:block;font-size:var(--t-xs);margin-top:4px}
 /* Ajustes */
@@ -484,7 +487,13 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-tab:hover:not(.active){color:var(--ink-2)}
 .pp-tab .cnt{font-size:var(--t-xs);color:var(--ink-3);margin-left:3px;font-variant-numeric:tabular-nums}
 .pp-tab .cnt:empty{display:none}
-.pp-ficha-status{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4) 0;font-size:var(--t-xs);color:var(--ink-3);flex-wrap:wrap}
+.pp-ficha-row{display:flex;justify-content:flex-end;padding:2px var(--sp-3) 0}
+.pp-ghost{display:inline-flex;align-items:center;gap:5px;background:none;border:0;padding:2px 6px;border-radius:var(--r-sm);font:inherit;font-size:var(--t-xs);color:var(--ink-4);cursor:pointer}
+.pp-ghost:hover,.pp-ghost[aria-expanded="true"]{color:var(--ink-2);background:var(--surface-2)}
+.pp-ghost .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-4)}
+.pp-ghost .dot.warn{background:var(--warn)}
+.pp-ghost .dot.bad{background:var(--bad)}
+.pp-ficha-status{display:flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-4) var(--sp-1);font-size:var(--t-xs);color:var(--ink-3);flex-wrap:wrap}
 .pp-pane{display:none;padding:var(--sp-3) var(--sp-4) var(--sp-4);flex:1}
 .pp-pane.active{display:block}
 .pp-empty{font-size:var(--t-sm);color:var(--ink-3);padding:var(--sp-2) 0}

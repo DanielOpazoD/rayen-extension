@@ -130,7 +130,7 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
       const { fragment, css } = buildPatientReport(cur, scope);
       await openReport(fragment, css);
     } catch (err) {
-      $('ppFichaStatus').innerHTML = `<span class="al al-bad">No se pudo generar el informe. ${esc(humanError(err, 'Eloisa'))}</span>`;
+      setFichaStatus(`<span class="al al-bad">No se pudo generar el informe. ${esc(humanError(err, 'Eloisa'))}</span>`, 'bad');
     } finally { b.disabled = false; }
   });
 
@@ -140,6 +140,11 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     const hidden = $('ppDatos').toggleAttribute('hidden');
     $('ppAvatar').classList.toggle('on', !hidden);
     $('ppAvatar').setAttribute('aria-expanded', String(!hidden));
+  });
+  $('ppFichaToggle').addEventListener('click', () => {
+    const box = $('ppFichaStatus');
+    box.hidden = !box.hidden;
+    $('ppFichaToggle').setAttribute('aria-expanded', String(!box.hidden));
   });
   // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas; y los «Ver todo» de la portada.
   $('patientPanel').addEventListener('click', e => {
@@ -300,7 +305,7 @@ function renderDx() {
 
   html += h4(ficha?.visits?.length ? 'Problemas (historial completo, todos los profesionales)' : 'Problemas (mis atenciones)');
   html += probs.length ? probs.map(d => {
-    const meta = [d.codigo, pesoLabel(d), d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · ');
+    const meta = [d.codigo, d.ultima].filter(Boolean).join(' · ');
     return `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
       `<span class="pp-row-m">${esc(meta)}</span></div>`;
   }).join('') : empty('Sin diagnósticos registrados');
@@ -327,7 +332,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
   const cita = agendaByAtencion.get(v.id);
   const who  = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections);
-  const hasBody = v.anamnesis.motivo || v.anamnesis.historia || secs.length || v.actividades.length || v.adjuntos.length;
+  const hasBody = v.anamnesis.motivo || v.anamnesis.historia || v.extras?.length || secs.length || v.actividades.length || v.adjuntos.length;
   return `
     <div class="pp-visit ${mine ? 'mine' : ''} ${hasBody ? 'has-body' : ''}">
       <div class="pp-vhead" ${hasBody ? 'role="button" tabindex="0" aria-expanded="false"' : ''}>
@@ -347,6 +352,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
       <div class="pp-body">
         ${v.anamnesis.motivo   ? `<div class="pp-sec"><span class="pp-sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}
         ${v.anamnesis.historia ? `<div class="pp-sec"><span class="pp-sec-l">Historia / evolución</span><p>${esc(v.anamnesis.historia)}</p></div>` : ''}
+        ${(v.extras ?? []).map(x => `<div class="pp-sec"><span class="pp-sec-l">${esc(x.label)}</span><p>${esc(x.text)}</p></div>`).join('')}
         ${secs.map(([id, items]) => sectionHTML(id, items)).join('')}
         ${v.actividades.length ? `<div class="pp-sec"><span class="pp-sec-l">Actividades</span><p>${v.actividades.map(a => esc(a.descripcion || a.codigo)).join(' · ')}</p></div>` : ''}
         ${v.adjuntos.length ? `<div class="pp-sec"><span class="pp-sec-l">Adjuntos</span><p>📎 ${v.adjuntos.map(a => esc(a.nombre)).join(', ')}</p></div>` : ''}
@@ -431,10 +437,7 @@ function renderRx() {
   const porVisita = conRx.map(v => ({ v, items: clasificar(v) }));
   const cuenta = estado => porVisita.reduce((n, { items }) => n + items.filter(i => (estado === 'activas' ? i.estado === 'activa' : i.estado !== 'activa')).length, 0);
   let html = segGroup('rx', 'Recetas', [['activas', 'Activas', cuenta('activas')], ['vencidas', 'Vencidas', cuenta('vencidas')]], rxFilter);
-  const f = rxFilter === 'activas' ? ficha.antecedentes.farmacos : [];
-  if (f.length) html += h4('Fármacos en uso') + f.map(x =>
-    `<div class="pp-row"><span class="pp-row-t">${esc(x.label)}${x.hearts ? ' <span class="al al-info">HEARTS</span>' : ''}</span>` +
-    `<span class="pp-row-m">${esc([x.posologia, x.estado ? `receta ${x.estado.toLowerCase()}` : '', x.fecha].filter(Boolean).join(' · '))}</span></div>`).join('');
+  // «Fármacos en uso» (RecuperarAntecedentes) repetía lo que ya dicen las recetas por atención.
 
   let total = 0;
   const visibles = porVisita.map(({ v, items }) => ({ v, items: items.filter(i => (rxFilter === 'activas' ? i.estado === 'activa' : i.estado !== 'activa')) })).filter(x => x.items.length);
@@ -455,11 +458,11 @@ function renderRx() {
       }
       html += `</div>`;
     }
-  } else if (!f.length) {
+  } else {
     html += empty(rxFilter === 'activas' ? 'Sin recetas ni prescripciones activas' : 'Sin recetas vencidas');
   }
   $('ppPaneRx').innerHTML = html;
-  setTabCount('rx', total || ficha.antecedentes.farmacos.length);
+  setTabCount('rx', total);
 }
 
 function renderAll() {
@@ -473,7 +476,23 @@ function renderAll() {
 }
 
 const OPEN_SIC = new Set(['pendiente', 'enviada']);
-const pesoLabel = d => d.cronico ? 'crónico' : d.recurrente ? 'recurrente' : '';
+
+/**
+ * El estado de la ficha («Ficha completa · 4 atenciones (1 mías) desde…») vive
+ * detrás de un botón muy discreto. Lo que no se oculta es el tono: un punto
+ * ámbar o rojo en el botón avisa de ficha parcial, sin sesión o error, y el
+ * nombre accesible del botón lleva el texto completo.
+ */
+function setFichaStatus(html, tone = '') {
+  const box = $('ppFichaStatus');
+  box.innerHTML = html;
+  const dot = $('ppFichaDot');
+  dot.hidden = !tone;
+  dot.className = `dot ${tone}`;
+  const texto = box.textContent.replace(/\s+/g, ' ').trim();
+  $('ppFichaToggle').setAttribute('aria-label', `Estado de la ficha clínica: ${texto || 'sin datos'}`);
+  $('ppFichaToggle').title = texto;
+}
 const hoy8 = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
 const seccion = (titulo, goto, cuerpo) =>
   `<h4>${esc(titulo)}${goto ? ` <button type="button" class="pp-link" data-goto="${goto}" aria-label="Ver todo: ${esc(titulo)}">Ver todo</button>` : ''}</h4>${cuerpo}`;
@@ -491,7 +510,6 @@ function renderResumen() {
   const mias = (ficha?.visits?.length ? ficha.visits.filter(isMine) : visits.filter(v => v.atencionId || v.origen !== 'cita')).slice(0, 3);
   const abiertas = sics.filter(s => OPEN_SIC.has(s.grupo));
   const proximo = proximoControlSugerido(src, hoy8());
-  const chips = ficha ? alertChips(ficha) : [];
   // Con la ficha caída (503, sesión vencida) no se afirma nada sobre el registro:
   // sólo se dice lo que se vio en tus atenciones.
   const sinFicha = cur.fichaFailed || (ficha && !ficha.visits?.length && ficha.errors?.length > 0);
@@ -499,9 +517,9 @@ function renderResumen() {
     : sinFicha ? 'Ficha no disponible · sólo tus atenciones, sin diagnósticos'
     : ficha ? 'Sin diagnósticos en tus atenciones' : 'Consultando ficha…';
 
-  let html = chips.length ? `<div class="pp-chips pp-res-chips">${chips.join('')}</div>` : '';
-  html += seccion('Problemas activos', 'dx', probs.length
-    ? probs.map(d => `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span><span class="pp-row-m">${esc([pesoLabel(d), d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · '))}</span></div>`).join('')
+  // Sin chapas ni calificadores: el orden ya lleva el peso; la fecha basta como dato.
+  let html = seccion('Problemas activos', 'dx', probs.length
+    ? probs.map(d => `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span><span class="pp-row-m">${esc(d.ultima)}</span></div>`).join('')
     : empty(vacioDx));
   html += seccion('Tus últimas atenciones', 'at', mias.length
     ? mias.map(v => `<div class="pp-row"><span class="pp-row-t">${esc(v.tipoAtencion || v.razon || 'Atención')}${(v.diagnosticos ?? [])[0] ? ` <em>${esc(v.diagnosticos[0].nombre)}</em>` : ''}</span><span class="pp-row-m">${esc(v.fechaAtencion)}</span></div>`).join('')
@@ -518,15 +536,15 @@ function renderResumen() {
 async function loadAndRenderFicha(force = false) {
   const me = cur;
   const { record } = me;
-  $('ppFichaStatus').innerHTML = `<span class="muted">Cargando ficha clínica…</span>`;
+  setFichaStatus(`<span class="muted">Cargando ficha clínica…</span>`);
   // Show the shape of what is coming instead of an empty pane
   for (const id of ['ppPaneDx', 'ppPaneAt', 'ppPaneIc', 'ppPaneRx']) {
     if (!$(id).innerHTML.trim()) $(id).innerHTML = skeletonCards(3);
   }
   let token = null;
   try { token = await getToken(); } catch { /* no extension context */ }
-  if (!token) { $('ppFichaStatus').innerHTML = `<span class="al al-warn">Sin sesión en Eloisa — solo agenda</span>`; return; }
-  if (!record.run && !record.idUsp) { $('ppFichaStatus').innerHTML = `<span class="al al-warn">Paciente sin RUN — no se puede consultar la ficha</span>`; return; }
+  if (!token) { setFichaStatus(`<span class="al al-warn">Sin sesión en Eloisa — solo agenda</span>`, 'warn'); return; }
+  if (!record.run && !record.idUsp) { setFichaStatus(`<span class="al al-warn">Paciente sin RUN — no se puede consultar la ficha</span>`, 'warn'); return; }
   try {
     const ficha = await loadFicha(token, { run: record.run, idUsp: record.idUsp }, { force });
     if (cur !== me) return; // user moved to another patient meanwhile
@@ -540,12 +558,13 @@ async function loadAndRenderFicha(force = false) {
     const estado = fallos ? `Ficha parcial · ${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}` : 'Ficha completa';
     const hora = new Date(ficha.savedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
     const humanFichaError = e => { const m = String(e).match(/^([^:]{2,40}):\s*(.+)$/); return m ? `${m[1]}: ${humanError(m[2], 'Eloisa')}` : humanError(e, 'Eloisa'); };
-    $('ppFichaStatus').innerHTML =
+    setFichaStatus(
       `<span>${estado} · ${n} ${n === 1 ? 'atención' : 'atenciones'} (${mineN} mías)${n ? ` desde ${esc(ficha.visits[n - 1].fechaAtencion)}` : ''} · ${hora}</span>` +
       `<button class="btn-mini" id="ppReload" aria-label="Volver a pedir la ficha a Eloisa" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
-      (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : '');
+      (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : ''),
+      fallos ? 'warn' : '');
   } catch (err) {
-    if (cur === me) { me.fichaFailed = true; renderRx(); renderResumen(); $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`; }
+    if (cur === me) { me.fichaFailed = true; renderRx(); renderResumen(); setFichaStatus(`<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`, 'bad'); }
   }
 }
 

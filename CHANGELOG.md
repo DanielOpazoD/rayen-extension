@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.29.0 — 2026-09-04
+
+Ajustes pedidos por Daniel sobre el panel con datos reales, la navegación y el calendario.
+
+- **Resumen sin calificadores ni chapas**: los problemas activos muestran sólo la fecha (el peso ya está en el orden); desaparecen «crónico», «recurrente», «n veces» y las alertas (Estrato, EMP, PSA). En la pestaña Problemas queda «código · última fecha».
+- **Estado de la ficha detrás de un botón discreto** («Ficha», arriba a la derecha del panel): la línea «Ficha completa · 4 atenciones (1 mías) desde…» se despliega al pulsarlo. Un punto ámbar o rojo en el botón avisa de ficha parcial, sin sesión o error, y su nombre accesible lleva el texto completo.
+- **Recetas sin «Fármacos en uso»**: repetía lo que ya dicen las recetas por atención.
+- **Atenciones de urgencia con su registro clínico**: los textos libres que HistorialAtencion devuelve fuera de las secciones conocidas (evolución, examen físico, categorización, observaciones…) se muestran en la tarjeta de la atención y en el informe impreso, con el nombre del campo. Antes se perdían en silencio.
+- **«Laboratorio» pasa a «Exámenes complementarios»** en el riel y en la pestaña inicial de Preferencias, como futuro acceso a imagenología, biopsias y laboratorio. Bajo 1200 px el riel muestra «Exámenes».
+- **Calendario de Hoy**: el número de atenciones va en una chapa en la esquina superior derecha de cada día; el día mostrado la lleva en verde. Corregido el día de hoy, cuyo número subía porque la celda heredaba la clase `today` del contenedor de la jornada.
+
 ## 2.28.1 — 2026-09-04
 
 Correcciones tras revisión adversarial de 2.27.0 y 2.28.0.
