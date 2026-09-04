@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.31.0 — 2026-09-04
+
+Saneamiento estructural, primer paso de la preparación para flujos con IA. Sin cambios de comportamiento.
+
+- **Tres capas con dependencia en un solo sentido**: `src/core/` (dominio puro: análisis de Eloisa, laboratorio, orden clínico, calendario, anonimizador), `src/io/` (Eloisa, SysLab, ProactiveLIS, almacenamiento y estado) y `src/ui/` (DOM, pestañas, panel, gráficos, informes). `src/ai/` queda reservada.
+- **Vallas en el lint**: `core` no puede usar `document`, `window`, `chrome` ni `fetch`, ni importar de `io`/`ui`; `io` y `ai` no importan de `ui`. Comprobado con una prueba negativa.
+- `ficha.js` se divide en análisis puro (`core/ficha.js`) y carga (`io/ficha-load.js`); `esc` pasa a `core/text.js` y cuatro módulos que armaban HTML dejan de depender del DOM; la impresión de la solicitud de exámenes pasa a la interfaz.
+- `docs:check` exige que todo módulo viva en una capa; ARCHITECTURE.md documenta las capas y el mapa de 70 módulos.
+
 ## 2.30.0 — 2026-09-04
 
 Captura anonimizada en el Explorador API, para estudiar la forma real de las respuestas sin datos del paciente.

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeLoad } from '../src/load-summary.js';
+import { summarizeLoad } from '../src/core/load-summary.js';
 
 test('el estado de una carga terminada muestra sólo el total útil', () => {
   assert.deepEqual(summarizeLoad(134, { failedDays: 0, historialFailed: 0 }), {

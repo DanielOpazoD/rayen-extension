@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { periodRange, resolveRange, inRange, isoToDate8, date8ToIso, PERIODS } from '../src/period.js';
+import { periodRange, resolveRange, inRange, isoToDate8, date8ToIso, PERIODS } from '../src/core/period.js';
 
 const HOY = new Date(2026, 8, 3); // miércoles 3 de septiembre de 2026
 

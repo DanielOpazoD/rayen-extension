@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prioridadInfo } from '../src/config.js';
-import { stateTone, sicTone } from '../src/dom.js';
+import { prioridadInfo } from '../src/core/config.js';
+import { stateTone, sicTone } from '../src/ui/dom.js';
 
 test('prioridadInfo never invents a severity label', () => {
   for (const n of [1, 2, 3]) {
@@ -38,7 +38,7 @@ test('sicTone maps every SIC lifecycle group, with a safe default', () => {
 });
 
 // ── Command palette ────────────────────────────────────────────
-import { searchPatients } from '../src/palette.js';
+import { searchPatients } from '../src/ui/palette.js';
 
 const pac = (nombre, runStr, extra = {}) => ({ nombre, runStr, edad: 40, fechaAtencion: '01-09-2026', ...extra });
 const PACS = [

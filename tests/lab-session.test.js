@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSessionMonitor, sessionState } from '../src/lab-session.js';
+import { createSessionMonitor, sessionState } from '../src/io/lab-session.js';
 
 // Antes esta política vivía en la pestaña, mezclada con el DOM y sin pruebas:
 // «Verificando…» eterno, y «sin sesión» cuando en realidad el portal no respondía.

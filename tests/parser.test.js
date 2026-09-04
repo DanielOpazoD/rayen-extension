@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatRun, computeDv, decodeEdadExacta, fmtDate, fmtHora, dateToInt,
-  parseCita, parseAtencion, parseDiagnostico, matchKey, dateRange, humanCase } from '../src/parser.js';
+  parseCita, parseAtencion, parseDiagnostico, matchKey, dateRange, humanCase } from '../src/core/parser.js';
 
 // ── RUN ───────────────────────────────────────────────────────
 

@@ -31,7 +31,7 @@ li{margin:3px 0}
 
 <h2>Convenciones de la API</h2>
 <ul>
-  <li><b>Auth:</b> <code>Authorization: Bearer &lt;accessToken&gt;</code>, token leído de <code>localStorage.userSession</code> en la pestaña de Eloisa (world MAIN vía <code>chrome.scripting</code>). La extensión solo envía el token al origen <code>clinicohangaroa.eloisa.cl</code> (<code>src/http.js → resolveUrl</code>).</li>
+  <li><b>Auth:</b> <code>Authorization: Bearer &lt;accessToken&gt;</code>, token leído de <code>localStorage.userSession</code> en la pestaña de Eloisa (world MAIN vía <code>chrome.scripting</code>). La extensión solo envía el token al origen <code>clinicohangaroa.eloisa.cl</code> (<code>src/io/http.js → resolveUrl</code>).</li>
   <li><b>Parámetros en el path:</b> <code>/endpoint/clave=valor;clave=valor</code>. Espacios como <code>%20</code>, comas como <code>%2C</code>.</li>
   <li><b>Fechas:</b> <code>YYYYMMDD HHmmss</code> (espacio, no <code>T</code>). Sentinel «sin fecha»: <code>00010101 000000</code>. Fechas ya formateadas en algunas SIC: <code>DD-MM-YYYY HH:mm</code>. Zona horaria local (Rapa Nui, UTC-6): usar siempre funciones <em>locales</em> de Date.</li>
   <li><b>RUN:</b> dígitos + DV pegado, sin puntos ni guion, DV puede ser <code>k</code> minúscula (<code>25106217k</code>). <code>formatRun()</code> separa el último carácter como DV y valida módulo 11.</li>

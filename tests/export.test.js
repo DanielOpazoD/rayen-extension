@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { csvCell } from '../src/export.js';
+import { csvCell } from '../src/ui/export.js';
 
 test('csvCell quotes every value and doubles inner quotes', () => {
   assert.equal(csvCell('Pérez'), '"Pérez"');

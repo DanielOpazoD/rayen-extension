@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { trendSVG, renderTrends } from '../src/lab-charts.js';
+import { trendSVG, renderTrends } from '../src/ui/lab-charts.js';
 
 const serie = (values) => ({
   analysis: 'Creatinina',

@@ -25,6 +25,8 @@ const actual = (await listJavaScriptFiles('src')).map(file => file.split(path.se
 
 assert.equal(new Set(documented).size, documented.length, 'the architecture map contains duplicate modules');
 assert.deepEqual([...documented].sort(), actual, 'ARCHITECTURE.md must document every src/**/*.js module exactly once');
+const LAYERS = ['src/core/', 'src/io/', 'src/ui/', 'src/ai/'];
+for (const file of actual) assert.ok(LAYERS.some(layer => file.startsWith(layer)), `${file} debe vivir en una capa: ${LAYERS.join(', ')}`);
 
 for (const file of ['README.md', 'ARCHITECTURE.md', 'DOCUMENTATION_MAP.md', 'MAPA_API.html', 'CHANGELOG.md']) {
   await access(file);

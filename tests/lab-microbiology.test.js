@@ -7,7 +7,7 @@ import {
   microbiologyResultAlert,
   resolveMicrobiologyCategoriesForExam,
   resolveMicrobiologyCategoryForFinding,
-} from '../src/lab-microbiology.js';
+} from '../src/core/lab-microbiology.js';
 
 // Orden real de SysLab: en un mismo folio vienen el cultivo, su antibiograma y
 // un panel viral. Es el caso que obliga a separar categorías.

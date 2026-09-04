@@ -17,9 +17,9 @@ import {
   TREND_GROUPS,
   URINE_ANALYTE_MARKERS,
   URINE_MARKERS,
-} from '../src/lab-catalog.js';
-import { IMPORTANT_ANALYSES } from '../src/lab-analytics.js';
-import { normalizeAnalysisName } from '../src/lab-parser.js';
+} from '../src/core/lab-catalog.js';
+import { IMPORTANT_ANALYSES } from '../src/core/lab-analytics.js';
+import { normalizeAnalysisName } from '../src/core/lab-parser.js';
 
 const duplicados = lista => lista.filter((valor, i) => lista.indexOf(valor) !== i);
 

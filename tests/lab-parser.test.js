@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseMeasurement, referenceBounds, findingAlert, parseReportText,
   normalizeAnalysisName, isSystemicTrendEligible, extractRutBodyFromReportText, normalizeSexo,
-} from '../src/lab-parser.js';
+} from '../src/core/lab-parser.js';
 
 // Informe con la forma real de SysLab: cabecera que se descarta, secciones en
 // mayúsculas y filas «Analito : valor unidad rango».

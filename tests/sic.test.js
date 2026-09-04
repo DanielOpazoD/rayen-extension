@@ -1,9 +1,9 @@
 import { beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSIC, isMine, contactsFromSICs, loadSICs } from '../src/sic.js';
-import { CONFIG, sicGrupo } from '../src/config.js';
+import { parseSIC, isMine, contactsFromSICs, loadSICs } from '../src/io/sic.js';
+import { CONFIG, sicGrupo } from '../src/core/config.js';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { resetRun, resetSession } from '../src/http.js';
+import { resetRun, resetSession } from '../src/io/http.js';
 
 let fake;
 beforeEach(() => {

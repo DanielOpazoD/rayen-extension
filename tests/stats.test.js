@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyFilters } from '../src/stats.js';
+import { applyFilters } from '../src/ui/stats.js';
 
 const ME = 439550;
 const NONE = { q: '', fecha: '', dia: '', sexo: '', estado: '', prev: '', tipo: '', prest: '', ic: '', dx: '' };

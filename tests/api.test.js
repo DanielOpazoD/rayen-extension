@@ -1,10 +1,10 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { CONFIG } from '../src/config.js';
-import { isMutableAppointmentStatus, loadData } from '../src/api.js';
-import { cancelRun } from '../src/http.js';
-import { dateRange, localDateStr } from '../src/parser.js';
+import { CONFIG } from '../src/core/config.js';
+import { isMutableAppointmentStatus, loadData } from '../src/io/api.js';
+import { cancelRun } from '../src/io/http.js';
+import { dateRange, localDateStr } from '../src/core/parser.js';
 
 /**
  * loadData is the orchestrator: cache-first, honest about failures, stops on a

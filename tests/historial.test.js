@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeHistorial, aggregateTeam } from '../src/historial.js';
-import { parseAtencion } from '../src/parser.js';
+import { mergeHistorial, aggregateTeam } from '../src/io/historial.js';
+import { parseAtencion } from '../src/core/parser.js';
 
 const OFFICER = 439550;
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buscarOrdenesPorRut, normalizeOrden, DEFAULT_YEARS_BACK,
   ordenRutBody, ordersMatchRut,
-} from '../src/lab-api.js';
+} from '../src/io/lab-api.js';
 
 /**
  * La forma de esta petición está tomada de tráfico real del portal

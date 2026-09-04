@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeRutBody, examRowsMatchRut, normalizeSyslabExam,
-} from '../src/syslab-api.js';
+} from '../src/io/syslab-api.js';
 
 test('normalizeRutBody deja sólo el cuerpo del RUT, sin puntos ni dígito verificador', () => {
   assert.equal(normalizeRutBody('16.940.645-6'), '16940645');

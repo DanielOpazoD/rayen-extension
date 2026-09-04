@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL, isMedicalVisit, isMedico } from '../src/patient-report.js';
-import { ageBucket } from '../src/charts.js';
-import { CONFIG } from '../src/config.js';
+import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL, isMedicalVisit, isMedico } from '../src/ui/patient-report.js';
+import { ageBucket } from '../src/ui/charts.js';
+import { CONFIG } from '../src/core/config.js';
 
 const ME = CONFIG.officerId;
 const v = (id, prestadores, extra = {}) => ({

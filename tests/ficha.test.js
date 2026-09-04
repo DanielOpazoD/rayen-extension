@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster, textosLibres } from '../src/ficha.js';
+import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster, textosLibres } from '../src/core/ficha.js';
 
 test('parseMaster maps the UsuarioApsRut record (contact, family, prevision, flags)', () => {
   const m = parseMaster({

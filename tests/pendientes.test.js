@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computePendientes, resumirPendientes } from '../src/pendientes.js';
-import { computeCambios } from '../src/watch.js';
-import { CONFIG } from '../src/config.js';
+import { computePendientes, resumirPendientes } from '../src/core/pendientes.js';
+import { computeCambios } from '../src/io/watch.js';
+import { CONFIG } from '../src/core/config.js';
 
 const ME = CONFIG.officerId;
 const HOY = new Date(2026, 8, 3);           // 03-09-2026

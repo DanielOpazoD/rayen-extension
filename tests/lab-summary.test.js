@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReportSummary, buildAnalysisSummary } from '../src/lab-summary.js';
-import { buildAnalysis } from '../src/lab-analytics.js';
+import { buildReportSummary, buildAnalysisSummary } from '../src/core/lab-summary.js';
+import { buildAnalysis } from '../src/core/lab-analytics.js';
 
 /** Un informe con la forma que entrega `buildAnalysis().reports`. */
 const informe = (findings, date = '08/04/2026', time = '14:00:00') => ({ date, time, findings });

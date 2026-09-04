@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { humanError } from '../src/errors.js';
+import { humanError } from '../src/core/errors.js';
 
 // Antes la interfaz mostraba «HSR: error — Failed to fetch» y «Error: HTTP 500
 // /Citas/ListaPacientesCitados/…»: frases para el programador, no para quien
