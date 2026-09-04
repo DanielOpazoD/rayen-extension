@@ -471,10 +471,29 @@
         <div class="menu-note">Se abre en una pestaña con el diálogo de impresión: elige «Guardar como PDF».</div>
       </div>
     </div>
+    <button id="ppIaBtn" class="pp-hbtn" data-tip="Informe con IA a partir del registro desidentificado (proveedor manual)" aria-label="Informe con IA">Informe</button>
     <button id="ppLabBtn" class="pp-hbtn" data-tip="Buscar exámenes de laboratorio (HSR + HHR)" aria-label="Laboratorio">Lab</button>
     <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>
   </div>
   <div class="pp-datos" id="ppDatos" hidden></div>
+  <section class="ia-sheet" id="iaSheet" role="dialog" aria-modal="true" aria-labelledby="iaTitle" hidden>
+    <div class="ia-head"><h2 id="iaTitle">Informe con IA</h2><button id="iaClose" class="btn-mini" aria-label="Cerrar informe (Esc)">✕</button></div>
+    <p class="ia-nota">Nada sale de este equipo hasta que copias el prompt. Lo que se copia no lleva nombre, RUN ni nombres de profesionales, y las fechas van relativas salvo que marques «fechas reales». Pega la respuesta del modelo autorizado y el informe se arma aquí, con la identidad repuesta.</p>
+    <div class="ia-row">
+      <label>Plantilla <select id="iaPlantilla"></select></label>
+      <label>Ventana <select id="iaVentana"></select></label>
+      <label class="ia-check"><input type="checkbox" id="iaFechasReales"> Fechas reales</label>
+    </div>
+    <div class="ia-fuentes" id="iaFuentes"></div>
+    <div class="ia-meta" id="iaCtxMeta" role="status"></div>
+    <details class="ia-details"><summary>Ver el contexto que se enviará</summary><textarea id="iaContexto" readonly aria-label="Contexto desidentificado"></textarea></details>
+    <details class="ia-details"><summary>Ver el prompt completo</summary><textarea id="iaPrompt" readonly aria-label="Prompt"></textarea></details>
+    <div class="ia-row"><button class="btn btn-primary" id="iaCopiar">1 · Copiar prompt</button></div>
+    <label class="ia-label">2 · Pega la respuesta del modelo<textarea id="iaRespuesta" placeholder="Respuesta en Markdown, con los mismos títulos de sección"></textarea></label>
+    <div class="ia-row"><button class="btn" id="iaArmar">3 · Armar informe</button><span class="ia-meta" id="iaInformeMeta" role="status"></span></div>
+    <div class="ia-informe" id="iaInforme"></div>
+    <div class="ia-row"><button class="btn" id="iaImprimir" disabled>Imprimir / PDF</button><button class="btn" id="iaCopiarMd" disabled>Copiar Markdown</button></div>
+  </section>
   <nav class="pp-tabs" role="tablist" aria-label="Ficha del paciente">
     <button class="pp-tab active" role="tab" aria-selected="true" data-pt="res" aria-controls="ppPaneRes">Resumen</button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="dx" aria-controls="ppPaneDx">Problemas <span class="cnt"></span></button>

@@ -13,6 +13,7 @@ import { CONFIG } from '../core/config.js';
 import { whenLabel } from './table.js';
 import { buildPatientReport, SCOPE_LABEL } from './patient-report.js';
 import { openReport } from './export.js';
+import { initIaPanel, openIa, closeIa } from './ia-panel.js';
 import { copyToClipboard } from './toast.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ const shielded = () => [document.getElementById('mainContent'), document.getElem
 const isOpen = () => $('patientPanel').classList.contains('open');
 
 function close() {
+  closeIa();
   if (!isOpen()) return;
   const id = cur?.record?.id;
   const panel = $('patientPanel');
@@ -169,6 +171,11 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     if (seg.dataset.scope === 'rx') { rxFilter = seg.dataset.seg; renderRx(); }
   });
 
+  initIaPanel();
+  $('ppIaBtn').addEventListener('click', () => {
+    if (!cur) return;
+    openIa({ record: cur.record, ficha: cur.ficha, visits: cur.visits, sics: cur.sics });
+  });
   $('ppLabBtn').addEventListener('click', () => {
     // Se cierra antes de saltar: con el diálogo abierto el resto queda inerte y
     // la pestaña Laboratorio no se podría usar.
