@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.33.1 — 2026-09-04
+
+- El informe con IA muestra el RUN con puntos y guion, como el panel; venía en bruto desde la agenda.
+
 ## 2.33.0 — 2026-09-04
 
 Botón «Informe» en el panel del paciente: el flujo con IA, usable desde hoy con el proveedor manual.

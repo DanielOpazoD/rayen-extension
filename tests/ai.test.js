@@ -33,6 +33,8 @@ const datos = () => ({
 test('buildClinicalRecord reúne agenda, ficha, SIC y laboratorio con procedencia y sin HTML', () => {
   const r = buildClinicalRecord(datos());
   assert.equal(r.version, 1); assert.equal(r.paciente.nombre, 'Rosa Ejemplo Tuki'); assert.equal(r.paciente.idUsp, 77);
+  assert.equal(r.paciente.run, '6.543.210-2', 'RUN con formato aunque venga formateado');
+  assert.equal(buildClinicalRecord({ ...datos(), record: { ...datos().record, run: '65432102' } }).paciente.run, '6.543.210-2', 'RUN con formato aunque venga en bruto');
   assert.equal(r.atenciones.length, 3); assert.equal(r.atenciones[0].fecha, '26-08-2026', 'más reciente primero');
   assert.equal(r.atenciones[0].esMia, true); assert.equal(r.atenciones[2].esMia, false); assert.equal(r.atenciones[2].esUrgencia, true);
   assert.equal(r.atenciones[0].textos[0].titulo, 'Evolución');
