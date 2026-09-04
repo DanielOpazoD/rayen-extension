@@ -40,7 +40,11 @@ function close() {
   panel.inert = true;
   for (const node of shielded()) node.inert = false;
   cur = null;
-  if (opener?.isConnected) opener.focus({ preventScroll: true });
+  // Guardar una nota repinta la tabla y la fila original deja de existir: el
+  // foco vuelve a la fila del mismo paciente, buscada por su id.
+  const fallback = id != null && typeof CSS !== 'undefined' ? document.querySelector(`#tbody tr[data-id="${CSS.escape(String(id))}"]`) : null;
+  const target = opener?.isConnected ? opener : fallback;
+  target?.focus({ preventScroll: true });
   opener = null;
   // The host brings the table back to the row this patient came from
   document.dispatchEvent(new CustomEvent('rayen:panel-closed', { detail: { id } }));
@@ -60,8 +64,10 @@ const empty = t => `<div class="pp-empty">${esc(t)}</div>`;
  *   shows the toast and offers undo); the panel never writes on its own.
  */
 let labSearch = null;
+let addNoteHook = null, editNoteHook = null;
 
-export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
+export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch } = {}) {
+  addNoteHook = addNote; editNoteHook = editNote;
   const panel = $('patientPanel');
   panel.inert = true;
   // Tab y Shift+Tab dan la vuelta dentro del diálogo.
@@ -80,12 +86,29 @@ export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
   $('ppClose').addEventListener('click', close);
   $('panelBackdrop').addEventListener('click', close);
 
+  // Diario: «Añadir nota» crea una entrada con fecha; cada entrada se edita en su sitio.
   $('ppSaveNote').addEventListener('click', async () => {
     if (!cur) return;
-    const btn = $('ppSaveNote');
-    const saved = await saveNote(cur.record, $('ppNoteText').value);
-    btn.textContent = saved ? '✓ Guardado' : '✗ No guardado';
-    setTimeout(() => { btn.textContent = 'Guardar nota'; }, 1800);
+    const text = $('ppNoteText').value;
+    if (!text.trim()) return;
+    const ok = addNoteHook ? await addNoteHook(cur.record, text) : await saveNote(cur.record, text);
+    if (ok) { $('ppNoteText').value = ''; renderNotes(); }
+  });
+  $('ppNotes').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-note-act]');
+    if (!btn || !cur) return;
+    const item = btn.closest('.pp-nota');
+    const at = item.dataset.at || null;
+    if (btn.dataset.noteAct === 'edit') {
+      item.classList.add('editing');
+      item.querySelector('textarea').focus();
+    } else if (btn.dataset.noteAct === 'cancel') {
+      renderNotes();
+    } else if (btn.dataset.noteAct === 'save') {
+      const text = item.querySelector('textarea').value;
+      if (editNoteHook) await editNoteHook(cur.record, at === 'null' ? null : at, text);
+      renderNotes();
+    }
   });
 
   // PDF menu: the patient's clinical history, by scope
@@ -480,7 +503,30 @@ async function loadAndRenderFicha(force = false) {
  */
 /** Keeps the open panel's textarea in step when a note changes elsewhere (undo, inline edit). */
 export function syncNote(record) {
-  if (cur && patientKey(cur.record) === patientKey(record)) $('ppNoteText').value = record.note ?? '';
+  if (!cur || patientKey(cur.record) !== patientKey(record)) return;
+  cur.record.note = record.note;
+  cur.record.notas = record.notas;
+  renderNotes();
+}
+
+const fechaNota = at => {
+  if (!at) return 'Sin fecha';
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return 'Sin fecha';
+  const p = n => String(n).padStart(2, '0');
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+/** El diario del paciente: la más nueva primero, cada una editable en su sitio. */
+function renderNotes() {
+  const rec = cur?.record;
+  const notas = rec?.notas ?? (rec?.note ? [{ at: null, text: rec.note }] : []);
+  $('ppNotes').innerHTML = notas.map(n => `
+    <div class="pp-nota" data-at="${esc(String(n.at ?? 'null'))}">
+      <div class="pp-nota-h"><span>${esc(fechaNota(n.at))}</span><button type="button" class="btn-mini ghost" data-note-act="edit">Editar</button></div>
+      <p class="pp-nota-t">${esc(n.text)}</p>
+      <div class="pp-nota-e"><textarea>${esc(n.text)}</textarea><div><button type="button" class="btn-mini" data-note-act="save">Guardar</button><button type="button" class="btn-mini ghost" data-note-act="cancel">Cancelar</button></div></div>
+    </div>`).join('');
 }
 
 export function openPanel(record, { allData, sics = [], contacts = new Map(), pos = null }) {
@@ -500,7 +546,8 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
   $('ppAvatar').setAttribute('aria-expanded', 'false');
   $('ppPdfMenu').classList.remove('open');
   $('ppPdfMenu').querySelectorAll('button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
-  $('ppNoteText').value = record.note ?? '';
+  $('ppNoteText').value = '';
+  renderNotes();
   $('ppPos').textContent = pos ? `${pos.i + 1}/${pos.n}` : '';
   $('ppPrev').disabled = !pos || pos.i <= 0;
   $('ppNext').disabled = !pos || pos.i >= pos.n - 1;

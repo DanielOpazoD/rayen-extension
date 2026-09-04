@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 2.25.0 — 2026-09-04
+
+Nota clínica como diario.
+
+- **Cada nota lleva fecha y hora y se edita en su sitio.** «Añadir nota» crea una entrada nueva; la más reciente va arriba. Vaciar una entrada la elimina. Las notas antiguas, guardadas como un solo texto, se leen como una entrada sin fecha.
+- La tabla, Hoy y las exportaciones siguen mostrando la última nota; el diario completo vive en el panel. El deshacer de la celda Notas conserva su comportamiento.
+
 ## 2.24.1 — 2026-09-04
 
 - Corrección: dos variables sin uso en `src/ficha-rank.js` que el lint rechazaba; el PR anterior entró porque la cadena de comandos no respetó el estado de salida de `npm run check`.
