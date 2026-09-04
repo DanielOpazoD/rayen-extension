@@ -47,7 +47,8 @@ export function rankProblems(visits, { officerId = null } = {}) {
     cronico: CHRONIC_CIE.test(p.codigo) || CHRONIC_WORDS.test(`${p.clasificacion} ${p.nombre}`) || p.n >= 3,
   }));
   out.sort((a, b) => (b.esAuge - a.esAuge) || (b.cronico - a.cronico) || (b.n - a.n) || b.stampUltima.localeCompare(a.stampUltima));
-  return out.map(p => { const { stampUltima: _u, stampPrimera: _p, ...rest } = p; return rest; });
+  for (const p of out) { delete p.stampUltima; delete p.stampPrimera; }
+  return out;
 }
 
 /** «dd-mm-yyyy» → «yyyymmdd», para comparar. */

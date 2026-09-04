@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.24.1 — 2026-09-04
+
+- Corrección: dos variables sin uso en `src/ficha-rank.js` que el lint rechazaba; el PR anterior entró porque la cadena de comandos no respetó el estado de salida de `npm run check`.
+
 ## 2.24.0 — 2026-09-04
 
 Panel de paciente, iteración 2: problemas con peso, interconsultas y recetas con el mismo lenguaje.
