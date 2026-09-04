@@ -29,7 +29,7 @@
   --shadow-pop:0 8px 24px rgba(20,30,35,.12);
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
-  --w-fecha:178px; --pp-head:64px;
+  --w-fecha:192px; --pp-head:64px;
 }
 @media (prefers-color-scheme:dark){:root{
   color-scheme:dark;
@@ -239,9 +239,10 @@ table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card
 col.c-fecha{width:var(--w-fecha)}
 /* Nombre y RUN completos a 1440; Razón sin «Morbili…». La tabla ya se desplaza
    en horizontal: es preferible a recortar el identificador del paciente. */
-col.c-nombre{width:250px} col.c-edad{width:56px} col.c-sexo{width:42px}
-col.c-razon{width:130px} col.c-tipo{width:135px} col.c-dx{width:190px}
-col.c-estado{width:136px} col.c-ic{width:170px} col.c-nota{width:100px}
+/* 192+230+52+40+190+210+190+100 = 1204 ≤ 1232 (1280 menos márgenes): sin
+   desplazamiento horizontal a 1280; a más ancho las columnas se reparten. */
+col.c-nombre{width:230px} col.c-edad{width:52px} col.c-sexo{width:40px}
+col.c-atencion{width:190px} col.c-dx{width:210px} col.c-ic{width:190px} col.c-nota{width:100px}
 thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);color:var(--ink-3);padding:8px 10px;text-align:left;font-size:var(--t-xs);font-weight:600;cursor:pointer;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
 thead th:hover,thead th:focus-visible{color:var(--ink)}
 thead th.ns{cursor:default}
@@ -279,6 +280,10 @@ td.num{text-align:right;padding-right:14px;font-variant-numeric:tabular-nums}
 /* La hora va junto a la fecha; antes vivía sólo en el tooltip de la «i». */
 .fd{font-weight:600;font-variant-numeric:tabular-nums}
 .fh{margin-left:6px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+/* Estado de la cita como punto junto a la hora; el texto va en el tooltip y en aria-label. */
+.sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:7px;vertical-align:1px;background:var(--ink-4)}
+.sdot.st-ok{background:var(--good)}.sdot.st-bad{background:var(--bad)}.sdot.st-warn{background:var(--warn)}.sdot.st-info,.sdot.st-neutral{background:var(--ink-4)}
+td .sec{color:var(--ink-3)}
 /* Nombre y RUN en la misma línea; un nombre largo se recorta, el RUN nunca. */
 .pname{display:inline-block;max-width:220px;vertical-align:bottom;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* RUN — patient identifier: readable size, AA contrast, tabular figures */
@@ -344,8 +349,8 @@ tfoot td{position:sticky;bottom:0;z-index:3;background:var(--surface-2);color:va
 .note-empty{color:var(--ink-3)}
 .note-cell.editing{white-space:normal;padding:4px}
 .note-edit{width:100%;font:inherit;font-size:var(--t-sm);line-height:1.4;border:1px solid var(--brand);border-radius:var(--r-sm);padding:4px 6px;resize:vertical;outline:none;background:var(--card)}
-table.hide-edad [data-c=edad],table.hide-sexo [data-c=sexo],table.hide-razon [data-c=razon],table.hide-tipoAtencion [data-c=tipoAtencion],table.hide-diagnostico [data-c=diagnostico],table.hide-estado [data-c=estado],table.hide-ic [data-c=ic],table.hide-nota [data-c=nota]{display:none}
-table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-razon,table.hide-tipoAtencion col.c-tipo,table.hide-diagnostico col.c-dx,table.hide-estado col.c-estado,table.hide-ic col.c-ic,table.hide-nota col.c-nota{visibility:collapse}
+table.hide-edad [data-c=edad],table.hide-sexo [data-c=sexo],table.hide-atencion [data-c=atencion],table.hide-diagnostico [data-c=diagnostico],table.hide-ic [data-c=ic],table.hide-nota [data-c=nota]{display:none}
+table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-atencion,table.hide-diagnostico col.c-dx,table.hide-ic col.c-ic,table.hide-nota col.c-nota{visibility:collapse}
 
 /* ═══ Menus ═══ */
 .menu-wrap{position:relative}

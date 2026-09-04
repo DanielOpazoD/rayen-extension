@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.23.0 — 2026-09-04
+
+Atenciones con menos columnas y más sentido (iteración 1 del plan de diseño).
+
+- **Razón y Tipo de atención en una sola columna, «Atención»**: «Consulta Médica · Morbilidad»; si la razón ya está dentro del tipo («Control Crónico»), sólo el tipo. Ambos valores siguen enteros en el tooltip, en los filtros y en las exportaciones.
+- **El estado de la cita es un punto de color junto a la hora**: verde completada, gris confirmada, rojo no se presentó; el texto va en el tooltip de la fecha y en el nombre accesible del punto.
+- Ocho columnas en vez de diez: la tabla cabe en 1280 px sin desplazamiento horizontal (1204 px de 1232 disponibles) y a 1440 las columnas se reparten el ancho.
+
 ## 2.22.0 — 2026-09-04
 
 Panel de paciente, a pedido de Daniel.
