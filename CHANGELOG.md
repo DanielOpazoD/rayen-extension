@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.32.0 — 2026-09-04
+
+Núcleo de IA (`src/ai/`), segundo paso del saneamiento. Sin interfaz todavía; sin cambios de comportamiento visibles.
+
+- **Registro clínico canónico** (`record.js`): agenda, ficha, interconsultas, laboratorio, imagenología y biopsias en una sola forma de datos con procedencia por fuente y estados honestos (completa, parcial, fallida, ausente). Registro de fuentes (`sources.js`) con imagenología (MMARD) y biopsias declaradas como pendientes.
+- **Contexto desidentificado** (`context.js`): sin nombre, RUN ni nombres de profesionales (también borrados del texto libre), fechas relativas a hoy, ventana por meses, presupuesto de tamaño que recorta lo más antiguo y lo declara, y comprobación final: con restos no hay prompt.
+- **Plantillas** (`templates.js`): resumen clínico, epicrisis ambulatoria, informe para interconsulta e informe de exámenes; personalizadas con validación; prompt con títulos exactos y reglas fijas (no inventar, «Sin datos en el registro»).
+- **Proveedores** (`provider.js`): manual (copiar prompt, pegar respuesta; sin red) y API de Anthropic por Messages API, apagado sin clave y sin permiso de host. Reconocimiento de la respuesta por secciones, con faltantes y «Sin datos».
+- **Informe** (`report.js`): identidad repuesta en local, secciones no entregadas marcadas, pie con origen y espacio de revisión; Markdown → HTML para imprimir.
+- 13 pruebas nuevas cubren el ciclo completo, incluida la garantía de que nombre y RUN no aparecen en el contexto.
+
 ## 2.31.0 — 2026-09-04
 
 Saneamiento estructural, primer paso de la preparación para flujos con IA. Sin cambios de comportamiento.
