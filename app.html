@@ -440,7 +440,7 @@
 <div id="panelBackdrop"></div>
 <aside id="patientPanel" role="dialog" aria-modal="true" aria-labelledby="ppName" tabindex="-1">
   <div class="pp-header" id="ppHeader">
-    <div class="pp-avatar" id="ppAvatar" aria-hidden="true"></div>
+    <button type="button" class="pp-avatar" id="ppAvatar" aria-expanded="false" aria-controls="ppDatos" aria-label="Datos del paciente" data-tip="Datos: contacto, previsión, inscripción, alertas y vigencias"></button>
     <div class="pp-info">
       <h2 id="ppName"></h2>
       <p id="ppMeta"></p>
@@ -462,7 +462,6 @@
         <div class="menu-note">Se abre en una pestaña con el diálogo de impresión: elige «Guardar como PDF».</div>
       </div>
     </div>
-    <button id="ppDatosBtn" class="pp-hbtn" data-tip="Contacto, inscripción, alertas y vigencias" aria-expanded="false" aria-controls="ppDatos">Datos</button>
     <button id="ppLabBtn" class="pp-hbtn" data-tip="Buscar exámenes de laboratorio (HSR + HHR)" aria-label="Laboratorio">Lab</button>
     <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>
   </div>

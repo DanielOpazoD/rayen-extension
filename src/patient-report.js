@@ -17,7 +17,26 @@ export const SCOPE_LABEL = Object.freeze({
   completo: 'Historia completa',
 });
 
-const isMedico = p => /m[eé]dic/i.test(p.instrumento ?? '');
+// «Médico», «Médico Cirujano», «Médico Internista»… pero no «Técnico Paramédico»
+// ni «Tecnólogo Médico».
+export const isMedico = p => /m[eé]dic/i.test(p.instrumento ?? '') && !/t[eé]cnic|param[eé]dic|tecn[oó]log/i.test(p.instrumento ?? '');
+
+const MEDICAL_TYPE = /m[eé]dic|morbilidad|urgencia|cirug|anestes|traumat|ginec|obstet|pediatr|internist|psiquiatr|control\s+(?:cr[oó]nico|salud)/i;
+const NON_MEDICAL_TYPE = /kinesi|nutric|odont|dental|matron|enfermer|psic[oó]log|taller|fonoaud|terapeuta|trabaj|social|param[eé]dic|podolog/i;
+
+/**
+ * Medicina = atendida por un profesional médico (medicina general, interna,
+ * cirugía, ginecología, pediatría, anestesia, traumatología…); Otros = matrona,
+ * kinesiología, nutrición, odontología, talleres… Decide por el instrumento
+ * del prestador; sin prestadores, por el tipo de atención.
+ */
+export function isMedicalVisit(v) {
+  const pres = v?.prestadores ?? [];
+  if (pres.length) return pres.some(isMedico);
+  const tipo = String(v?.tipoAtencion ?? '');
+  if (NON_MEDICAL_TYPE.test(tipo)) return false;
+  return MEDICAL_TYPE.test(tipo);
+}
 const isMine   = (v, officerId) => (v.prestadores ?? []).some(p => p.id === officerId);
 
 /**

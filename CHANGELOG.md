@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.22.0 — 2026-09-04
+
+Panel de paciente, a pedido de Daniel.
+
+- **Atenciones en dos pestañas internas: Medicina y Otros.** Medicina son las atenciones de profesional médico (medicina general e interna, cirugía, ginecología, pediatría, anestesia, traumatología…); Otros, las de matrona, kinesiología, nutrición, odontología, talleres. Se decide por el instrumento del prestador que registra Eloisa, sin contar técnicos ni tecnólogos «médicos»; sin prestadores, por el tipo de atención. La elección se recuerda entre pacientes.
+- **Las atenciones propias se destacan**: banda y fondo de marca, fecha en color y «Tú» como prestador.
+- **Diagnósticos sin etiquetas de certeza** («Confirmada», «sospecha») en el panel y en la tabla; la certeza sigue en el tooltip del diagnóstico.
+- **Cabecera mínima**: RUN y edad; sexo y previsión pasan a Datos. **Datos se abre desde las iniciales** del paciente, que llevan el punto de alerta cuando hay alergias o RAM. Un control menos en una cabecera que iba apretada.
+
 ## 2.21.0 — 2026-09-04
 
 Etapa 6: lo que los balances dejaron abierto y no necesita la red del hospital.
