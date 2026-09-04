@@ -36,7 +36,7 @@ export function buildStats(allData, team = {}) {
     [avgE + ' a',     'Edad promedio'],
     [fem,             `Mujeres · ${pc(fem, t)}`],
     [t - fem,         `Hombres · ${pc(t - fem, t)}`],
-    ...(teamTotal ? [[teamTotal.toLocaleString('es-CL'), `Equipo HHR · yo ${pc(t, teamTotal)}`]] : []),
+    ...(teamTotal ? [[teamTotal.toLocaleString('es-CL'), `Equipo · tú ${pc(t, teamTotal)}`]] : []),
   ].map(([n, l]) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`)
    .join('');
 }

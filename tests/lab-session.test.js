@@ -56,3 +56,11 @@ test('una sesión válida limpia la marca de vencida del transporte', async () =
   await m.check();
   assert.equal(reset, 2);
 });
+
+test('dos check() simultáneos comparten una sola comprobación por origen', async () => {
+  let calls = 0;
+  const { m } = monitor({ checkHsr: async () => { calls++; await new Promise(r => setTimeout(r, 20)); return true; } });
+  const [a, b] = await Promise.all([m.check(), m.check()]);
+  assert.deepEqual(a, b);
+  assert.equal(calls, 1, 'antes costaba dos: la caché sólo se llenaba al resolver');
+});

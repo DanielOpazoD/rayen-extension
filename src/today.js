@@ -82,7 +82,7 @@ function card(rec, allData, sics) {
     <article class="tcard ${done ? 'done' : ''}">
       <div class="tcard-h pat-link" data-id="${esc(rec.id)}" role="button" tabindex="0" data-tip="Abrir ficha completa">
         <span class="thora">${rec.hora || '—'}</span>
-        <span class="tname"><b>${esc(rec.nombre)}</b><span>${esc(rec.runStr)}${rec.edad != null ? ` · ${rec.edad} a` : ''}</span></span>
+        <span class="tname"><b>${esc(rec.nombre)}</b><span>${esc(rec.runStr)}${rec.edad != null ? ` · ${rec.edad} años` : ''}</span></span>
         <span class="ttipo">${esc(rec.tipoAtencion || rec.razon)}</span>
         ${stateDot(rec.estado)}
       </div>

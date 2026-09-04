@@ -141,7 +141,7 @@ export function renderCharts(records, team, container, sics = []) {
     const byPrio = count(sics, s => `P${s.prioridad}`);
     sicHTML =
       `<h3 class="chart-h3">Interconsultas del hospital · ${sics.length}</h3>` +
-      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140, filter: 'sicEsp' }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad (código Rayen)', 3, { color: BLUE }))}</div>`;
+      `<div class="chart-section">${card(hb(byEsp, 'Por especialidad', 15, { color: BLUE, labelW: 140, filter: 'sicEsp' }))}${card(hb(byGrp, 'Por estado', 5, { color: BLUE }))}${card(hb(byPrio, 'Por prioridad', 3, { color: BLUE }))}</div>`;
   }
 
   // ── Equipo ──

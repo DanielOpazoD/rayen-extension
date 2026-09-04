@@ -57,8 +57,16 @@ async function findAuthenticatedTab() {
     : 'SysLab pide iniciar sesión');
 }
 
+const INJECT_TIMEOUT_MS = 25_000;
+
 async function inject(tabId, func, args = []) {
-  const results = await chrome.scripting.executeScript({ target: { tabId }, func, args });
+  // Un script que no vuelve (pestaña colgada, portal caído) dejaba «Todos los
+  // PDF» y «Analizar» esperando para siempre; la navegación ya tenía límite.
+  let timer;
+  const results = await Promise.race([
+    chrome.scripting.executeScript({ target: { tabId }, func, args }),
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('SysLab no respondió a tiempo.')), INJECT_TIMEOUT_MS); }),
+  ]).finally(() => clearTimeout(timer));
   const value = results?.[0]?.result;
   if (!value) throw new Error('SysLab no respondió en la pestaña.');
   if (value.error) throw new Error(value.error);
@@ -205,7 +213,7 @@ function stepFetchReport(link) {
   };
   const grab = async url => {
     if (!allowed(url)) throw new Error('SysLab entregó una ruta de informe no permitida.');
-    const res = await fetch(url, { credentials: 'include', cache: 'no-store', redirect: 'follow' });
+    const res = await fetch(url, { credentials: 'include', cache: 'no-store', redirect: 'follow', signal: AbortSignal.timeout(20_000) });
     if (!res.ok) throw new Error('SysLab respondió HTTP ' + res.status + '.');
     const buffer = await res.arrayBuffer();
     if (buffer.byteLength > MAX_BYTES) throw new Error('El informe supera el límite de 6 MB.');

@@ -25,8 +25,13 @@ export function sicTone(grupo = '') {
  * A state reads as a coloured dot plus its label — quieter than a filled pill
  * and it keeps the meaning in the text, not only in the colour.
  */
+// Etiquetas largas de Rayen que se acortan en la celda; el texto completo va en el título.
+const SHORT_STATE = Object.freeze({ 'No se presentó a la cita': 'No se presentó' });
+
 export function stateDot(estado, { tone, small = false } = {}) {
-  return `<span class="st st-${tone ?? stateTone(estado)}${small ? ' sm' : ''}">${esc(estado)}</span>`;
+  const label = SHORT_STATE[estado] ?? estado;
+  const title = label !== estado ? ` title="${esc(estado)}"` : '';
+  return `<span class="st st-${tone ?? stateTone(estado)}${small ? ' sm' : ''}"${title}>${esc(label)}</span>`;
 }
 
 /**
@@ -36,15 +41,18 @@ export function stateDot(estado, { tone, small = false } = {}) {
 export function initTooltips() {
   const tt = document.createElement('div');
   tt.id = 'tt';
+  tt.setAttribute('role', 'tooltip');
   tt.hidden = true;
   document.body.appendChild(tt);
   let cur = null;
-  const hide = () => { cur = null; tt.hidden = true; };
+  // El elemento apunta al tooltip mientras está visible: así lo lee el lector de pantalla.
+  const hide = () => { cur?.removeAttribute('aria-describedby'); cur = null; tt.hidden = true; };
 
   const show = el => {
     const text = el.dataset.tip;
     if (!text) return;
     cur = el;
+    el.setAttribute('aria-describedby', 'tt');
     // Si el propio elemento está recortado con «…», el tooltip empieza por su
     // texto completo: la celda del nombre lleva ya un tip («Ver ficha») y el
     // RUN cortado no tenía cómo leerse.

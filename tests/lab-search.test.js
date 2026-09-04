@@ -103,3 +103,36 @@ test('isStale detecta que lo escrito ya no es lo buscado; reset lo borra todo', 
   assert.deepEqual(s.results, { hsr: [], hhr: [] });
   assert.equal(s.isStale('16.940.645-6'), false, 'sin búsqueda no hay nada desfasado');
 });
+
+// Balance 5: tres mutantes que sobrevivían. Cada test falla si se quita la
+// guarda correspondiente.
+test('reset en vuelo: nada de lo que llegue después se entrega', async () => {
+  const { s, events } = harness({ fetchHsr: async () => later(40, [orden()]), fetchHhr: async () => later(40, [examen()]) });
+  const out = s.start(RUT);
+  s.reset();
+  assert.deepEqual(await out.done, { superseded: true });
+  await later(60);
+  assert.equal(events.hsr.length + events.hhr.length, 0);
+  assert.deepEqual(events.state.at(-1), { searching: false, rutBody: '', rutDisplay: '' });
+});
+
+test('un error tardío de una búsqueda reemplazada se descarta', async () => {
+  let n = 0;
+  const { s, events } = harness({ fetchHsr: async () => (++n === 1 ? later(40).then(() => { throw new Error('boom'); }) : [orden()]) });
+  const primera = s.start(RUT);
+  const segunda = s.start(RUT);
+  await Promise.all([primera.done, segunda.done]);
+  await later(60);
+  assert.deepEqual(events.hsr.map(r => r.status), ['ok'], 'el error de la primera no se pinta sobre la segunda');
+});
+
+test('la búsqueda reemplazada no apaga «buscando» mientras la nueva sigue en curso', async () => {
+  let n = 0;
+  const { s } = harness({ fetchHsr: async () => later(++n === 1 ? 10 : 80, [orden()]), fetchHhr: async () => [examen()] });
+  const primera = s.start(RUT);
+  const segunda = s.start(RUT);
+  await primera.done;
+  assert.equal(s.searching, true, 'la primera terminó, pero la segunda sigue');
+  await segunda.done;
+  assert.equal(s.searching, false);
+});

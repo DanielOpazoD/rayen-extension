@@ -27,7 +27,7 @@
           <option value="12">12 meses</option>
         </select>
       </label>
-      <label class="history-toggle" data-tip="Cruza la agenda con FichaClinica/HistorialAtencion: diagnósticos, actividades, prestador, adjuntos y atenciones sin cita. La primera carga descarga ~1 MB por día.">
+      <label class="history-toggle" data-tip="Cruza la agenda con la ficha clínica: diagnósticos, actividades, prestador, adjuntos y atenciones sin cita. La primera carga tarda más.">
         <input type="checkbox" id="optHistorial" checked><span>Ficha clínica</span>
       </label>
     </div>
@@ -47,7 +47,7 @@
       <div class="menu-wrap" id="settingsWrap">
         <button class="btn" id="btnSettings" aria-haspopup="true" aria-expanded="false" data-tip="Refresco, privacidad y datos locales">Preferencias</button>
         <div class="menu settings" id="settingsMenu">
-          <div class="set-grid set-4">
+          <div class="set-grid">
             <label>Refresco automático
               <select id="setRefresh"><option value="0">Apagado</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
             <label>Bloqueo por inactividad
@@ -184,13 +184,13 @@
     <col class="c-razon"><col class="c-tipo"><col class="c-dx"><col class="c-estado"><col class="c-ic"><col class="c-nota">
   </colgroup>
   <thead><tr>
-    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" tabindex="0" aria-sort="descending" data-tip="Ordenar · la ⓘ muestra día y hora">Fecha</th>
+    <th data-col="fechaAtencion" data-c="fechaAtencion" class="sorted sticky s1" data-dir="desc" tabindex="0" aria-sort="descending" data-tip="Ordenar por fecha">Fecha</th>
     <th data-col="nombre" data-c="nombre" class="sticky s2" tabindex="0" aria-sort="none">Nombre</th>
     <th data-col="edad" data-c="edad" tabindex="0" aria-sort="none" data-tip="Ordenar · al pasar el cursor se ve la fecha de nacimiento">Edad</th>
     <th data-col="sexo" data-c="sexo" tabindex="0" aria-sort="none" data-tip="M = mujer · H = hombre">Sx</th>
     <th data-col="razon" data-c="razon" tabindex="0" aria-sort="none">Razón</th>
     <th data-col="tipoAtencion" data-c="tipoAtencion" tabindex="0" aria-sort="none">Tipo de atención</th>
-    <th data-col="diagnostico" data-c="diagnostico" tabindex="0" aria-sort="none" data-tip="Desde FichaClinica/HistorialAtencion">Diagnóstico</th>
+    <th data-col="diagnostico" data-c="diagnostico" tabindex="0" aria-sort="none" data-tip="Desde la ficha clínica">Diagnóstico</th>
     <th data-col="estado" data-c="estado" tabindex="0" aria-sort="none">Estado</th>
     <th class="ns" data-c="ic" data-tip="SIC que originó la cita (solicitante real, especialidad, estado) y otras SIC del paciente">Interconsulta</th>
     <th class="ns" data-c="nota" data-tip="Clic en una celda para editar">Notas</th>
@@ -287,7 +287,7 @@
         <th data-sort="paciente" tabindex="0" aria-sort="none">Paciente</th>
         <th data-sort="especialidad" tabindex="0" aria-sort="none">Especialidad · motivo</th>
         <th class="ns">Diagnóstico (CIE-10)</th>
-        <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Prioridad con que se pidió la interconsulta: P1 alta, P2 media, P3 baja. Rayen entrega sólo el código; la etiqueta es inferida.">Prior.</th>
+        <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Prioridad con que se pidió la interconsulta, de P1 a P3. Rayen entrega sólo el código; su significado es inferido y no está confirmado.">Prior.</th>
         <th data-sort="estado" tabindex="0" aria-sort="none">Estado</th>
         <th data-sort="solicitante" tabindex="0" aria-sort="none">Solicitante</th>
       </tr></thead>

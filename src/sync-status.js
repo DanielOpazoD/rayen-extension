@@ -15,7 +15,9 @@ function formatWhen(value) {
   if (!value) return 'Nunca';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Nunca';
-  return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+  // Mismo formato que las fechas pendientes de la tarjeta («05-03-2026»).
+  const p = n => String(n).padStart(2, '0');
+  return `${p(date.getDate())}-${p(date.getMonth() + 1)}-${date.getFullYear()} ${p(date.getHours())}:${p(date.getMinutes())}`;
 }
 
 function formatItem(item) {

@@ -35,6 +35,7 @@ export function render() {
   // Roving tabindex: la primera fila es la única parada de Tab.
   const first = $('tbody').querySelector('tr[data-id]');
   if (first) first.tabIndex = 0;
+  requestAnimationFrame(() => { const w = $('tblWrap'); w.classList.toggle('more-right', w.scrollLeft + w.clientWidth < w.scrollWidth - 1); });
   updateFilterCount();
 }
 
@@ -166,9 +167,19 @@ export function init(prefs) {
   initMenu('btnCols', 'colsMenu');
 
   // Stream the rest of the rows in as the user scrolls; also drive the sticky shadow
+  // Pistas de desplazamiento horizontal: sombra a la izquierda cuando ya se
+  // desplazó, y a la derecha mientras queden columnas fuera de la vista.
+  const scrollHints = w => {
+    w.classList.toggle('scrolled', w.scrollLeft > 0);
+    w.classList.toggle('more-right', w.scrollLeft + w.clientWidth < w.scrollWidth - 1);
+  };
+  window.addEventListener('resize', () => scrollHints($('tblWrap')));
+  // La tabla se pinta con la pestaña oculta (mide 0): al mostrarse cambia de
+  // tamaño y el observador recalcula las pistas.
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => scrollHints($('tblWrap'))).observe($('tblWrap'));
   $('tblWrap').addEventListener('scroll', e => {
     const w = e.currentTarget;
-    w.classList.toggle('scrolled', w.scrollLeft > 0);
+    scrollHints(w);
     if (hasMoreRows() && w.scrollTop + w.clientHeight > w.scrollHeight - 600) appendChunk();
   }, { passive: true });
 

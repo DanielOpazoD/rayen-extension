@@ -20,8 +20,6 @@ import {
 import { openReport } from '../export.js';
 
 let initialized = false;
-let hsrResults = [];
-let hhrResults = [];
 /** Claves «hsr:id» / «hhr:id» de las órdenes marcadas para analizar. */
 const selected = new Set();
 /**
@@ -32,9 +30,6 @@ const selected = new Set();
  * laboratorio de un paciente y pasar al siguiente antes de que respondiera
  * pintaba las órdenes del primero bajo el RUT del segundo.
  */
-let searchRutBody = '';
-let searching = false;
-let searchRutDisplay = '';
 let analysis = null;
 let analysisView = 'comparacion';
 
@@ -44,7 +39,7 @@ export function init() {
 
   // El mismo botón busca o cancela: una búsqueda colgada tenía antes un
   // «Buscando…» deshabilitado sin salida.
-  $('labSearchBtn').addEventListener('click', () => (searching ? cancelSearch() : doSearch()));
+  $('labSearchBtn').addEventListener('click', () => (search.searching ? cancelSearch() : doSearch()));
   $('labRut').addEventListener('keyup', e => { if (e.key === 'Enter') doSearch(); });
   $('labRut').addEventListener('input', markStaleIfRutChanged);
   $('labClear').addEventListener('click', clearResults);
@@ -128,7 +123,7 @@ function applyPeriodo() {
  * de una persona bajo el identificador de otra.
  */
 function markStaleIfRutChanged() {
-  const hayResultados = hsrResults.length > 0 || hhrResults.length > 0;
+  const hayResultados = search.results.hsr.length > 0 || search.results.hhr.length > 0;
   const desfasada = hayResultados && search.isStale($('labRut').value);
   $('labResults').classList.toggle('stale', desfasada);
   $('labStale').hidden = !desfasada;
@@ -137,19 +132,17 @@ function markStaleIfRutChanged() {
   $('labDownloadAll').disabled = desfasada;
   if (desfasada) {
     $('labStale').textContent =
-      `En pantalla siguen los exámenes de ${searchRutDisplay}. Pulsa Buscar para el RUT que escribiste.`;
+      `En pantalla siguen los exámenes de ${search.rut.display}. Pulsa Buscar para el RUT que escribiste.`;
   }
 }
 
 // ── Búsqueda ── (RUT, token, cancelación y período viven en lab-search.js; aquí sólo se pinta)
 
 const search = createLabSearch({
-  onState({ searching: on, rutBody, rutDisplay }) {
-    if (rutBody !== undefined) { searchRutBody = rutBody; searchRutDisplay = rutDisplay; }
-    if (on !== undefined) paintSearching(on);
+  onState(patch) {
+    if (patch.searching !== undefined) paintSearching(patch.searching);
   },
   onHsr(r) {
-    hsrResults = r.results;
     const el = $('labHsrCount');
     if (r.status === 'empty') el.textContent = 'HSR: 0 órdenes';
     else if (r.status === 'mismatch') el.textContent = 'HSR: la respuesta no corresponde al RUN consultado';
@@ -157,27 +150,25 @@ const search = createLabSearch({
     else if (r.status === 'error') el.textContent = `HSR: ${humanError(r.error, 'el portal del Hospital Salvador')}`;
     else {
       if (r.message) { $('labError').textContent = r.message; $('labError').className = 'lab-msg info'; }
-      el.textContent = `HSR: ${hsrResults.length} ${hsrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}`;
-      renderHsrResults(hsrResults);
+      el.textContent = `HSR: ${search.results.hsr.length} ${search.results.hsr.length === 1 ? 'orden' : 'órdenes'} de ${search.rut.display}`;
+      renderHsrResults(search.results.hsr);
     }
   },
   onHhr(r) {
-    hhrResults = r.results;
     const el = $('labHhrCount');
     if (r.status === 'empty') el.textContent = 'HHR: 0 órdenes';
     else if (r.status === 'auth') { el.textContent = 'HHR: sin sesión en SysLab. Abre SysLab en una pestaña e inicia sesión.'; sessions.refreshHhr(); }
     else if (r.status === 'error') el.textContent = `HHR: ${humanError(r.error, 'SysLab')}`;
     else {
-      el.textContent = `HHR: ${hhrResults.length} ${hhrResults.length === 1 ? 'orden' : 'órdenes'} de ${searchRutDisplay}` +
+      el.textContent = `HHR: ${search.results.hhr.length} ${search.results.hhr.length === 1 ? 'orden' : 'órdenes'} de ${search.rut.display}` +
         (r.ocultas ? ` · ${r.ocultas} fuera del período` : '');
-      renderHhrResults(hhrResults);
+      renderHhrResults(search.results.hhr);
     }
   },
 });
 
 // El mismo botón busca o cancela.
 function paintSearching(on) {
-  searching = on;
   const btn = $('labSearchBtn');
   btn.textContent = on ? 'Cancelar' : 'Buscar';
   btn.classList.toggle('btn-primary', !on);
@@ -212,8 +203,8 @@ async function doSearch() {
 
   const { superseded } = await outcome.done;
   if (superseded) return; // Otra búsqueda tomó el relevo, o se canceló.
-  const printable = hsrResults.filter(o => o.puedeImprimir).length +
-    hhrResults.filter(o => o.puedeImprimir).length;
+  const printable = search.results.hsr.filter(o => o.puedeImprimir).length +
+    search.results.hhr.filter(o => o.puedeImprimir).length;
   $('labDownloadAll').hidden = printable < 2;
   markStaleIfRutChanged();
   updateSelectionUI();
@@ -333,7 +324,7 @@ function wireRows(tbody, source) {
 // ── Selección ──
 
 function pickAll(source, checked) {
-  const rows = source === 'hsr' ? hsrResults : hhrResults;
+  const rows = source === 'hsr' ? search.results.hsr : search.results.hhr;
   const ids = rows.filter(o => analysable(source, o)).map(o => String(source === 'hsr' ? o.numero : o.id));
   for (const id of ids) {
     const key = `${source}:${id}`;
@@ -363,7 +354,7 @@ function updateSelectionUI() {
 /** Une lo seleccionado de ambos hospitales en una sola lista analizable. */
 function selectedItems() {
   const items = [];
-  for (const o of hsrResults) {
+  for (const o of search.results.hsr) {
     if (selected.has(`hsr:${o.numero}`) && analysable('hsr', o)) {
       items.push({
         source: 'HSR',
@@ -376,7 +367,7 @@ function selectedItems() {
       });
     }
   }
-  for (const o of hhrResults) {
+  for (const o of search.results.hhr) {
     if (selected.has(`hhr:${o.id}`) && analysable('hhr', o)) {
       items.push({
         source: 'HHR',
@@ -413,7 +404,7 @@ async function analyzeSelected() {
   // El RUN se toma de la búsqueda que produjo estas filas, no del campo: si
   // alguien edita el buscador sin volver a buscar, el análisis seguiría siendo
   // del paciente cuyos informes están en pantalla.
-  const expectedRutBody = searchRutBody;
+  const expectedRutBody = search.rut.body;
 
   try {
     const { details, errors } = await buildDetails(
@@ -630,8 +621,8 @@ async function printRequest() {
     // la tabla y el RUN del buscador, así que editar el campo sin volver a
     // buscar imprimía un par cruzado en un papel que viaja al laboratorio.
     paciente: {
-      nombre: hsrResults[0]?.nombrePaciente || hhrResults[0]?.nombrePaciente || '',
-      run: searchRutDisplay,
+      nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
+      run: search.rut.display,
       fecha: fmtFecha(new Date()),
       procedencia: '',
     },
@@ -649,9 +640,9 @@ async function downloadAllPdfs() {
   msg.textContent = '';
 
   const loaders = [
-    ...hsrResults.filter(o => o.puedeImprimir).map(o => async () =>
+    ...search.results.hsr.filter(o => o.puedeImprimir).map(o => async () =>
       new Uint8Array(await (await informeResultado(o.ordenEncryptada)).arrayBuffer())),
-    ...hhrResults.filter(o => o.puedeImprimir).map(o => () => syslabReportBytes(o.link)),
+    ...search.results.hhr.filter(o => o.puedeImprimir).map(o => () => syslabReportBytes(o.link)),
   ];
 
   btn.textContent = `0/${loaders.length}…`;
@@ -663,7 +654,7 @@ async function downloadAllPdfs() {
 
     // El nombre lleva el RUT que se buscó, no lo que haya en el campo: editarlo
     // sin volver a buscar guardaba los informes de A como «laboratorio-<RUT de B>».
-    savePdf(bytes, `laboratorio-${searchRutDisplay.replace(/[^0-9kK-]/g, '') || 'informes'}.pdf`);
+    savePdf(bytes, `laboratorio-${search.rut.display.replace(/[^0-9kK-]/g, '') || 'informes'}.pdf`);
     msg.textContent = failed === 0
       ? `PDF único con ${merged} informe${merged !== 1 ? 's' : ''} (${pages} pág.).`
       : `PDF con ${merged} de ${merged + failed} informes (${pages} pág.). ${failed} no se pudo incluir.`;
@@ -700,8 +691,6 @@ function clearResults() {
   $('labDownloadAll').hidden = true;
   $('labPickAllHsr').checked = false;
   $('labPickAllHhr').checked = false;
-  hsrResults = [];
-  hhrResults = [];
   search.reset();
   selected.clear();
   closeAnalysis();
