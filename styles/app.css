@@ -449,7 +449,6 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pp-sic-b{font-size:var(--t-sm);color:var(--ink-2)}
 .pp-fund{font-size:var(--t-sm);color:var(--ink-2);white-space:pre-wrap;margin:5px 0;max-height:4.4em;overflow:hidden}
 .pp-sic:hover .pp-fund,.pp-sic:focus-within .pp-fund{max-height:none}
-.cr-ok{color:var(--good);font-size:var(--t-xs)}
 .pp-rx{border:1px solid var(--rule);border-radius:var(--r-md);padding:8px 10px;margin-bottom:6px}
 .pp-rx-h{display:flex;justify-content:space-between;gap:var(--sp-2);font-size:var(--t-sm);margin-bottom:3px}
 .pp-rx-r{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--t-sm);padding:2px 0}
@@ -482,7 +481,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .sic-status{padding:0 var(--sp-2);font-size:var(--t-xs);color:var(--ink-3)}
 .sic-table col.s-fecha{width:104px} .sic-table col.s-dias{width:52px}
 .sic-table col.s-pac{width:206px} .sic-table col.s-esp{width:172px} .sic-table col.s-dx{width:222px}
-.sic-table col.s-prio{width:52px} .sic-table col.s-est{width:146px} .sic-table col.s-flags{width:150px} .sic-table col.s-sol{width:128px}
+.sic-table col.s-prio{width:52px} .sic-table col.s-est{width:146px} .sic-table col.s-sol{width:128px}
 tr.sic-row{cursor:pointer}
 tr.sic-row:focus-visible{outline-offset:-2px}
 tr.sic-row.open td{background:var(--surface-2)!important;border-bottom:none}
@@ -496,26 +495,9 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .sic-detail-grid h4{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:var(--sp-3) 0 2px;font-weight:600}
 .sic-detail-grid h4:first-child{margin-top:0}
 .sic-detail-grid p{white-space:pre-wrap;color:var(--ink-2)}
-.cr-list{list-style:none;padding:0;margin:0;color:var(--ink-2)}
-.cr-list li{padding:2px 0}
 .sic-actions{display:flex;gap:6px;margin-top:var(--sp-3)}
 @media (max-width:900px){.sic-detail-grid{grid-template-columns:1fr}}
 
-/* Contrarreferencia — la respuesta, su ausencia, o que aún no toca */
-.cr-cell{white-space:normal}
-.cr-yes{display:block;font-size:var(--t-xs);color:var(--good);line-height:1.35}
-.cr-yes b{font-variant-numeric:tabular-nums}
-.cr-yes span{display:block;color:var(--ink-3)}
-.cr-missing{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);font-weight:600;color:var(--warn);cursor:help}
-.cr-missing::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
-.cr-box{border:1px solid var(--rule);border-radius:var(--r-md);padding:10px 12px;margin-bottom:var(--sp-3)}
-.cr-box.ok{border-color:var(--brand-line);background:var(--brand-soft)}
-.cr-box.miss{border-color:var(--warn);background:var(--warn-soft)}
-.cr-box h4{margin:0 0 5px!important}
-.cr-box p{font-size:var(--t-sm);color:var(--ink-2);margin:0}
-.cr-item{font-size:var(--t-sm);padding:2px 0}
-.cr-item span{display:block;color:var(--ink-3);font-size:var(--t-xs)}
-.cr-note{margin-top:6px!important;font-size:var(--t-xs)!important;color:var(--ink-3)!important}
 .stat-click{cursor:pointer}
 .stat-click:hover{border-color:var(--brand)}
 .stat-alert .stat-n{color:var(--warn)}
@@ -528,7 +510,6 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .nov{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-md);margin-bottom:5px;background:var(--card);cursor:pointer}
 .nov:hover{border-color:var(--brand)}
 .nov-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);flex-shrink:0}
-.nov-contrarreferencia .nov-tag{color:var(--good)}
 .nov-nueva .nov-tag{color:var(--ink-2)}
 .nov-pac{font-weight:500;font-size:var(--t-sm)}
 .nov-esp{font-size:var(--t-sm);color:var(--ink-2)}

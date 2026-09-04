@@ -24,16 +24,16 @@ function formatItem(item) {
 
 export function syncOverview(health) {
   const rows = SYNC_SOURCES.map(source => ({ source, value: health?.[source] })).filter(row => row.value);
-  if (!rows.length) return { text: 'Sin sincronizaciones registradas', tone: 'neutral', pending: 0 };
+  if (!rows.length) return { text: 'Sin comprobar', tone: 'neutral', pending: 0 };
   const pending = rows.reduce((sum, row) => sum + (row.value.failedItems?.length ?? 0), 0);
-  if (rows.some(row => row.value.status === 'running')) return { text: 'Actualización en curso', tone: 'info', pending };
-  if (rows.some(row => row.value.status === 'error')) return { text: 'Hay fuentes sin actualizar', tone: 'bad', pending };
-  if (rows.some(row => row.value.status === 'partial')) return { text: 'Actualización parcial', tone: 'warn', pending };
-  if (pending) return { text: 'Actualización parcial', tone: 'warn', pending };
+  if (rows.some(row => row.value.status === 'running')) return { text: 'Sincronizando', tone: 'info', pending };
+  if (rows.some(row => row.value.status === 'error')) return { text: 'Error', tone: 'bad', pending };
+  if (rows.some(row => row.value.status === 'partial')) return { text: 'Pendiente', tone: 'warn', pending };
+  if (pending) return { text: 'Pendiente', tone: 'warn', pending };
   const checked = rows.filter(row => row.value.status !== 'disabled');
   const complete = rows.length === SYNC_SOURCES.length && checked.length > 0
     && checked.every(row => ['ok', 'cached'].includes(row.value.status));
-  return { text: complete ? 'Fuentes disponibles' : 'Comprobación incompleta', tone: complete ? 'ok' : 'neutral', pending };
+  return { text: complete ? 'Al día' : 'Sin comprobar', tone: complete ? 'ok' : 'neutral', pending };
 }
 
 /**
@@ -62,6 +62,9 @@ async function renderSyncStatusBody(health) {
   const overview = syncOverview(data);
   $('syncOverall').textContent = overview.text;
   $('syncOverall').className = `sync-overall ${overview.tone}`;
+  // El botón «Detalle» conserva su estilo; el tono lo lleva el texto de al lado.
+  $('btnSyncDetails').className = 'btn-mini';
+  $('btnSyncDetails').setAttribute('aria-label', `${overview.text}. ${overview.pending ? `${overview.pending} pendientes. ` : ''}${$('syncDetails').hidden ? 'Ver detalle' : 'Ocultar detalle'}`);
   $('btnRetrySync').hidden = !hasRetryableSync(data);
 
   $('syncSources').innerHTML = SYNC_SOURCES.map(source => {
@@ -87,6 +90,7 @@ export function initSyncStatus(onRetry) {
     details.hidden = !open;
     $('btnSyncDetails').setAttribute('aria-expanded', String(open));
     $('btnSyncDetails').textContent = open ? 'Ocultar' : 'Detalle';
+    $('btnSyncDetails').setAttribute('aria-label', `${$('syncOverall').textContent}. ${open ? 'Ocultar detalle' : 'Ver detalle'}`);
   });
   $('btnRetrySync').addEventListener('click', onRetry);
   // Si no se pudo recuperar una fuente colgada, se pinta lo que haya: renderSyncStatus no lanza.

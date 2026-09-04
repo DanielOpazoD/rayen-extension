@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.15.1 — 2026-09-03
+
+Integración con `main`. La rama de trabajo nació antes de dos pull requests que se mergearon hoy en `main` (#6, smoke de navegador en CI; #7, sincronización compacta y **retirada del metadato «contrarreferencia»** de filtros, tablas, pendientes, estadísticas, informes y exportaciones, con su petición adicional). Al integrar prevalece esa decisión de producto, que es la más reciente: desaparecen aquí también el cruce de contrarreferencias, el gráfico «% sin contrarreferencia», la regla de pendientes «sin contrarreferencia» y su umbral. Todo lo demás de esta rama se conserva; el riel de estado y el panel de sincronización quedan en la versión de esta rama, que ya integraba lo que #7 buscaba. La 2.6.0 que `main` declaraba para #7 queda absorbida por esta entrada.
+
 ## 2.15.0 — 2026-09-03
 
 Etapa 3, segunda tanda: datos del paciente, gráficos y cromo medio.

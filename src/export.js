@@ -63,7 +63,6 @@ const SIC_COLS = [
   ['Hipótesis diagnóstica', s => s.hipotesis], ['Fundamentos clínicos', s => s.fundamentos], ['Exámenes realizados', s => s.examenes],
   ['Origen', s => s.origen], ['Destino', s => s.destino], ['Solicitante', s => s.registrador.nombre], ['Ejecutor', s => s.ejecutor.nombre],
   ['Fecha cita', s => s.fechaCita],
-  ['Contrarreferencia', s => s.contrarreferencias.map(c => `${c.fecha} ${c.profesional} (${c.especialidad})`).join(' | ')],
 ];
 
 // ── CSV ────────────────────────────────────────────────────────

@@ -123,7 +123,6 @@ export function buildFixture(today = new Date()) {
     const d = new Date(today); d.setDate(d.getDate() - age);
     const d8 = localDateStr(d);
     const emitida = r() < 0.6;
-    const conCR = estadoId === 5 && r() < 0.3;
     const raw = {
       NumeroSolicitud: String(21450400 + k), FechaHora: fmtDMY(d8), FechaHoraCreacion: `${fmtDMY(d8)} 10:00:00`, AntiguedadDias: age, Prioridad: 1 + Math.floor(r() * 3),
       FundamentosClinicos: 'Cuadro de evolución subaguda, sin respuesta a manejo inicial. Se solicita evaluación por especialidad.',
@@ -137,8 +136,7 @@ export function buildFixture(today = new Date()) {
         IdFuncionarioRegistrador: emitida ? CONFIG.officerId : 439717, IdFuncionarioPrestadorEjecutor: emitida ? 439554 : CONFIG.officerId,
         FuncionarioPrestadorEjecutor: { NombreFormateado: emitida ? 'Especialista Ejemplo' : OFFICER.NombreCompleto }, EspecialidadNodoOrigen: { NombreEspecialidad: 'Medicina General' }, EsGES: false },
     };
-    const cr = conCR ? [{ FechaRegistro: `${d8} 000000`, Especialidad: raw.Especialidad, NombreProfesional: 'Especialista', ApellidoPaternoProfesional: 'Ejemplo', EstablecimientoContrarrefiere: 'Hospital Hanga Roa' }] : [];
-    sics.push(parseSIC(raw, cr));
+    sics.push(parseSIC(raw));
   }
 
   const now = Date.now();

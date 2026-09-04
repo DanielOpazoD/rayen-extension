@@ -82,12 +82,14 @@ test('una SIC sin antigüedad informada se evalúa por su fecha', () => {
     paciente: { nombre: 'Paciente Uno', run: '1K', runStr: '1-K' },
     registrador: { id: ME, nombre: 'Opazo' }, ejecutor: { id: 9, nombre: 'Otro' },
   };
-  const p = computePendientes([], [sic], { hoy: HOY });
-  assert.deepEqual(p.map(x => x.tipo), ['cr-faltante']);
-  assert.ok(p[0].dias > 200, `los días deben salir de la fecha: ${p[0].dias}`);
+  // Una SIC atendida ya no genera pendiente: la regla «sin contrarreferencia»
+  // se retiró con el PR #7 (metadato administrativo).
+  assert.deepEqual(computePendientes([], [sic], { hoy: HOY }), []);
 
   const nueva = { ...sic, estadoId: 13, estado: 'Nueva', grupo: 'pendiente' };
-  assert.deepEqual(computePendientes([], [nueva], { hoy: HOY }).map(x => x.tipo), ['sic-nueva']);
+  const p = computePendientes([], [nueva], { hoy: HOY });
+  assert.deepEqual(p.map(x => x.tipo), ['sic-nueva']);
+  assert.ok(p[0].dias > 200, `los días deben salir de la fecha: ${p[0].dias}`);
 });
 
 // Las barras de «Diagnósticos más frecuentes» se rotulan con la clasificación,

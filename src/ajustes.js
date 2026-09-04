@@ -24,7 +24,7 @@ function fillSettings() {
   $('setRefresh').value = String(refreshMin);
   $('setLock').value    = String(lockCtl?.minutes ?? 15);
   $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
-  $('setCr').value = umbrales.crDias;     $('setNueva').value   = umbrales.nuevaDias;
+  $('setNueva').value = umbrales.nuevaDias;
   $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
 }
 
@@ -53,8 +53,8 @@ export function init({ lock }) {
       setPrefs({ retentionMonths: m });
       await savePrefs({ retentionMonths: m });
     }
-    if (['setCr', 'setNueva', 'setCita', 'setControl'].includes(t.id)) {
-      const umbrales = { crDias: +$('setCr').value || 1, nuevaDias: +$('setNueva').value || 1, citaDias: +$('setCita').value || 0, controlDias: +$('setControl').value || 0 };
+    if (['setNueva', 'setCita', 'setControl'].includes(t.id)) {
+      const umbrales = { nuevaDias: +$('setNueva').value || 1, citaDias: +$('setCita').value || 0, controlDias: +$('setControl').value || 0 };
       setPrefs({ umbrales }, { rerender: true });
       await savePrefs({ umbrales });
     }

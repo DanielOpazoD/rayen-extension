@@ -28,11 +28,30 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
 
   await page.locator('#btnFetch').click();
   await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones( · .+)?$/);
+  await expect(page.locator('#syncOverall')).toHaveText(/^(Al día|Pendiente)$/);
   const total = Number((await page.locator('#statusBar').innerText()).split(' ')[0]);
   expect(total).toBeGreaterThan(0);
 
+  // El estado vive en el riel de pestañas (una sola banda de ≤40 px) y el
+  // detalle de sincronización se despliega encima sin empujar las pestañas.
+  const rail = await page.locator('.rail').boundingBox();
+  const narrowViewport = (await page.evaluate(() => document.documentElement.clientWidth)) <= 760;
+  expect(rail.height).toBeLessThanOrEqual(narrowViewport ? 84 : 40); // bajo 760 px el estado baja a una segunda línea del riel
+  const tabsBeforeDetails = await page.locator('.tabs').first().boundingBox();
+  await page.locator('#btnSyncDetails').click();
+  await expect(page.locator('#syncDetails')).toBeVisible();
+  const tabsAfterDetails = await page.locator('.tabs').first().boundingBox();
+  expect(tabsAfterDetails.y).toBe(tabsBeforeDetails.y);
+  await page.locator('#btnSyncDetails').click();
+  await expect(page.locator('#syncDetails')).toBeHidden();
+
   await expect(page.locator('#todayContent')).not.toContainText('Citas pasadas sin resolver');
   await expect(page.locator('#todayContent')).not.toContainText('Sin contrarreferencia');
+
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Interconsultas' }).click();
+  await expect(page.locator('#tab-interconsultas')).toBeVisible();
+  await expect(page.locator('#tab-interconsultas')).not.toContainText(/contrarreferencia/i);
+  await expect(page.locator('.sic-table thead th')).toHaveCount(8);
 
   await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones' }).click();
   await page.locator('#btnFilters').click();

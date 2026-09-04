@@ -100,7 +100,7 @@ function mapPrueba(p) {
 }
 
 function mapDerivacion(d) {
-  return { label: clean(d.Descripcion), details: [d.TieneContrarreferencias ? 'con contrarreferencia' : ''].filter(Boolean), raw: d };
+  return { label: clean(d.Descripcion), details: [], raw: d };
 }
 
 const SECTIONS = [

@@ -348,7 +348,7 @@ function renderIc() {
         <div class="pp-sic-b"><b>${esc(s.especialidad)}</b>${s.cie10 ? ` · <span class="cie">${esc(s.cie10)}</span>` : ''} ${esc(s.diagnostico)}
           ${s.registrador.nombre ? `<br><span class="muted">Solicitó ${esc(s.registrador.nombre)}${s.motivo ? ` · ${esc(s.motivo)}` : ''}</span>` : ''}
           ${s.fundamentos ? `<p class="pp-fund">${esc(s.fundamentos)}</p>` : ''}
-          ${s.contrarreferencias.length ? `<span class="cr-ok">Contrarreferencia ${esc(s.contrarreferencias[0].fecha)} · ${esc(s.contrarreferencias[0].profesional)}</span>` : ''}</div>
+          </div>
       </div>`).join('')
     : empty('Sin interconsultas en el período cargado');
 

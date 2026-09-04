@@ -6,9 +6,9 @@ import { loadSICs } from '../src/sic.js';
 import { cancelRun, resetRun } from '../src/http.js';
 
 /**
- * loadSICs hace tres listados, baja los detalles por grupos y cruza las
- * contrarreferencias por id. Nada de eso tenía prueba: sólo parseSIC. Aquí se
- * ejercita contra un fetch guionizado.
+ * loadSICs hace tres listados y baja los detalles por grupos. (El cruce de
+ * contrarreferencias se retiró con el PR #7: era un metadato administrativo.)
+ * Se ejercita contra un fetch guionizado.
  */
 let calls;
 function scriptFetch(handler) {
@@ -44,24 +44,12 @@ function guion({ ids = [21450486], contrarrefs = [], detailFail = false } = {}) 
 
 beforeEach(() => { installFakeChrome(); });
 
-test('carga completa: lista, detalle y contrarreferencias cruzadas por id numérico', async () => {
-  scriptFetch(guion({ contrarrefs: [{ IdSolicitud: 21450486, FechaHora: '10-08-2026', NombreFuncionario: 'Dra. X' }] }));
+test('carga completa: lista y detalle en dos pasos', async () => {
+  scriptFetch(guion());
   const res = await loadSICs('tok', 3);
   assert.equal(res.failed, 0);
   assert.equal(res.fromCache, false);
   assert.equal(res.sics.length, 1);
-  assert.equal(res.sics[0].contrarreferencias.length, 1);
-});
-
-// El cruce indexa por el tipo crudo que llegue en `IdSolicitud` y busca con
-// Number(...). Si el endpoint devuelve el id como texto —como ya hace su
-// hermano con NumeroSolicitud en los fixtures reales— todas las
-// contrarreferencias desaparecen en silencio y cada SIC atendida pasa a
-// «sin contrarreferencia».
-test('el cruce de contrarreferencias no depende del tipo con que llegue IdSolicitud', async () => {
-  scriptFetch(guion({ contrarrefs: [{ IdSolicitud: '21450486', FechaHora: '10-08-2026', NombreFuncionario: 'Dra. X' }] }));
-  const res = await loadSICs('tok', 3);
-  assert.equal(res.sics[0].contrarreferencias.length, 1, 'un id como texto debe cruzar igual que como número');
 });
 
 test('un grupo de detalles que falla se cuenta y conserva la instantánea completa anterior', async () => {

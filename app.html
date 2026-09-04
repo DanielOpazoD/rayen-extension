@@ -59,7 +59,6 @@
           </div>
           <div class="set-h">Umbrales de pendientes <small>días</small></div>
           <div class="set-grid set-4">
-            <label>Sin contrarreferencia<input type="number" id="setCr" min="1" max="365"></label>
             <label>Sin cursar («Nueva»)<input type="number" id="setNueva" min="1" max="365"></label>
             <label>Cita pasada<input type="number" id="setCita" min="0" max="365"></label>
             <label>Control vencido<input type="number" id="setControl" min="0" max="365"></label>
@@ -246,7 +245,7 @@
     <input type="text" id="sicSearch" placeholder="Buscar paciente, RUN, N° SIC, diagnóstico, CIE-10, fundamentos…" aria-label="Buscar interconsultas">
     <input type="hidden" id="sicPer" value="todo">
     <div class="chips" id="sicPerChips" role="group" aria-label="Período"></div>
-    <button class="btn-mini" id="btnSicFilters" aria-expanded="false" aria-controls="sicFilterPanel" data-tip="Estado, especialidad, rol, contrarreferencia, GES, prioridad y rango de fechas">Filtros</button>
+    <button class="btn-mini" id="btnSicFilters" aria-expanded="false" aria-controls="sicFilterPanel" data-tip="Estado, especialidad, rol, GES, prioridad y rango de fechas">Filtros</button>
     <span class="sic-status" id="sicStatus" role="status">Carga los datos para ver las interconsultas.</span>
     <span class="spacer"></span>
     <button class="btn-mini" id="btnSicRefresh" data-tip="Volver a pedir las interconsultas a Eloisa">Actualizar</button>
@@ -270,12 +269,6 @@
         <option value="recibidas">Recibidas por mí</option>
         <option value="mias">Mías</option>
       </select></label>
-      <label>Contrarreferencia<select id="sicContra">
-        <option value="">Todas</option>
-        <option value="si">Con contrarreferencia</option>
-        <option value="falta">Falta — atendida sin CR</option>
-        <option value="no">Sin CR (cualquier estado)</option>
-      </select></label>
       <label>GES<select id="sicGes"><option value="">Todas</option><option value="si">Solo GES</option><option value="no">Sin GES</option></select></label>
       <label>Prioridad<select id="sicPrio"><option value="">Todas</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option></select></label>
       <label class="fp-range">Rango de fechas<span><input type="date" id="sicDesde" aria-label="Desde"><i>–</i><input type="date" id="sicHasta" aria-label="Hasta"></span></label>
@@ -286,7 +279,7 @@
     <table class="sic-table" aria-label="Interconsultas">
       <colgroup>
         <col class="s-fecha"><col class="s-dias"><col class="s-pac"><col class="s-esp"><col class="s-dx">
-        <col class="s-prio"><col class="s-est"><col class="s-flags"><col class="s-sol">
+        <col class="s-prio"><col class="s-est"><col class="s-sol">
       </colgroup>
       <thead><tr>
         <th data-sort="fecha8" class="sorted" data-dir="desc" tabindex="0" aria-sort="descending">Fecha / N°</th>
@@ -296,11 +289,10 @@
         <th class="ns">Diagnóstico (CIE-10)</th>
         <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Código de prioridad tal como lo entrega Rayen. La API no envía etiqueta; pasa el cursor sobre cada código.">Prior.</th>
         <th data-sort="estado" tabindex="0" aria-sort="none">Estado</th>
-        <th data-sort="cr" tabindex="0" aria-sort="none" data-tip="Quién contrarrefirió y cuándo. Rayen guarda el metadato, no el texto: el contenido va en el PDF de la solicitud.">Contrarreferencia</th>
         <th data-sort="solicitante" tabindex="0" aria-sort="none">Solicitante</th>
       </tr></thead>
-      <tbody id="sicBody"><tr><td colspan="9" class="empty">Sin datos todavía.</td></tr></tbody>
-      <tfoot><tr><td colspan="9" id="sicCount"></td></tr></tfoot>
+      <tbody id="sicBody"><tr><td colspan="8" class="empty">Sin datos todavía.</td></tr></tbody>
+      <tfoot><tr><td colspan="8" id="sicCount"></td></tr></tfoot>
     </table>
   </div>
 </div>

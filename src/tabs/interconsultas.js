@@ -17,7 +17,7 @@ import { renderSyncStatus } from '../sync-status.js';
 
 /** Interconsultas: loading (cache-first, 30 min TTL), filters, sort, detail rows. */
 
-const SIC_FILTER_IDS = ['sicSearch', 'sicGrupo', 'sicEsp', 'sicQuien', 'sicContra', 'sicGes', 'sicPrio', 'sicDesde', 'sicHasta'];
+const SIC_FILTER_IDS = ['sicSearch', 'sicGrupo', 'sicEsp', 'sicQuien', 'sicGes', 'sicPrio', 'sicDesde', 'sicHasta'];
 
 let loading = false, loadedFor = 0;
 let chips, updateCount;
@@ -153,7 +153,7 @@ export function init() {
     const tile = e.target.closest('[data-filter]');
     if (!tile) return;
     const [campo, valor] = tile.dataset.filter.split(':');
-    const id = { grupo: 'sicGrupo', quien: 'sicQuien', cr: 'sicContra' }[campo];
+    const id = { grupo: 'sicGrupo', quien: 'sicQuien' }[campo];
     if (id) applyFilter(id, valor);
     else { clearFilters(); render(); }
   });

@@ -68,6 +68,7 @@ flowchart LR
 7. La identidad y navegación de pacientes usa una clave estable; el nombre visible no es identificador.
 8. Las operaciones destructivas requieren confirmación y viven en Preferencias, separadas de las acciones cotidianas.
 9. Una prueba sintética no equivale a validar la extensión cargada en Chrome, y ninguna de ambas equivale a probar contra una sesión real de Eloisa.
+10. Los metadatos administrativos de Rayen no se presentan como conceptos clínicos sin una semántica validada.
 
 ## Dónde hacer cada cambio
 
@@ -77,7 +78,7 @@ flowchart LR
 | Agenda, caché o actualización histórica | `src/api.js`, `src/historial.js`, `src/cache.js` | pruebas de fechas mutables, fallo parcial y reintento |
 | Estado global o coordinación entre vistas | `src/state.js`, `src/actions.js` | contrato de eventos y ausencia de copias divergentes |
 | Filtro o columna de Atenciones | `src/tabs/atenciones.js`, `src/table.js` | filtro, contador, limpiar/deshacer y exportación |
-| Interconsultas | `src/sic.js`, `src/ic-tab.js`, `src/tabs/interconsultas.js` | carga completa/parcial, filtros y contrarreferencia |
+| Interconsultas | `src/sic.js`, `src/ic-tab.js`, `src/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
 | Vista Hoy | `src/today.js`, `src/tabs/hoy.js` | jornada vacía, antecedentes y navegación de paciente |
 | Panel o reporte de paciente | `src/patient-panel.js`, `src/patient-report.js`, `src/ficha.js` | identidad, escape de texto y variantes del reporte |
 | Laboratorio / ProactiveLIS (HSR) | `src/lab-http.js`, `src/lab-api.js`, `src/tabs/laboratorio.js` | sesión cookie, parsing de órdenes, guardia de origen |
@@ -136,7 +137,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/pdf.js` — obtención y presentación segura de documentos PDF.
 - `src/pendientes.js` — reglas explicables de pendientes clínico-administrativos.
 - `src/period.js` — periodos rápidos y rangos explícitos.
-- `src/sic.js` — carga y normalización de interconsultas y contrarreferencias.
+- `src/sic.js` — carga y normalización de interconsultas.
 - `src/state.js` — fuente única de verdad y eventos de la aplicación.
 - `src/syslab-api.js` — servicio SysLab HHR: búsqueda por RUT y verificación de identidad del lote.
 - `src/syslab-http.js` — conducción de la pestaña SysLab (navegación por estado) y lectura de su DOM.
