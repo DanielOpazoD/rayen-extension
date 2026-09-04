@@ -449,6 +449,11 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-datos-grp{margin-bottom:var(--sp-3)}
 .pp-datos h4,.pp-pane h4{font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:var(--sp-4) 0 6px}
 .pp-datos h4:first-child,.pp-pane h4:first-child{margin-top:0}
+/* Portada: títulos de sección con su «Ver todo»; última nota como cita. */
+.pp-pane h4{display:flex;align-items:baseline;gap:8px}
+.pp-link{margin-left:auto;background:none;border:0;padding:0;font:inherit;font-size:var(--t-xs);font-weight:500;text-transform:none;letter-spacing:0;color:var(--brand-2);cursor:pointer}
+.pp-link:hover{text-decoration:underline}
+.pp-res-chips{margin-bottom:var(--sp-2)}
 .pp-chips{display:flex;flex-wrap:wrap;gap:5px}
 .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px var(--sp-3);margin-top:6px}
 .kv{display:flex;flex-direction:column;font-size:var(--t-sm);min-width:0}

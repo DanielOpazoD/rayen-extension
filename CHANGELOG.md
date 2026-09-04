@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.27.0 — 2026-09-04
+
+Portada clínica del paciente (iteración 4 del plan de diseño).
+
+- **Pestaña «Resumen», primera y por defecto**: problemas activos con peso (hasta seis), tus últimas atenciones con su diagnóstico, interconsultas abiertas con su antigüedad, próximo control sugerido y las alertas de la ficha. Cada sección lleva «Ver todo» a su pestaña. La última nota queda a la vista porque el diario vive bajo las pestañas.
+- «Diagnósticos» pasa a llamarse «Problemas» en el panel (lista de problemas, no columna de la tabla).
+- El peso distingue **crónico** (código CIE o nombre) de **recurrente** (tres o más registros): una bronquitis aguda siete veces ya no salía rotulada «crónico».
+
 ## 2.26.0 — 2026-09-04
 
 Hoy con calendario mensual (iteración 3 del plan de diseño).
