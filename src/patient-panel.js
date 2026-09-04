@@ -1,4 +1,4 @@
-import { rankProblems, prescripcionEstado } from './ficha-rank.js';
+import { rankProblems, prescripcionEstado, proximoControlSugerido } from './ficha-rank.js';
 import { isMine as isMineSic } from './sic.js';
 import { isMedicalVisit } from './patient-report.js';
 import { humanError } from './errors.js';
@@ -144,7 +144,18 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas; y los «Ver todo» de la portada.
   $('patientPanel').addEventListener('click', e => {
     const goto = e.target.closest('button[data-goto]');
-    if (goto) { showTab(goto.dataset.goto); return; }
+    if (goto) {
+      const id = goto.dataset.goto;
+      // «2 abiertas» en la portada y una pestaña que dijera «Sin interconsultas tuyas» sería una contradicción.
+      if (id === 'ic') {
+        const abiertas = cur.sics.filter(s => OPEN_SIC.has(s.grupo));
+        if (abiertas.length && !abiertas.some(isMineSic)) { icFilter = 'otros'; renderIc(); }
+      }
+      showTab(id);
+      // El botón pulsado queda en un panel oculto: el foco sigue a la pestaña, no cae al body.
+      $('patientPanel').querySelector(`.pp-tab[data-pt="${id}"]`)?.focus();
+      return;
+    }
     const seg = e.target.closest('[data-seg][data-scope]');
     if (!seg) return;
     if (seg.dataset.scope === 'at') { atFilter = seg.dataset.seg; renderAt(); }
@@ -465,7 +476,7 @@ const OPEN_SIC = new Set(['pendiente', 'enviada']);
 const pesoLabel = d => d.cronico ? 'crónico' : d.recurrente ? 'recurrente' : '';
 const hoy8 = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
 const seccion = (titulo, goto, cuerpo) =>
-  `<h4>${esc(titulo)}${goto ? ` <button type="button" class="pp-link" data-goto="${goto}">Ver todo</button>` : ''}</h4>${cuerpo}`;
+  `<h4>${esc(titulo)}${goto ? ` <button type="button" class="pp-link" data-goto="${goto}" aria-label="Ver todo: ${esc(titulo)}">Ver todo</button>` : ''}</h4>${cuerpo}`;
 
 /**
  * Portada clínica: lo que conviene saber antes de entrar a la consulta, en una
@@ -479,18 +490,22 @@ function renderResumen() {
   const probs = rankProblems(src, { officerId: CONFIG.officerId }).slice(0, 6);
   const mias = (ficha?.visits?.length ? ficha.visits.filter(isMine) : visits.filter(v => v.atencionId || v.origen !== 'cita')).slice(0, 3);
   const abiertas = sics.filter(s => OPEN_SIC.has(s.grupo));
-  const h = hoy8();
-  const proximo = src.flatMap(v => (v.proximoControl ?? []).map(c => ({ ...c, desde: v.fechaAtencion })))
-    .filter(c => c.fecha8 && c.fecha8 >= h).sort((a, b) => a.fecha8.localeCompare(b.fecha8))[0];
+  const proximo = proximoControlSugerido(src, hoy8());
   const chips = ficha ? alertChips(ficha) : [];
+  // Con la ficha caída (503, sesión vencida) no se afirma nada sobre el registro:
+  // sólo se dice lo que se vio en tus atenciones.
+  const sinFicha = cur.fichaFailed || (ficha && !ficha.visits?.length && ficha.errors?.length > 0);
+  const vacioDx = ficha?.visits?.length ? 'Sin diagnósticos registrados'
+    : sinFicha ? 'Ficha no disponible · sólo tus atenciones, sin diagnósticos'
+    : ficha ? 'Sin diagnósticos en tus atenciones' : 'Consultando ficha…';
 
   let html = chips.length ? `<div class="pp-chips pp-res-chips">${chips.join('')}</div>` : '';
   html += seccion('Problemas activos', 'dx', probs.length
     ? probs.map(d => `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span><span class="pp-row-m">${esc([pesoLabel(d), d.n > 1 ? `${d.n} veces` : '', d.ultima].filter(Boolean).join(' · '))}</span></div>`).join('')
-    : empty(ficha ? 'Sin diagnósticos registrados' : 'Sin diagnósticos en tus atenciones'));
+    : empty(vacioDx));
   html += seccion('Tus últimas atenciones', 'at', mias.length
     ? mias.map(v => `<div class="pp-row"><span class="pp-row-t">${esc(v.tipoAtencion || v.razon || 'Atención')}${(v.diagnosticos ?? [])[0] ? ` <em>${esc(v.diagnosticos[0].nombre)}</em>` : ''}</span><span class="pp-row-m">${esc(v.fechaAtencion)}</span></div>`).join('')
-    : empty('Todavía no lo has atendido'));
+    : empty(sinFicha ? 'Ficha no disponible · ninguna atención tuya en la agenda cargada' : 'Todavía no lo has atendido'));
   html += seccion('Interconsultas abiertas', 'ic', abiertas.length
     ? abiertas.map(s => `<div class="pp-row"><span class="pp-row-t">${esc(s.especialidad)}</span><span class="pp-row-m">${esc([s.estado, s.antiguedadDias != null ? `${s.antiguedadDias} d` : ''].filter(Boolean).join(' · '))}</span></div>`).join('')
     : empty('Ninguna abierta'));
@@ -530,7 +545,7 @@ async function loadAndRenderFicha(force = false) {
       `<button class="btn-mini" id="ppReload" aria-label="Volver a pedir la ficha a Eloisa" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
       (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : '');
   } catch (err) {
-    if (cur === me) { me.fichaFailed = true; renderRx(); $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`; }
+    if (cur === me) { me.fichaFailed = true; renderRx(); renderResumen(); $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`; }
   }
 }
 

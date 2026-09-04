@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rankProblems, prescripcionEstado } from '../src/ficha-rank.js';
+import { rankProblems, prescripcionEstado, proximoControlSugerido } from '../src/ficha-rank.js';
 
 const dx = (nombre, over = {}) => ({ nombre, clasificacion: nombre, codigo: '', certeza: 'Confirmada', esAuge: false, ...over });
 const visita = (fechaAtencion, diagnosticos, prestadores = []) => ({ fechaAtencion, fecha8: fechaAtencion.split('-').reverse().join(''), diagnosticos, prestadores });
@@ -48,4 +48,28 @@ test('la frecuencia rotula «recurrente», no «crónico»: siete bronquitis agu
   const v = n => ({ fechaAtencion: `0${n}-08-2026`, diagnosticos: [{ nombre: 'Bronquitis aguda', codigo: 'J20.9' }] });
   const [b] = rankProblems([v(1), v(2), v(3)], {});
   assert.equal(b.n, 3); assert.equal(b.cronico, false); assert.equal(b.recurrente, true);
+});
+
+test('crónico pesa más que recurrente aunque tenga menos registros', () => {
+  const v = (d, n) => ({ fechaAtencion: `0${n}-08-2026`, diagnosticos: [{ nombre: 'Bronquitis aguda', codigo: 'J20.9' }] });
+  const visits = [v(0, 1), v(0, 2), v(0, 3), v(0, 4), v(0, 5), { fechaAtencion: '01-01-2026', diagnosticos: [{ nombre: 'Diabetes mellitus tipo 2', codigo: 'E11' }] }];
+  const r = rankProblems(visits, {});
+  assert.equal(r[0].nombre, 'Diabetes mellitus tipo 2'); assert.equal(r[0].cronico, true);
+  assert.equal(r[1].recurrente, true);
+});
+
+test('un nombre que niega el problema no lo vuelve crónico; «crónica» en el nombre sí', () => {
+  const visits = [{ fechaAtencion: '01-08-2026', diagnosticos: [{ nombre: 'Sin diabetes', codigo: '' }, { nombre: 'Descarta hipertensión arterial', codigo: '' }, { nombre: 'Gastritis crónica', codigo: 'K29.5' }] }];
+  const by = Object.fromEntries(rankProblems(visits, {}).map(p => [p.nombre, p.cronico]));
+  assert.equal(by['Sin diabetes'], false); assert.equal(by['Descarta hipertensión arterial'], false); assert.equal(by['Gastritis crónica'], true);
+});
+
+test('proximoControlSugerido ignora órdenes descartadas y fechas pasadas', () => {
+  const visits = [
+    { fechaAtencion: '05-08-2026', proximoControl: [{ fecha: '04-09-2026', fecha8: '20260904', descartada: true }] },
+    { fechaAtencion: '20-08-2026', proximoControl: [{ fecha: '01-09-2026', fecha8: '20260901' }, { fecha: '20-10-2026', fecha8: '20261020' }] },
+  ];
+  const p = proximoControlSugerido(visits, '20260904');
+  assert.equal(p.fecha, '20-10-2026'); assert.equal(p.desde, '20-08-2026');
+  assert.equal(proximoControlSugerido([visits[0]], '20260904'), null);
 });
