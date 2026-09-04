@@ -1,3 +1,4 @@
+import { nameOf } from './text.js';
 import { state } from './state.js';
 import { CONFIG, SIC_ESTADOS, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO, sicGrupo } from './config.js';
 import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
@@ -8,9 +9,6 @@ const BASE = '/API/api/rayen/ReferenciaYContrarreferencia';
 
 // ── Parsing ────────────────────────────────────────────────────
 
-function nameOf(v) {
-  return typeof v === 'string' ? v : (v?.Nombre ?? '');
-}
 
 /**
  * Compacts one item of SolicitudInterconsultaDerivacionPorIds (~5 KB) into the

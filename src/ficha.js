@@ -1,3 +1,4 @@
+import { cleanText, nameOf } from './text.js';
 import { CONFIG } from './config.js';
 import { apiGet, apiPost, session } from './http.js';
 import { parseAtencion, fmtDate, localDateStr, formatRun } from './parser.js';
@@ -26,7 +27,6 @@ const FLAGS_ALL = Object.freeze({
 const memo = new Map(); // key → { savedAt, ficha }
 const TTL = 30 * 60 * 1000;
 
-const clean = s => String(s ?? '').replace(/\s+/g, ' ').trim();
 const isRayenDate = v => /^\d{8} \d{4,6}$/.test(String(v));
 
 // ── Generic item description (fallback for sections whose shape is not captured yet) ──
@@ -43,8 +43,8 @@ export function describe(item) {
   let label = '';
   for (const k of LABEL_KEYS) {
     const v = item[k];
-    if (typeof v === 'string' && v.trim()) { label = clean(v); break; }
-    if (v && typeof v === 'object' && typeof v.Nombre === 'string' && v.Nombre.trim()) { label = clean(v.Nombre); break; }
+    if (typeof v === 'string' && v.trim()) { label = cleanText(v); break; }
+    if (v && typeof v === 'object' && typeof v.Nombre === 'string' && v.Nombre.trim()) { label = cleanText(v.Nombre); break; }
   }
   const details = [];
   for (const k of DETAIL_KEYS) {
@@ -55,8 +55,8 @@ export function describe(item) {
   if (!label) {
     for (const [k, v] of Object.entries(item)) {
       if (SKIP.test(k)) continue;
-      if (typeof v === 'string' && v.trim().length > 1) { label = clean(v); break; }
-      if (v && typeof v === 'object' && typeof v.Nombre === 'string' && v.Nombre.trim()) { label = clean(v.Nombre); break; }
+      if (typeof v === 'string' && v.trim().length > 1) { label = cleanText(v); break; }
+      if (v && typeof v === 'object' && typeof v.Nombre === 'string' && v.Nombre.trim()) { label = cleanText(v.Nombre); break; }
     }
   }
   return { label: label || '(sin descripción)', details, raw: item };
@@ -66,13 +66,13 @@ export function describe(item) {
 
 /** "Losartan 50 mg : 1 comprimido cada 12 horas por 12 meses de la Receta Nº 593522430" */
 function mapPrescripcion(p) {
-  const txt = clean(p.Descripcion);
+  const txt = cleanText(p.Descripcion);
   const m = txt.match(/^(.*?)\s*de la Receta N[º°]\s*(\d+)/i);
   const details = [];
   if (p.IdReceta || m?.[2]) details.push(`Receta Nº ${p.IdReceta || m[2]}`);
   if (p.Suspendido) details.push('SUSPENDIDO');
   if (p.EsExterna)  details.push('externa');
-  if (clean(p.Observacion)) details.push(clean(p.Observacion));
+  if (cleanText(p.Observacion)) details.push(cleanText(p.Observacion));
   return { label: m?.[1] ?? txt, details, suspendido: !!p.Suspendido, raw: p };
 }
 
@@ -92,15 +92,15 @@ function mapOrdenInterna(o) {
   if (o.FechaSugerida && o.FechaSugerida !== '00010101 000000') details.push(`sugerido ${fmtDate(o.FechaSugerida)}${o.CuantosDiasMas ? ` (+${o.CuantosDiasMas} d)` : ''}`);
   if (o.PrioridadAlta) details.push('prioridad alta');
   if (o.FechaDescarte && o.FechaDescarte !== '00010101 000000') details.push(`descartada ${fmtDate(o.FechaDescarte)}`);
-  return { label: clean(o.Motivo) || 'Control', details, raw: o };
+  return { label: cleanText(o.Motivo) || 'Control', details, raw: o };
 }
 
 function mapPrueba(p) {
-  return { label: clean(p.Descripcion), details: [p.Estado].filter(Boolean), raw: p };
+  return { label: cleanText(p.Descripcion), details: [p.Estado].filter(Boolean), raw: p };
 }
 
 function mapDerivacion(d) {
-  return { label: clean(d.Descripcion), details: [], raw: d };
+  return { label: cleanText(d.Descripcion), details: [], raw: d };
 }
 
 const SECTIONS = [
@@ -148,10 +148,10 @@ export function parseFichaAtencion(a) {
 export function parseAntecedentes(d) {
   if (!d || typeof d !== 'object') return { farmacos: [], morbidos: [], alergias: [], eventosAdversos: [] };
   const farmacos = (d.farmacoEnUsos?.medications ?? []).map(m => {
-    const txt = clean(m.Descripcion);
+    const txt = cleanText(m.Descripcion);
     const estado = (txt.match(/Estado Receta:\s*([^.]+)/i) ?? [])[1]?.trim() ?? '';
     return {
-      label:   clean(m.DescripcionArticulo) || txt.split(/N[º°] Receta/i)[0].trim(),
+      label:   cleanText(m.DescripcionArticulo) || txt.split(/N[º°] Receta/i)[0].trim(),
       posologia: (txt.split(/N[º°] Receta/i)[0].split(':').slice(1).join(':')).trim(),
       receta:  m.IdReceta ?? 0,
       fecha:   fmtDate(m.FechaReceta ?? ''),
@@ -161,7 +161,7 @@ export function parseAntecedentes(d) {
   });
   const morbidos = (d.antecedenteMedicoPersonal ?? [])
     .filter(x => x.Seleccionado !== false && !x.EsBorrado)
-    .map(x => ({ label: clean(x.Diagnostico), fecha: fmtDate(x.Fecha ?? ''), morbido: !!x.EsMorbido }));
+    .map(x => ({ label: cleanText(x.Diagnostico), fecha: fmtDate(x.Fecha ?? ''), morbido: !!x.EsMorbido }));
 
   // `alergia` / `eventoAdverso` mix catalogs (reaccionAdversa, categories…) with the
   // patient's own entries; keep only lists whose items reference the patient.
@@ -191,7 +191,6 @@ export function parseProgramas(list) {
 export function parseMaster(u) {
   if (!u) return null;
   const tel = (u.Telefonos ?? []).filter(t => !t.Eliminado && !t.EsBorrado).map(t => t.TelefonoDescripcion).filter(Boolean);
-  const nameOf = v => typeof v === 'string' ? v : (v?.Nombre ?? '');
   const fam = u.Familia ?? {};
   return {
     idUsp:        u.Id,

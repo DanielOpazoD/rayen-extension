@@ -28,7 +28,7 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
 
   await page.locator('#btnFetch').click();
   await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones( · .+)?$/);
-  await expect(page.locator('#syncOverall')).toHaveText(/^(Al día|Pendiente)$/);
+  await expect(page.locator('#syncOverall')).toHaveText(/^(Al día( · sin ficha)?|Pendiente)$/);
   const total = Number((await page.locator('#statusBar').innerText()).split(' ')[0]);
   expect(total).toBeGreaterThan(0);
 

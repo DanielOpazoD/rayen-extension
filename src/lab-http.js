@@ -42,8 +42,8 @@ async function labRequest(path, init = {}) {
   return res;
 }
 
-export async function labGet(path) {
-  return (await labRequest(path)).json();
+export async function labGet(path, init = {}) {
+  return (await labRequest(path, init)).json();
 }
 
 export async function labBlob(path) {

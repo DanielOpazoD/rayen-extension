@@ -131,3 +131,10 @@ test('una orden sin documento no puede desmentirse y no bloquea el lote', () => 
   // No es la que puede colar a otro paciente: sin documento, no afirma nada.
   assert.equal(ordersMatchRut([{ NumeroOrden: '02131899' }], '11957001'), true);
 });
+
+// Balance 5: una orden sin documento en un lote donde las demás sí lo declaran
+// desentona; el lote entero se rechaza.
+test('ordersMatchRut rechaza el lote si una orden no declara documento y las demás sí', () => {
+  assert.equal(ordersMatchRut([{ numDocumentoCompleto: '0119570018' }, {}], '11957001'), false);
+  assert.equal(ordersMatchRut([{}, {}], '11957001'), true, 'sin ningún documento no hay con qué desmentir');
+});

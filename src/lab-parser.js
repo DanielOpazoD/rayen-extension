@@ -1,3 +1,4 @@
+import { cleanText } from './text.js';
 /**
  * Parser clínico de informes de laboratorio.
  *
@@ -15,7 +16,7 @@
  *    tendencias sistémicas, salvo las razones RAC y RPC, que sí son sistémicas.
  */
 
-export const cleanText = value => String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+export { cleanText };
 
 export const comparisonToken = value => cleanText(value)
   .normalize('NFD')

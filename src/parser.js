@@ -1,3 +1,4 @@
+import { nameOf } from './text.js';
 import { DOW_LABEL, SEXO_BY_ID } from './config.js';
 
 // ── Date helpers ──────────────────────────────────────────────
@@ -144,9 +145,6 @@ function parseDesc(desc = '') {
   return { citadoPor, sicNum };
 }
 
-function nameOf(v) {
-  return typeof v === 'string' ? v : (v?.Nombre ?? '');
-}
 
 /** Fields of a cita already mapped by parseCita (used by the API explorer). */
 export const CITA_KNOWN_FIELDS = new Set([

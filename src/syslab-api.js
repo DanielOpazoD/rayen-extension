@@ -17,11 +17,11 @@ export async function checkSyslabSession() {
   return true;
 }
 
-export async function buscarExamenesPorRut(rutBody) {
+export async function buscarExamenesPorRut(rutBody, { signal } = {}) {
   const body = normalizeRutBody(rutBody);
   if (!/^\d{5,9}$/.test(body)) throw new Error('RUT sin dígito verificador no válido.');
 
-  const exams = await syslabSearchByRut(body);
+  const exams = await syslabSearchByRut(body, { signal });
   if (!examRowsMatchRut(exams, body)) {
     throw new Error('SysLab devolvió órdenes que no corresponden al RUN consultado.');
   }
