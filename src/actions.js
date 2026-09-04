@@ -1,5 +1,6 @@
+import { humanError } from './errors.js';
 import { state, setNote, sicsByRun, contacts } from './state.js';
-import { saveNote, restoreNote, patientKey } from './notes.js';
+import { saveNote, restoreNote, patientKey, addNote, updateNote } from './notes.js';
 import { openPanel } from './patient-panel.js';
 import { toast, copyToClipboard, flashOk } from './toast.js';
 import { setStatus } from './ui.js';
@@ -19,12 +20,12 @@ export async function writeNote(record, text) {
   const after  = text.trim();
   if (before === after) return true;
   try {
-    await saveNote(record, after);
-    setNote(record, after);
+    const notas = await saveNote(record, after);
+    setNote(record, notas[0]?.text ?? '', notas);
     const undo = before
       ? { label: 'Deshacer', onClick: async () => {
-            await restoreNote(record, before);
-            setNote(record, before);
+            const restored = await restoreNote(record, before);
+            setNote(record, restored[0]?.text ?? '', restored);
             toast('Nota restaurada');
           } }
       : null;
@@ -33,6 +34,33 @@ export async function writeNote(record, text) {
   } catch (err) {
     setStatus(`No se pudo guardar la nota: ${err.message}`, 'err');
     toast('No se pudo guardar la nota', { tone: 'bad' });
+    return false;
+  }
+}
+
+/** Diario: añade una nota con fecha. */
+export async function addNoteEntry(record, text) {
+  if (!String(text ?? '').trim()) return false;
+  try {
+    const notas = await addNote(record, text);
+    setNote(record, notas[0]?.text ?? '', notas);
+    toast('Nota añadida');
+    return true;
+  } catch (err) {
+    toast(`No se pudo guardar la nota. ${humanError(err, 'Chrome')}`, { tone: 'bad' });
+    return false;
+  }
+}
+
+/** Diario: edita (o elimina, si queda vacía) la entrada `at`. */
+export async function editNoteEntry(record, at, text) {
+  try {
+    const notas = await updateNote(record, at, text);
+    setNote(record, notas[0]?.text ?? '', notas);
+    toast(String(text ?? '').trim() ? 'Nota actualizada' : 'Nota eliminada', { tone: 'ok' });
+    return true;
+  } catch (err) {
+    toast(`No se pudo guardar la nota. ${humanError(err, 'Chrome')}`, { tone: 'bad' });
     return false;
   }
 }

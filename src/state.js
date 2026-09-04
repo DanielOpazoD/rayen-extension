@@ -47,10 +47,11 @@ export function setPrefs(patch, { rerender = false } = {}) {
 }
 
 /** Same note on every row of that patient, then one event. */
-export function setNote(record, text) {
+export function setNote(record, text, notas = null) {
   const key = patientKey(record);
-  for (const p of state.allData) if (patientKey(p) === key) p.note = text;
+  for (const p of state.allData) if (patientKey(p) === key) { p.note = text; if (notas) p.notas = notas; }
   record.note = text;
+  if (notas) record.notas = notas;
   state.version++;
   emit('notes', record);
 }

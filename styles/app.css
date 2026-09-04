@@ -491,6 +491,14 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-rx-r small{color:var(--ink-3);font-size:var(--t-xs);flex:1}
 .pp-note{padding:var(--sp-3) var(--sp-4);border-top:1px solid var(--rule);background:var(--surface-3)}
 .pp-note label{display:block;font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+/* Diario: una tarjeta por nota, la más nueva arriba; editar en el sitio. */
+.pp-notes{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.pp-nota{border:1px solid var(--rule-2);border-radius:var(--r-sm);background:var(--card);padding:6px 8px}
+.pp-nota-h{display:flex;justify-content:space-between;align-items:center;font-size:var(--t-xs);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.pp-nota-t{font-size:var(--t-sm);color:var(--ink-2);white-space:pre-wrap;line-height:1.5;margin-top:2px}
+.pp-nota-e{display:none;margin-top:4px}.pp-nota-e textarea{width:100%;border:1px solid var(--brand);border-radius:var(--r-sm);padding:6px 8px;font-size:var(--t-sm);min-height:56px;resize:vertical;background:var(--card)}
+.pp-nota-e div{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+.pp-nota.editing .pp-nota-t,.pp-nota.editing .pp-nota-h button{display:none}.pp-nota.editing .pp-nota-e{display:block}
 #ppNoteText{width:100%;border:1px solid var(--rule);border-radius:var(--r-sm);padding:8px;font-size:var(--t-sm);resize:vertical;min-height:64px;outline:none;background:var(--card)}
 #ppNoteText:focus{border-color:var(--brand)}
 #ppSaveNote{margin-top:6px;margin-left:auto;display:block;height:var(--h-ctl);padding:0 16px;background:var(--brand);color:var(--on-brand);border:none;border-radius:var(--r-sm);font-size:var(--t-sm);font-weight:600;cursor:pointer}

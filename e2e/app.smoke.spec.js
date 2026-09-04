@@ -165,8 +165,16 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
   await page.locator('#ppPaneIc .pp-seg button[data-seg="otros"]').click();
   await expect(page.locator('#ppPaneIc .pp-seg button[data-seg="otros"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('.pp-tab[data-pt="dx"]').click();
+  // Diario de notas: añadir crea una entrada con fecha y la tabla muestra la última.
+  const antes = await page.locator('#ppNotes .pp-nota').count();
+  await page.locator('#ppNoteText').fill('Control en 30 días');
+  await page.locator('#ppSaveNote').click();
+  await expect(page.locator('#ppNotes .pp-nota')).toHaveCount(antes + 1);
+  await expect(page.locator('#ppNotes .pp-nota-t').first()).toHaveText('Control en 30 días', { timeout: 5000 });
+  await expect(page.locator('#ppNoteText')).toHaveValue('');
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
+  await expect(rows.nth(1).locator('td[data-c="nota"]')).toContainText('Control en 30 días');
   await expect(page.locator('#mainContent')).toHaveJSProperty('inert', false);
   await expect(rows.nth(1)).toBeFocused();
   // Cerrado, ningún control del panel es alcanzable con Tab.

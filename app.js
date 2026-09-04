@@ -5,7 +5,7 @@ import { initLock } from './src/lock.js';
 import { $, initTooltips, initTablist, activateOnKey } from './src/dom.js';
 import { state, setPrefs, on } from './src/state.js';
 import { remeasure } from './src/ui.js';
-import { registerTabs, writeNote, openPatient, patientList } from './src/actions.js';
+import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/actions.js';
 import { CONFIG } from './src/config.js';
 import { patientKey } from './src/notes.js';
 import * as loader from './src/loader.js';
@@ -60,6 +60,7 @@ ajustes.init({ lock });
 
 initPanel({
   saveNote: writeNote,                      // the panel has no path of its own
+  addNote: addNoteEntry, editNote: editNoteEntry, // diario de notas
   onNavigate(dir, current) {                // ‹ › and ←/→ walk the table's order
     const list = patientList();
     const i    = list.findIndex(p => patientKey(p) === patientKey(current));
