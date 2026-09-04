@@ -8,6 +8,7 @@ export function setStatus(msg, cls = 'idle') {
   el.textContent = msg;
   el.className = cls;
   el.title = msg; // en el riel el texto puede recortarse; el completo queda a mano
+  remeasure(); // el estado comparte riel con las pestañas: su ancho decide si desbordan
 }
 
 export const debounce = (fn, ms) => { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; };
@@ -104,6 +105,7 @@ export function markSorted(headers, active, dir) {
  * The tables fill whatever the controls leave. Measuring beats a hardcoded
  * offset: fold the filters and the table grows by itself.
  */
+let observed = false;
 function measureChrome() {
   const pane = document.querySelector('.tab-pane.active');
   const bar  = pane?.querySelector('.toolbar');
@@ -111,6 +113,18 @@ function measureChrome() {
   const h = ($('topbar')?.offsetHeight ?? 0) + (bar?.offsetHeight ?? 0) + (fp?.offsetHeight ?? 0)
           + (pane?.querySelector('.stats')?.offsetHeight ?? 0) + 48;
   document.documentElement.style.setProperty('--chrome-h', `${h}px`);
+  const tabs = document.querySelector('.tabs');
+  if (tabs) {
+    tabs.classList.toggle('overflowing', tabs.scrollWidth > tabs.clientWidth + 1);
+    // El riel cambia de tamaño cuando aparece o crece el estado de sincronización;
+    // se observa desde la primera medición, cuando el riel ya existe (el arnés
+    // de desarrollo monta el DOM después de evaluar los módulos).
+    if (!observed && typeof ResizeObserver !== 'undefined') {
+      observed = true;
+      new ResizeObserver(remeasure).observe(tabs);
+    }
+  }
 }
 export const remeasure = () => requestAnimationFrame(measureChrome);
 window.addEventListener('resize', remeasure);
+

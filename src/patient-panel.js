@@ -186,10 +186,11 @@ function renderHeader() {
   $('ppAvatar').textContent = initials;
   $('ppName').textContent = record.nombre;
   $('ppName').title = record.nombre;
+  // El RUN va primero: es el identificador clínico y se recortaba al final.
   $('ppMeta').textContent = [
+    record.runStr ? `RUN ${record.runStr}` : '',
     m?.sexo || record.sexo,
     record.edadLabel || contact.edad || (record.edad != null ? `${record.edad} años` : ''),
-    record.runStr ? `RUN ${record.runStr}` : '',
     m?.prevision || record.prevision || contact.prevision,
   ].filter(Boolean).join(' · ');
 }
@@ -422,10 +423,17 @@ async function loadAndRenderFicha(force = false) {
     me.ficha = ficha;
     renderAll();
     const mineN = ficha.visits.filter(isMine).length;
+    // Antes decía «Ficha completa · 0 atenciones» junto a siete errores 503, con
+    // la hora con segundos y las rutas HTTP en el tooltip.
+    const n = ficha.visits.length;
+    const fallos = ficha.errors.length;
+    const estado = fallos ? `Ficha parcial · ${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}` : 'Ficha completa';
+    const hora = new Date(ficha.savedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const humanFichaError = e => { const m = String(e).match(/^([^:]{2,40}):\s*(.+)$/); return m ? `${m[1]}: ${humanError(m[2], 'Eloisa')}` : humanError(e, 'Eloisa'); };
     $('ppFichaStatus').innerHTML =
-      `<span>Ficha completa · ${ficha.visits.length} atenciones (${mineN} mías)${ficha.visits.length ? ` desde ${ficha.visits[ficha.visits.length - 1].fechaAtencion}` : ''} · ${new Date(ficha.savedAt).toLocaleTimeString('es-CL')}</span>` +
-      `<button class="btn-mini" id="ppReload" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
-      (ficha.errors.length ? `<span class="al al-warn" data-tip="${esc(ficha.errors.join('\n'))}">⚠ ${ficha.errors.length}</span>` : '');
+      `<span>${estado} · ${n} ${n === 1 ? 'atención' : 'atenciones'} (${mineN} mías)${n ? ` desde ${esc(ficha.visits[n - 1].fechaAtencion)}` : ''} · ${hora}</span>` +
+      `<button class="btn-mini" id="ppReload" aria-label="Volver a pedir la ficha a Eloisa" data-tip="Volver a pedir la ficha a Eloisa">↻</button>` +
+      (fallos ? `<span class="al al-warn" tabindex="0" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠ ${fallos}</span>` : '');
   } catch (err) {
     if (cur === me) $('ppFichaStatus').innerHTML = `<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`;
   }

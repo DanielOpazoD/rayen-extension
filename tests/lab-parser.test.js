@@ -287,3 +287,35 @@ test('el VCM alto conserva su alerta aunque le siga un analito de tres palabras'
   assert.equal(vcm.refValue, '80 - 100');
   assert.equal(findingAlert(vcm), true, 'macrocitosis: 110 fuera de 80–100');
 });
+
+// Balance 4: dos rótulos de grupo seguidos, cualitativos en texto libre y el
+// «4.500» sin unidad.
+test('varios rótulos de grupo: la unidad queda limpia y rige la referencia de adultos', () => {
+  const [k] = parseReportText('QUIMICA\nPotasio: 4,1 mEq/L Niños: 3,4 - 4,7 Adultos: 3,5 - 5,0');
+  assert.equal(k.unit, 'mEq/L');
+  assert.equal(k.refValue, '3,5 - 5,0');
+  const [solo] = parseReportText('QUIMICA\nCalcio: 9,1 mg/dL Niños: 8,8 - 10,8');
+  assert.equal(solo.unit, 'mg/dL');
+  assert.equal(solo.refValue, '8,8 - 10,8', 'sin rótulo de adultos, la primera referencia');
+});
+
+test('los resultados en texto libre de orina y cultivos se conservan; un dato administrativo no', () => {
+  const out = parseReportText(['ORINA', 'Color: AMARILLO Densidad: 1.020', 'Aspecto: Ligeramente turbio',
+    'UROCULTIVO', 'Cultivo: Se observa desarrollo de Escherichia coli > 100.000 UFC/mL', 'Germen aislado: Escherichia coli',
+    'HEMOGRAMA', 'Medico tratante: Dr. Perez', 'Hemoglobina: 13,5 g/dL 13 - 17'].join('\n'));
+  const by = Object.fromEntries(out.map(f => [f.analysis, f]));
+  assert.equal(by.Color?.result, 'AMARILLO');
+  assert.equal(by.Densidad?.result, '1.020', 'el numérico que seguía al cualitativo ya no se pierde');
+  assert.equal(by.Aspecto?.result, 'Ligeramente turbio');
+  assert.match(by.Cultivo?.result ?? '', /Escherichia coli/);
+  assert.equal(by.Cultivo.qualitative, true);
+  assert.equal(by['Germen aislado']?.result, 'Escherichia coli');
+  assert.equal(by['Medico tratante'], undefined, 'texto libre sólo donde es un resultado');
+  assert.equal(by.Hemoglobina?.refValue, '13 - 17');
+});
+
+test('«4.500» sin unidad es ambiguo sólo cuando es un recuento', () => {
+  assert.deepEqual(parseMeasurement('4.500', { analysis: 'Recuento Leucocitos', unit: '', refValue: '' }), { comparator: '=', value: 4.5, ambiguous: true });
+  assert.deepEqual(parseMeasurement('4.500', { analysis: 'Recuento Leucocitos', unit: '/uL', refValue: '4.000 - 10.000' }), { comparator: '=', value: 4500 });
+  assert.deepEqual(parseMeasurement('1.020', { analysis: 'Densidad', unit: '', refValue: '' }), { comparator: '=', value: 1.02 });
+});

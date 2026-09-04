@@ -210,3 +210,16 @@ test('la misma variable con y sin rótulo de edad cae en una sola fila y forma t
   assert.equal(rows.length, 1, `una sola fila de potasio; hay ${rows.length}`);
   assert.ok(a.trends.length >= 1, 'dos mediciones de la misma variable forman tendencia');
 });
+
+// Balance 4: un «4.500» sin unidad se mezclaba con 4500 de otro informe en la
+// tendencia de leucocitos.
+test('un recuento ambiguo no entra a la tendencia', () => {
+  // Tres informes de la misma fila (misma sección, analito y unidad vacía): el
+  // primero es «4.500», que sin unidad puede ser 4,5 o 4500.
+  const exam = (id, date) => ({ id, date, time: '08:00', patientName: 'PEREZ, JUAN', origin: 'MEDICINA', exams: ['Hemograma'], rutBody: '16940645' });
+  const det = (id, result) => ({ examId: id, rutBody: '16940645', findings: [{ section: 'HEMOGRAMA', analysis: 'Recuento Leucocitos', result, unit: '', refValue: '' }] });
+  const a = buildAnalysis([det('401', '4.500'), det('402', '6100'), det('403', '5800')], [exam('401', '01/07/2026'), exam('402', '01/08/2026'), exam('403', '01/09/2026')]);
+  const t = a.trends.find(x => /leucocit/i.test(x.analysis));
+  const puntos = (t?.points ?? []).filter(Boolean).map(p => p.value);
+  assert.deepEqual(puntos, [6100, 5800], 'el ambiguo queda fuera; los dos claros forman la tendencia');
+});

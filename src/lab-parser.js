@@ -134,7 +134,11 @@ export function parseMeasurement(value, context) {
   if (!Number.isFinite(number)) return null;
   const rawComparator = match[1] || '=';
   const comparator = rawComparator === '≤' ? '<=' : rawComparator === '≥' ? '>=' : rawComparator;
-  return { comparator, value: number };
+  // «4.500» sin unidad ni referencia puede ser 4,5 o 4500: se entrega el valor
+  // decimal pero marcado, para que las tendencias no lo mezclen con 4500.
+  const esRecuento = /recuento|rcto|leucocit|plaquet|eritrocit|hemat[ií]es|colonias|ufc|c[ée]lulas/i.test(cleanText(context && context.analysis));
+  const ambiguous = esRecuento && /^\d{1,3}\.\d{3}$/.test(unsignedNumeric) && !unit && !refValue && normalized === numeric;
+  return ambiguous ? { comparator, value: number, ambiguous: true } : { comparator, value: number };
 }
 
 const parseReferenceNumber = (value, context) => parseMeasurement(value, context)?.value;
@@ -238,10 +242,25 @@ const WORDED_BOUNDS = [
 // parte de la unidad. Dejarlo dentro partía una misma variable en dos filas.
 const UNIT_TRAILING_LABEL = /\s*\b(?:Adultos?|Ni[ñn][oa]s?|Hombres?|Mujeres|Embarazadas?|Lactantes?|Reci[ée]n\s+nacidos?|Valores?\s+(?:de\s+)?referencia)\s*:?\s*$/i;
 
+// «mEq/L Niños: 3,4 - 4,7 Adultos: 3,5 - 5,0»: la unidad termina donde empieza
+// el primer rótulo de grupo; la referencia que rige es la de adultos y, si no
+// la hay, la primera. Antes sólo se pelaba el último rótulo y el resto quedaba
+// dentro de la unidad, partiendo la variable en dos filas.
+const GROUP_LABEL_ANY = /\b(?:Adultos?|Ni[ñn][oa]s?|Hombres?|Mujeres|Embarazadas?|Lactantes?|Reci[ée]n\s+nacidos?)\s*:/i;
+const ANY_REFERENCE = new RegExp(`((?:[<>]=?|[≤≥])\\s*${LOCALIZED_NUMBER_SOURCE}|${LOCALIZED_NUMBER_SOURCE}\\s*[-–]\\s*${LOCALIZED_NUMBER_SOURCE})`);
+const ADULT_REFERENCE = new RegExp(`Adultos?\\s*:\\s*((?:[<>]=?|[≤≥])\\s*${LOCALIZED_NUMBER_SOURCE}|${LOCALIZED_NUMBER_SOURCE}\\s*[-–]\\s*${LOCALIZED_NUMBER_SOURCE})`, 'i');
+
 function splitReportUnitAndReference(rest) {
   let cleaned = String(rest || '').replace(/^\s*\|+\s*|\s*\|+\s*$/g, '').trim();
   if (!cleaned) return { unit: '', refValue: '' };
   for (const [regex, replacement] of WORDED_BOUNDS) cleaned = cleaned.replace(regex, replacement);
+  const group = cleaned.search(GROUP_LABEL_ANY);
+  if (group >= 0) {
+    const groups = cleaned.slice(group);
+    const chosen = groups.match(ADULT_REFERENCE)?.[1] ?? groups.match(ANY_REFERENCE)?.[1] ?? '';
+    const before = splitReportUnitAndReference(cleaned.slice(0, group));
+    return { unit: before.unit, refValue: (chosen || before.refValue).trim() };
+  }
   const rangeSuffix = cleaned.match(REFERENCE_SUFFIX_REGEX);
   let unit = cleaned, refValue = '';
   if (rangeSuffix && Number.isInteger(rangeSuffix.index)) {
@@ -270,7 +289,9 @@ const isValidAnalysis = analysis => analysis.length >= 2 && analysis.length <= 6
 // pliega. Las versiones anteriores cortaban ante cualquier «palabra: número» y
 // decidían por trozos; con nombres de tres palabras tras otro analito completo
 // el VCM perdía su rango y, con él, su alerta.
-const VALUE_ANCHOR = /:\s*\|?\s*(?:[<>]=?|[≤≥])?\s*[+-]?\s*\d[\d.,]*/g;
+// Un valor en mayúsculas («Color: AMARILLO») también ancla: sin esto «Color:
+// AMARILLO Densidad: 1.020» llegaba entero y se perdían los dos.
+const VALUE_ANCHOR = /:\s*\|?\s*(?:(?:[<>]=?|[≤≥])?\s*[+-]?\s*\d[\d.,]*|[A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,})*)/g;
 const HEAD_WORD = /^[A-ZÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑáéíóúñ]*\.?$/;
 const HEAD_CONNECTOR = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'en', 'y', 'e', 'a', 'por', 'con']);
 const UNIT_LIKE_HEAD = /^(?:m?UI|IU|U|mU|UFC|UF)$/;
@@ -342,12 +363,36 @@ function parseAnalyteSegment(segment, currentSection) {
     };
   }
   match = segment.match(REPORT_NUMERIC_REGEX);
-  if (!match) return null;
-  const analysis = normalizeAnalysisName(match[1], currentSection);
-  if (!isValidAnalysis(analysis)) return null;
-  const split = splitReportUnitAndReference(match[3]);
+  if (match) {
+    const analysis = normalizeAnalysisName(match[1], currentSection);
+    if (!isValidAnalysis(analysis)) return null;
+    const split = splitReportUnitAndReference(match[3]);
+    return {
+      section: currentSection, analysis, result: match[2].replace(/\s+/g, ''),
+      unit: split.unit, refValue: split.refValue,
+    };
+  }
+  return parseFreeQualitative(segment, currentSection);
+}
+
+// Un resultado en texto libre («Cultivo: Se observa desarrollo de Escherichia
+// coli > 100.000 UFC/mL», «Aspecto: Ligeramente turbio») se conserva como
+// hallazgo cualitativo sin alerta numérica, sólo en las secciones o rótulos
+// donde ese texto es el resultado. Antes se descartaba en silencio y la
+// tarjeta del cultivo aparecía sin germen.
+// «GRAM» con límites de palabra: HEMOGRAMA no es una sección de texto libre.
+const FREE_TEXT_SECTION = /ORINA|SEDIMENTO|CULTIVO|MICROBIO|BACTERIO|ANTIBIOGRAMA|\bGRAM\b|PARASIT|COPRO|SECRECI|MICOL|HONGOS/i;
+const FREE_TEXT_LABEL = /cultivo|germen|microorganismo|antibiograma|\bgram\b|aspecto|color|olor|observaci|tinci[óo]n|identificaci[óo]n|desarrollo/i;
+function parseFreeQualitative(segment, currentSection) {
+  const m = segment.match(/^([^:]{2,60}):\s*(.{2,200})$/);
+  if (!m) return null;
+  const label = cleanText(m[1]);
+  if (!isValidAnalysis(label)) return null;
+  if (!FREE_TEXT_SECTION.test(currentSection) && !FREE_TEXT_LABEL.test(label)) return null;
+  const text = cleanText(m[2]);
+  if (/^[\d.,\s<>≤≥=+-]+$/.test(text)) return null; // eso era un número mal formado, no texto
   return {
-    section: currentSection, analysis, result: match[2].replace(/\s+/g, ''),
-    unit: split.unit, refValue: split.refValue,
+    section: currentSection, analysis: normalizeAnalysisName(label, currentSection), result: text,
+    unit: '', refValue: '', qualitative: true, free: true,
   };
 }

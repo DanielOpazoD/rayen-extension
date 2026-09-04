@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 2.16.0 — 2026-09-03
+
+Etapa 4: lo que el cuarto balance (4,8/7) encontró abierto, verificado ejecutando.
+
+- **El PDF único lleva el RUT que se buscó**, no lo que haya escrito en el campo: editarlo sin volver a buscar guardaba los informes de una persona con el RUT de otra. Con la tabla desfasada, «Todos los PDF» queda deshabilitado.
+- **Exportar interconsultas pide confirmación** con recuento de pacientes y aviso de contenido, como Atenciones. **El almacén de interconsultas se poda con la retención elegida** (llevaba teléfono y dirección sin límite).
+- **Parser**: con varios rótulos de grupo («Niños: … Adultos: …») la unidad queda limpia y rige la referencia de adultos; los resultados en texto libre de orina y cultivos se conservan («Cultivo: Se observa desarrollo de Escherichia coli…», «Aspecto: Ligeramente turbio», «Color: AMARILLO» seguido de un numérico), sin convertir en resultado un dato administrativo; un «4.500» sin unidad en un recuento se marca ambiguo y no entra a la tendencia.
+- **Pestañas con afordancia de desborde** (degradado en el borde y la activa siempre a la vista) y **tabla de Atenciones que cabe a 1440 px** con Notas visible.
+- **Panel honesto**: «Ficha parcial · 7 fuentes fallaron · 22:39» en vez de «Ficha completa · 0 atenciones»; el tooltip de fallos habla en frases, no en rutas; el RUN va primero y ya no se recorta.
+- **Foco visible** en filas y campos que apagaban el outline; `--ink-4` deja de usarse como texto en cuatro sitios más; horas siempre en 24 h; «Desde caché» pasa a «Guardadas antes».
+- Limpieza tras el merge: once reglas CSS sin emisor y el guion muerto de contrarreferencias en las pruebas.
+
 ## 2.15.1 — 2026-09-03
 
 Integración con `main`. La rama de trabajo nació antes de dos pull requests que se mergearon hoy en `main` (#6, smoke de navegador en CI; #7, sincronización compacta y **retirada del metadato «contrarreferencia»** de filtros, tablas, pendientes, estadísticas, informes y exportaciones, con su petición adicional). Al integrar prevalece esa decisión de producto, que es la más reciente: desaparecen aquí también el cruce de contrarreferencias, el gráfico «% sin contrarreferencia», la regla de pendientes «sin contrarreferencia» y su umbral. Todo lo demás de esta rama se conserva; el riel de estado y el panel de sincronización quedan en la versión de esta rama, que ya integraba lo que #7 buscaba. La 2.6.0 que `main` declaraba para #7 queda absorbida por esta entrada.

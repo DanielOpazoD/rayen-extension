@@ -130,8 +130,18 @@ export function init() {
   $('btnSicClear').addEventListener('click', () => { clearFilters(); render(); });
   $('btnSicRefresh').addEventListener('click', () => ensureSICs(true));
   document.addEventListener('rayen:retry-sics', () => ensureSICs(true));
-  $('btnSicExport').addEventListener('click',    () => { const r = sortSICs(filterSICs(state.sics)); exportSICsCSV(r); toast(`CSV: ${r.length} interconsultas`); });
-  $('btnSicExportXls').addEventListener('click', () => { const r = sortSICs(filterSICs(state.sics)); exportSICsXLS(r); toast(`Excel: ${r.length} interconsultas`); });
+  // Como en Atenciones: un archivo con nombre, RUN y diagnóstico sale del
+  // navegador, así que se confirma diciendo cuántos pacientes lleva.
+  const exportSics = (fmt, exporter) => {
+    const r = sortSICs(filterSICs(state.sics));
+    const pacientes = new Set(r.map(s => s.paciente?.run || s.paciente?.nombre)).size;
+    const aviso = `¿Exportar ${r.length} ${r.length === 1 ? 'interconsulta' : 'interconsultas'} de ${pacientes} ${pacientes === 1 ? 'paciente' : 'pacientes'} a ${fmt}?\n\nEl archivo incluye nombre, RUN y diagnóstico. Guárdalo sólo en un equipo del hospital.`;
+    if (!window.confirm(aviso)) return;
+    exporter(r);
+    toast(`${fmt}: ${r.length} interconsultas`);
+  };
+  $('btnSicExport').addEventListener('click',    () => exportSics('CSV', exportSICsCSV));
+  $('btnSicExportXls').addEventListener('click', () => exportSics('Excel', exportSICsXLS));
 
   $('sicBody').addEventListener('click', async e => {
     const pdf = e.target.closest('.pdf-sic');

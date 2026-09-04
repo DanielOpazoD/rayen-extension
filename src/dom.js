@@ -104,6 +104,7 @@ export function initTablist(nav, onSelect, key) {
       t.setAttribute('aria-selected', String(on));
       t.tabIndex = on ? 0 : -1;
       if (on && focus) t.focus();
+      if (on) t.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); // la activa nunca queda fuera del riel
     }
     onSelect(id);
   };

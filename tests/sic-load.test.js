@@ -4,6 +4,8 @@ import { installFakeChrome } from './helpers/fake-chrome.js';
 import { CONFIG } from '../src/config.js';
 import { loadSICs } from '../src/sic.js';
 import { cancelRun, resetRun } from '../src/http.js';
+import { setPrefs } from '../src/state.js';
+import { pruneByRetention } from '../src/sic.js';
 
 /**
  * loadSICs hace tres listados y baja los detalles por grupos. (El cruce de
@@ -32,12 +34,11 @@ const rawSic = id => ({
   },
 });
 
-/** Guion base: los tres listados devuelven los mismos ids; detalles y contrarrefs según `over`. */
-function guion({ ids = [21450486], contrarrefs = [], detailFail = false } = {}) {
+/** Guion base: los tres listados devuelven los mismos ids; detalles según `over`. */
+function guion({ ids = [21450486], detailFail = false } = {}) {
   return url => {
     if (url.includes('IdsSolicitudesInterconsultasGet')) return ids;
     if (url.includes('SolicitudInterconsultaDerivacionPorIds')) return detailFail ? fail() : ids.map(rawSic);
-    if (url.includes('ObtenerHistorialContrarreferenciasPorSicIds')) return contrarrefs;
     return [];
   };
 }
@@ -96,4 +97,21 @@ test('dentro del TTL se sirve desde caché sin tocar la red', async () => {
   const res = await loadSICs('tok', 3);
   assert.equal(res.fromCache, true);
   assert.equal(calls.length, 0);
+});
+
+// Balance 4: el almacén de interconsultas (con teléfono y dirección) no se
+// podaba por la retención elegida; agenda y ficha sí.
+test('las interconsultas guardadas se podan con la retención de Preferencias', async () => {
+  setPrefs({ retentionMonths: 3 });
+  const hoy = new Date();
+  const reciente = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getDate()).padStart(2, '0')}`;
+  const kept = pruneByRetention([{ id: 1, fecha8: '20200101' }, { id: 2, fecha8: reciente }, { id: 3 }]);
+  assert.deepEqual(kept.map(r => r.id), [2, 3], 'la vieja se va; sin fecha se conserva por prudencia');
+
+  globalThis.chrome.storage.local.set({ [CONFIG.sicKey]: { records: [{ id: 1, fecha8: '20200101' }, { id: 2, fecha8: reciente }], savedAt: Date.now(), months: 6 } });
+  scriptFetch(() => { throw new Error('no debería llamarse'); });
+  const res = await loadSICs('tok', 3);
+  assert.equal(res.fromCache, true);
+  assert.deepEqual(res.sics.map(r => r.id), [2], 'desde caché también se aplica la retención');
+  setPrefs({ retentionMonths: 13 });
 });

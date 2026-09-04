@@ -202,8 +202,12 @@ function markStaleIfRutChanged() {
   const vigente = searchRutDisplay &&
     normalizePatientRutBody($('labRut').value) === searchRutBody;
   const hayResultados = hsrResults.length > 0 || hhrResults.length > 0;
-  $('labResults').classList.toggle('stale', Boolean(hayResultados && !vigente));
-  $('labStale').hidden = !(hayResultados && !vigente);
+  const desfasada = Boolean(hayResultados && !vigente);
+  $('labResults').classList.toggle('stale', desfasada);
+  $('labStale').hidden = !desfasada;
+  // Con la tabla desfasada no se genera el PDF único: llevaría el RUT de una
+  // persona y los informes de otra.
+  $('labDownloadAll').disabled = desfasada;
   if (hayResultados && !vigente) {
     $('labStale').textContent =
       `En pantalla siguen los exámenes de ${searchRutDisplay}. Pulsa Buscar para el RUT que escribiste.`;
@@ -774,7 +778,9 @@ async function downloadAllPdfs() {
     });
     if (!bytes) throw new Error('Ningún informe se pudo incluir.');
 
-    savePdf(bytes, `laboratorio-${$('labRut').value.trim().replace(/[^0-9kK-]/g, '') || 'informes'}.pdf`);
+    // El nombre lleva el RUT que se buscó, no lo que haya en el campo: editarlo
+    // sin volver a buscar guardaba los informes de A como «laboratorio-<RUT de B>».
+    savePdf(bytes, `laboratorio-${searchRutDisplay.replace(/[^0-9kK-]/g, '') || 'informes'}.pdf`);
     msg.textContent = failed === 0
       ? `PDF único con ${merged} informe${merged !== 1 ? 's' : ''} (${pages} pág.).`
       : `PDF con ${merged} de ${merged + failed} informes (${pages} pág.). ${failed} no se pudo incluir.`;

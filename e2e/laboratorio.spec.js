@@ -73,6 +73,12 @@ test('busca en el Salvador, muestra las órdenes con su detalle y ofrece analiza
   await page.locator('#labRut').fill('16.940.645-6');
   await expect(page.locator('#labStale')).toBeVisible();
   await expect(page.locator('#labStale')).toContainText(RUT);
+  // Con la tabla desfasada no se puede generar el PDF único (llevaría el RUT de
+  // otra persona); al volver al RUT buscado se reactiva.
+  await expect(page.locator('#labDownloadAll')).toBeDisabled();
+  await page.locator('#labRut').fill(RUT);
+  await expect(page.locator('#labStale')).toBeHidden();
+  await expect(page.locator('#labDownloadAll')).toBeEnabled();
 
   // La solicitud de exámenes abre con el catálogo completo y sin «enviar».
   await page.locator('#labRequestOpen').click();

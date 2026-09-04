@@ -333,7 +333,8 @@ export function buildAnalysis(details, exams) {
       const finding = row.values[report.examId];
       if (!finding || !isSystemicTrendEligible(finding)) return null;
       const measurement = parseMeasurement(finding.result, finding);
-      if (!measurement || measurement.comparator !== '=') return null;
+      // Un «4.500» sin unidad puede ser 4,5 o 4500: no entra a la tendencia.
+      if (!measurement || measurement.comparator !== '=' || measurement.ambiguous) return null;
       // El rango viaja con cada punto: puede cambiar entre informes (distinto
       // laboratorio, distinta edad), y el gráfico sólo puede dibujar la banda
       // normal cuando todos los puntos declaran el mismo.

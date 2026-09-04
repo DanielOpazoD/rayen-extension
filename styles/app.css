@@ -149,6 +149,8 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 @media(max-width:760px){.rail-status{margin-left:0;width:100%;padding:2px 0 8px;flex-wrap:wrap}.sync-details{grid-template-columns:1fr;right:var(--sp-3)}}
 
 .tabs{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+/* Cuando no caben todas, un degradado en el borde derecho dice que hay más. */
+.tabs.overflowing{mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
 .tabs::-webkit-scrollbar{display:none}
 .tab-btn{padding:9px 14px;border:none;background:none;cursor:pointer;font-size:var(--t-sm);font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .tab-btn.active{color:var(--ink);border-bottom-color:var(--brand);font-weight:600}
@@ -179,7 +181,7 @@ header p{font-size:var(--t-xs);color:var(--ink-3)}
 .fp-grid select,.fp-grid input[type=date]{height:var(--h-ctl);padding:0 8px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);font-size:var(--t-sm);color:var(--ink);width:100%;outline:none}
 .fp-grid select:focus,.fp-grid input:focus{border-color:var(--brand)}
 .fp-range span{display:flex;align-items:center;gap:5px}
-.fp-range i{color:var(--ink-4);font-style:normal}
+.fp-range i{color:var(--ink-3);font-style:normal}
 .fp-foot{display:flex;justify-content:flex-end;padding-top:var(--sp-2)}
 .multi-select{position:relative}
 .multi-trigger{width:100%;height:var(--h-ctl);padding:5px 30px 5px 9px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);color:var(--ink);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;position:relative}
@@ -235,9 +237,9 @@ table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card
 col.c-fecha{width:var(--w-fecha)}
 /* Nombre y RUN completos a 1440; Razón sin «Morbili…». La tabla ya se desplaza
    en horizontal: es preferible a recortar el identificador del paciente. */
-col.c-nombre{width:280px} col.c-edad{width:56px} col.c-sexo{width:42px}
-col.c-razon{width:150px} col.c-tipo{width:160px} col.c-dx{width:210px}
-col.c-estado{width:112px} col.c-ic{width:214px} col.c-nota{width:124px}
+col.c-nombre{width:250px} col.c-edad{width:56px} col.c-sexo{width:42px}
+col.c-razon{width:130px} col.c-tipo{width:140px} col.c-dx{width:190px}
+col.c-estado{width:100px} col.c-ic{width:180px} col.c-nota{width:110px}
 thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);color:var(--ink-3);padding:8px 10px;text-align:left;font-size:var(--t-xs);font-weight:600;cursor:pointer;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
 thead th:hover,thead th:focus-visible{color:var(--ink)}
 thead th.ns{cursor:default}
@@ -256,6 +258,7 @@ tbody tr:hover td{background:var(--surface-3)}
    con Enter sobre la fila. */
 tbody tr[tabindex]:focus-visible{outline:none}
 tbody tr:focus-visible td{background:var(--brand-soft)}
+tbody tr:focus-visible td:first-child{box-shadow:inset 3px 0 0 var(--brand)}
 tbody tr.r-ficha td:first-child{box-shadow:inset 2px 0 0 var(--ink-4)}
 tbody tr.r-ns td{color:var(--ink-3)}
 tbody tr:last-child td{border-bottom:none}
@@ -311,7 +314,6 @@ button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
 .rol{font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
 /* El rol es tipográfico (versalita), no un color: Emití/Recibí no son estados. */
 .rol-in,.rol-out{color:var(--ink-2)} .rol-other{color:var(--ink-3);font-weight:500}
-.ic-cr{font-size:var(--t-xs);font-weight:600;color:var(--good)}
 .cie{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-2)}
 .ic-chip{display:inline-block;font-size:var(--t-xs);padding:1px 6px;border:1px solid var(--rule);border-radius:var(--r-full);cursor:pointer;color:var(--ink-2)}
 .ic-chip:hover{border-color:var(--brand);color:var(--brand-2)}
@@ -384,7 +386,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pp-info{flex:1;min-width:0}
 /* El nombre del paciente no se recorta: puede ocupar dos líneas. */
 .pp-info h2{font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em;line-height:1.25;text-wrap:balance;overflow-wrap:anywhere}
-.pp-info p{font-size:var(--t-sm);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-info p{font-size:var(--t-sm);color:var(--ink-2);line-height:1.4}
 #ppSector{font-size:var(--t-xs);color:var(--ink-3)}
 #ppClose{background:none;border:none;color:var(--ink-3);font-size:var(--t-base);cursor:pointer;padding:4px 8px;border-radius:var(--r-sm);flex-shrink:0}
 #ppClose:hover{background:var(--surface-2);color:var(--ink)}
@@ -474,7 +476,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-razon col.c-raz
 .pac-sic{display:flex;flex-wrap:wrap;gap:4px}
 .pac-pend{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-xs);color:var(--warn);font-weight:600}
 .pac-pend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
-.pac-none{color:var(--ink-4)}
+.pac-none{color:var(--ink-3)}
 .pac-nota{font-size:var(--t-xs);color:var(--ink-2);white-space:normal;word-break:break-word;display:block}
 
 /* ═══ Interconsultas ═══ */
@@ -500,7 +502,6 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 
 .stat-click{cursor:pointer}
 .stat-click:hover{border-color:var(--brand)}
-.stat-alert .stat-n{color:var(--warn)}
 
 /* ═══ Parte matinal: novedades y pendientes ═══ */
 .brief{max-width:1200px;margin:0 0 var(--sp-5)}
@@ -515,16 +516,8 @@ tr.sic-detail td{background:var(--surface-3)!important;white-space:normal;paddin
 .nov-esp{font-size:var(--t-sm);color:var(--ink-2)}
 .nov-mov{font-size:var(--t-xs);color:var(--ink-3);margin-left:auto;font-family:var(--mono)}
 .nov-mov b{color:var(--ink);font-weight:600}
-.pgrp{margin-bottom:var(--sp-3)}
-.pgrp-h{font-size:var(--t-sm);font-weight:600;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--rule-2);display:flex;gap:8px;align-items:baseline}
-.pgrp-h span{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3)}
 .pend{display:flex;align-items:baseline;gap:12px;padding:7px 4px;border-bottom:1px solid var(--rule-2);cursor:pointer;border-radius:var(--r-sm)}
 .pend:hover{background:var(--surface-2)}
-.pend-d{font-family:var(--mono);font-size:var(--t-sm);font-weight:600;color:var(--warn);min-width:44px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0}
-.pend-d small{font-weight:400;color:var(--ink-3);margin-left:1px}
-.pend-t{font-size:var(--t-sm);color:var(--ink-2);min-width:0}
-.pend-t b{color:var(--ink);font-weight:500;margin-right:8px}
-.pgrp-more{font-size:var(--t-xs);color:var(--ink-3);padding:6px 4px}
 
 /* Toasts — con acción, barra de tiempo y pausa al pasar el cursor */
 #toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
@@ -630,7 +623,6 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .lab-progreso span{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
 .lab-rech{color:var(--bad)}
 .lab-detail{padding:var(--sp-2) var(--sp-4);background:var(--surface-3);font-size:var(--t-xs);line-height:1.6}
-.lab-detail-row td{border-bottom:1px solid var(--rule-2)}
 .lab-pdf{font-size:var(--t-xs)}
 .lab-prest{display:block;font-size:var(--t-xs);line-height:1.4}
 .lab-exams{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t-xs)}
@@ -653,7 +645,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .lab-matrix td{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .lab-out{color:var(--bad);font-weight:700}
 .lab-out-row{background:var(--bad-soft)}
-.lab-gap{color:var(--ink-4)}
+.lab-gap{color:var(--ink-3)}
 /* Resultados que ya no corresponden al RUT escrito: siguen legibles, pero
    dejan de parecer los vigentes. */
 .lab-results.stale{opacity:.55}
@@ -667,7 +659,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .er-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);align-items:start}
 .er-sec{margin-bottom:var(--sp-2)}
 .er-sec h3{font-size:var(--t-xs);margin:0 0 var(--sp-1);text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);display:flex;justify-content:space-between;gap:var(--sp-2)}
-.er-tube{font-weight:400;color:var(--ink-4)}
+.er-tube{font-weight:400;color:var(--ink-3)}
 .er-list{list-style:none;margin:0;padding:0;font-size:var(--t-sm)}
 .er-list.er-2col{columns:2;column-gap:var(--sp-3)}
 .er-list li{line-height:1.7;break-inside:avoid}
@@ -695,3 +687,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .lock-box .mark{width:32px;height:32px;margin:0 auto var(--sp-3)}
 .lock-box h2{font-size:var(--t-lg);font-weight:600;margin-bottom:6px}
 .lock-box p{font-size:var(--t-sm);color:var(--ink-3);margin-bottom:var(--sp-4)}
+
+/* Al final a propósito: los campos que apagan el outline nativo (`outline:none`
+   con la misma especificidad) lo recuperan al foco por teclado. */
+.toolbar input:focus-visible,.toolbar select:focus-visible,.fp-grid select:focus-visible,.fp-grid input:focus-visible,.lab input:focus-visible,.lab select:focus-visible,.explorer input:focus-visible,#ppNoteText:focus-visible,#palInput:focus-visible{outline:2px solid var(--brand);outline-offset:1px}

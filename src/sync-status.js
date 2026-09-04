@@ -4,7 +4,7 @@ import { hasRetryableSync, loadSyncHealth, recoverStaleSyncSources, SYNC_SOURCES
 const LABELS = Object.freeze({ agenda: 'Agenda', historial: 'Ficha clínica', sics: 'Interconsultas' });
 const STATUS = Object.freeze({
   ok:       ['Actualizada', 'ok'],
-  cached:   ['Desde caché', 'neutral'],
+  cached:   ['Guardadas antes', 'neutral'],
   partial:  ['Parcial', 'warn'],
   error:    ['Sin actualizar', 'bad'],
   running:  ['Actualizando…', 'info'],
@@ -15,7 +15,7 @@ function formatWhen(value) {
   if (!value) return 'Nunca';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Nunca';
-  return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function formatItem(item) {
