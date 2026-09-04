@@ -1,3 +1,4 @@
+import { isMedicalVisit } from './patient-report.js';
 import { humanError } from './errors.js';
 import { patientKey } from './notes.js';
 import { dateToInt } from './parser.js';
@@ -14,6 +15,7 @@ import { copyToClipboard } from './toast.js';
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
 let activeTab = 'dx';    // remembered across patients
+let atFilter = 'medicina'; // Medicina | Otros, también recordado
 let navigate = null;     // (dir) => void, supplied by the host
 
 let opener = null;       // quien tenía el foco al abrir; lo recupera al cerrar
@@ -103,10 +105,19 @@ export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
     } finally { b.disabled = false; }
   });
 
-  $('ppDatosBtn').addEventListener('click', () => {
+  // Los datos administrativos se abren desde las iniciales del paciente: un
+  // botón menos en una cabecera que ya iba apretada.
+  $('ppAvatar').addEventListener('click', () => {
     const hidden = $('ppDatos').toggleAttribute('hidden');
-    $('ppDatosBtn').classList.toggle('on', !hidden);
-    $('ppDatosBtn').setAttribute('aria-expanded', String(!hidden));
+    $('ppAvatar').classList.toggle('on', !hidden);
+    $('ppAvatar').setAttribute('aria-expanded', String(!hidden));
+  });
+  // Pestañas internas Medicina / Otros dentro de Atenciones.
+  $('ppPaneAt').addEventListener('click', e => {
+    const seg = e.target.closest('[data-seg]');
+    if (!seg) return;
+    atFilter = seg.dataset.seg;
+    renderAt();
   });
 
   $('ppLabBtn').addEventListener('click', () => {
@@ -179,19 +190,17 @@ function setTabCount(id, n) {
 // ── Header + datos ────────────────────────────────────────────
 
 function renderHeader() {
-  const { record, contact, ficha } = cur;
-  const m = ficha?.master;
+  const { record, contact } = cur;
   const initials = [record.ap?.[0], record.nombres?.[0]].filter(Boolean).join('').toUpperCase()
     || record.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
   $('ppAvatar').textContent = initials;
   $('ppName').textContent = record.nombre;
   $('ppName').title = record.nombre;
   // El RUN va primero: es el identificador clínico y se recortaba al final.
+  // Sólo lo que identifica: RUN y edad. Sexo y previsión viven en Datos.
   $('ppMeta').textContent = [
     record.runStr ? `RUN ${record.runStr}` : '',
-    m?.sexo || record.sexo,
     record.edadLabel || contact.edad || (record.edad != null ? `${record.edad} años` : ''),
-    m?.prevision || record.prevision || contact.prevision,
   ].filter(Boolean).join(' · ');
 }
 
@@ -219,13 +228,14 @@ function renderDatos() {
   const chips = ficha ? alertChips(ficha) : [];
   const important = ficha ? (ficha.master?.fallecido || ficha.master?.activo === false || ficha.antecedentes.alergias.length || ficha.ram.length) : false;
 
-  $('ppDatosBtn').classList.toggle('dot', !!important);
+  $('ppAvatar').classList.toggle('dot', !!important); // el punto rojo de alertas va en las iniciales
   $('ppDatos').innerHTML =
     `<div class="pp-datos-grp">${h4('Contacto')}<div class="kv-grid">${kv('Teléfono', tel)}${kv('Dirección', dir)}${kv('Email', m?.email)}</div>${!tel && !dir ? empty(ficha ? 'Sin contacto registrado' : 'Consultando ficha…') : ''}</div>` +
     (m ? `<div class="pp-datos-grp">${h4('Inscripción')}<div class="kv-grid">` +
       kv('Ficha', m.ficha) + kv('Familia', m.familia ? `${m.familia}${m.parentesco ? ` · ${m.parentesco}` : ''}` : '') +
       kv('Nacimiento', m.dob) + kv('Género', m.genero) + kv('Nombre social', m.nombreSocial) + kv('Responde a', m.apodo) +
       kv('Previsión', m.prevision) + kv('Grupo sanguíneo', m.grupoSang) +
+      kv('Sexo', m.sexo || record.sexo) + kv('Previsión', m.prevision || record.prevision || contact.prevision) +
       kv('Ocupación', m.ocupacion) + kv('Escolaridad', m.escolaridad) +
       kv('Nacionalidad', m.nacionalidad) + kv('Pueblo originario', m.etnia && m.etnia !== 'Ninguno' ? m.etnia : '') +
       kv('Inscrito desde', m.inscripcion) + kv('Sector', record.sector) +
@@ -256,7 +266,7 @@ function renderDx() {
   html += h4(ficha?.visits?.length ? 'Diagnósticos (historial completo, todos los profesionales)' : 'Diagnósticos (mis atenciones)');
   html += probs.length ? probs.map(d =>
     `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
-    `<span class="pp-row-m">${d.certeza && d.certeza !== 'Confirmada' ? `<i>${esc(d.certeza.toLowerCase())}</i> · ` : ''}${d.fecha}</span></div>`).join('')
+    `<span class="pp-row-m">${d.fecha}</span></div>`).join('')
     : empty('Sin diagnósticos registrados');
 
   if (a?.morbidos.length) html += h4('Antecedentes mórbidos') + a.morbidos.map(m =>
@@ -279,7 +289,7 @@ function sectionHTML(id, items) {
 function fichaVisitHTML(v, agendaByAtencion) {
   const mine = isMine(v);
   const cita = agendaByAtencion.get(v.id);
-  const who  = v.prestadores.map(p => `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
+  const who  = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections);
   const hasBody = v.anamnesis.motivo || v.anamnesis.historia || secs.length || v.actividades.length || v.adjuntos.length;
   return `
@@ -296,7 +306,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
       </div>
       <div class="pp-who ${mine ? 'me' : ''}">${esc(who)}</div>
       ${(v.diagnosticos ?? []).map(d =>
-        `<span class="pp-dx">${esc(d.nombre)}${d.certeza ? ` <em>(${esc(d.certeza)})</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>`
+        `<span class="pp-dx">${esc(d.nombre)}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>`
       ).join('')}
       <div class="pp-body">
         ${v.anamnesis.motivo   ? `<div class="pp-sec"><span class="pp-sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}
@@ -320,7 +330,7 @@ function agendaVisitHTML(v) {
         ${v.origen === 'cita' && v.estado === 'Completado' ? `<button class="btn-mini" data-pdf="${esc(certificadoPath(v.id))}" data-tip="Certificado de atención">Cert.</button>` : ''}
       </div>
       ${v.razon ? `<span class="pp-razon">${esc(v.razon)}</span>` : ''}
-      ${(v.diagnosticos ?? []).map(d => `<span class="pp-dx">${esc(d.nombre)}${d.certeza ? ` <em>(${esc(d.certeza)})</em>` : ''}</span>`).join('')}
+      ${(v.diagnosticos ?? []).map(d => `<span class="pp-dx">${esc(d.nombre)}</span>`).join('')}
     </div>`;
 }
 
@@ -329,11 +339,22 @@ function renderAt() {
   let html;
   if (ficha?.visits?.length) {
     const agendaByAtencion = new Map(visits.filter(v => v.atencionId && v.origen === 'cita').map(v => [v.atencionId, v]));
-    html = ficha.visits.map(v => fichaVisitHTML(v, agendaByAtencion)).join('');
+    const medicina = ficha.visits.filter(isMedicalVisit);
+    const otros = ficha.visits.filter(v => !isMedicalVisit(v));
+    const shown = atFilter === 'otros' ? otros : medicina;
+    const seg = (key, label, n) => `<button type="button" data-seg="${key}" aria-pressed="${atFilter === key}">${label} <span class="cnt">${n}</span></button>`;
+    html = `<div class="pp-seg" role="group" aria-label="Tipo de atención">${seg('medicina', 'Medicina', medicina.length)}${seg('otros', 'Otros', otros.length)}</div>` +
+      (shown.length ? shown.map(v => fichaVisitHTML(v, agendaByAtencion)).join('')
+        : empty(atFilter === 'otros' ? 'Sin atenciones de otros profesionales' : 'Sin atenciones médicas'));
     setTabCount('at', ficha.visits.length);
   } else {
-    html = (ficha ? `<div class="pp-empty">La ficha electrónica no tiene atenciones registradas; se muestra la agenda.</div>` : '') +
-      (visits.length ? visits.map(agendaVisitHTML).join('') : empty('Sin atenciones'));
+    // Sólo agenda: todas son atenciones propias, es decir, de Medicina. Las
+    // pestañas internas se muestran igual para que la vista no cambie de forma.
+    const seg = (key, label, n) => `<button type="button" data-seg="${key}" aria-pressed="${atFilter === key}">${label} <span class="cnt">${n}</span></button>`;
+    html = `<div class="pp-seg" role="group" aria-label="Tipo de atención">${seg('medicina', 'Medicina', visits.length)}${seg('otros', 'Otros', 0)}</div>` +
+      (ficha ? `<div class="pp-empty">La ficha electrónica no tiene atenciones registradas; se muestra la agenda.</div>` : '') +
+      (atFilter === 'otros' ? empty('Sin atenciones de otros profesionales')
+        : (visits.length ? visits.map(agendaVisitHTML).join('') : empty('Sin atenciones')));
     setTabCount('at', visits.length);
   }
   $('ppPaneAt').innerHTML = html;
@@ -464,7 +485,8 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
     ficha: null,
   };
   $('ppDatos').setAttribute('hidden', '');
-  $('ppDatosBtn').classList.remove('on');
+  $('ppAvatar').classList.remove('on');
+  $('ppAvatar').setAttribute('aria-expanded', 'false');
   $('ppPdfMenu').classList.remove('open');
   $('ppPdfMenu').querySelectorAll('button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
   $('ppNoteText').value = record.note ?? '';

@@ -147,6 +147,19 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
     const inside = await page.evaluate(() => document.getElementById('patientPanel').contains(document.activeElement));
     expect(inside, `Tab nº ${i + 1} salió del diálogo`).toBe(true);
   }
+  // Cabecera mínima: RUN y edad; Datos se abre desde las iniciales.
+  await expect(page.locator('#ppMeta')).toHaveText(/^RUN [\d.]+-[\dK] · \d+ años$/);
+  await expect(page.locator('#ppDatosBtn')).toHaveCount(0);
+  await page.locator('#ppAvatar').click();
+  await expect(page.locator('#ppDatos')).toBeVisible();
+  await page.locator('#ppAvatar').click();
+  await expect(page.locator('#ppDatos')).toBeHidden();
+  // Atenciones con pestañas internas Medicina / Otros.
+  await page.locator('.pp-tab[data-pt="at"]').click();
+  await expect(page.locator('#ppPaneAt .pp-seg button[data-seg="medicina"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#ppPaneAt .pp-seg button[data-seg="otros"]').click();
+  await expect(page.locator('#ppPaneAt .pp-seg button[data-seg="otros"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('.pp-tab[data-pt="dx"]').click();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
   await expect(page.locator('#mainContent')).toHaveJSProperty('inert', false);

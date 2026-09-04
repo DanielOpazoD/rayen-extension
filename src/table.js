@@ -65,7 +65,6 @@ function dxCell(p) {
   const d0  = list[0];
   const tip = list.map(d => `${d.nombre}${d.clasificacion && d.clasificacion !== d.nombre ? ` [${d.clasificacion}]` : ''}${d.certeza ? ` (${d.certeza})` : ''}${d.esAuge ? ' GES' : ''}`).join('\n');
   return `<span class="dx-main" data-tip="${esc(tip)}">${esc(d0.nombre)}</span>` +
-    (d0.certeza && d0.certeza !== 'Confirmada' ? `<span class="dx-cert">${esc(d0.certeza.toLowerCase())}</span>` : '') +
     (d0.esAuge ? `<span class="bges">GES</span>` : '') +
     (list.length > 1 ? `<span class="dx-more" data-tip="${esc(tip)}">+${list.length - 1}</span>` : '');
 }

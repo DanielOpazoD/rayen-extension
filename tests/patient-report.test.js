@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL } from '../src/patient-report.js';
+import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL, isMedicalVisit, isMedico } from '../src/patient-report.js';
 import { ageBucket } from '../src/charts.js';
 import { CONFIG } from '../src/config.js';
 
@@ -57,4 +57,21 @@ test('ageBucket follows clinical brackets and tolerates bad input', () => {
   assert.deepEqual([0, 3, 7, 12, 17, 30, 50, 80].map(ageBucket), ['<1','1–4','5–9','10–14','15–19','20–44','45–64','65+']);
   assert.equal(ageBucket(null), null);
   assert.equal(ageBucket('x'), null);
+});
+
+// Panel: pestañas internas Medicina / Otros. Decide por el instrumento del
+// prestador; «Técnico Paramédico» y «Tecnólogo Médico» no son médicos.
+test('isMedicalVisit separa profesional médico de otros profesionales', () => {
+  const v = (instrumento, tipoAtencion = '') => ({ prestadores: instrumento ? [{ id: 1, nombre: 'X', instrumento }] : [], tipoAtencion });
+  assert.equal(isMedicalVisit(v('Médico')), true);
+  assert.equal(isMedicalVisit(v('Médico Cirujano')), true);
+  assert.equal(isMedicalVisit(v('Matrona')), false);
+  assert.equal(isMedicalVisit(v('Kinesiólogo')), false);
+  assert.equal(isMedicalVisit(v('Técnico Paramédico')), false);
+  assert.equal(isMedicalVisit(v('Tecnólogo Médico')), false);
+  assert.equal(isMedico({ instrumento: 'Nutricionista' }), false);
+  assert.equal(isMedicalVisit(v('', 'Consulta Médica')), true);
+  assert.equal(isMedicalVisit(v('', 'Morbilidad Medica')), true);
+  assert.equal(isMedicalVisit(v('', 'Kinesiología')), false);
+  assert.equal(isMedicalVisit(v('', 'Taller de autocuidado')), false);
 });
