@@ -25,10 +25,15 @@ export function initLock({ minutes = 15 } = {}) {
 
   let timer = null;
   const locked = () => !el.hidden;
+  // Todo lo que no es la pantalla de bloqueo queda inerte mientras dura: sin
+  // foco, sin clics, sin lectores de pantalla. Antes sólo se tapaba con un velo.
+  // El panel de paciente y su velo también: están fuera de <main>.
+  const shielded = () => ['topbar', 'mainContent', 'patientPanel', 'panelBackdrop'].map(id => document.getElementById(id)).filter(Boolean);
 
   const lock = () => {
     if (locked()) return;
     el.hidden = false;
+    for (const node of shielded()) node.inert = true;
     el.querySelector('#lockBtn').focus();
   };
 
@@ -39,6 +44,7 @@ export function initLock({ minutes = 15 } = {}) {
 
   const unlock = () => {
     el.hidden = true;
+    for (const node of shielded()) node.inert = false;
     arm();
   };
 
@@ -47,6 +53,19 @@ export function initLock({ minutes = 15 } = {}) {
   for (const ev of EVENTS) {
     document.addEventListener(ev, () => { if (!locked()) arm(); }, { capture: true, passive: true });
   }
+  // Los atajos globales (⌘K, «/», ←/→ del panel) escuchan en `document` y no
+  // saben del bloqueo. Con el velo puesto, una tecla abría la paleta con doce
+  // pacientes por encima. Se cortan aquí, en fase de captura, antes de que
+  // lleguen a nadie.
+  //
+  // Se cortan también las que llegan con el foco en el propio botón de
+  // desbloqueo: ⌘K desde ahí abría la paleta igual. Sólo pasan las teclas que
+  // el botón necesita para operarse.
+  document.addEventListener('keydown', e => {
+    if (!locked()) return;
+    const allowed = el.contains(e.target) && ['Enter', ' ', 'Tab'].includes(e.key) && !e.metaKey && !e.ctrlKey;
+    if (!allowed) { e.stopImmediatePropagation(); e.preventDefault(); }
+  }, { capture: true });
   // Locking on hide would fire on every tab switch; only re-arm when coming back
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && !locked()) arm();

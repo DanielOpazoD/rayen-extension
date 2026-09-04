@@ -56,7 +56,12 @@ export function sortRecords(data, sortCol, sortDir) {
 
 function dxCell(p) {
   const list = p.diagnosticos ?? [];
-  if (!list.length) return `<span class="dx-none">${p.atencionId ? 'Sin diagnóstico' : '—'}</span>`;
+  if (!list.length) {
+    // Sin registro propio ese día pero con atención de otro profesional: se
+    // dice quién, sin heredar su diagnóstico.
+    const pista = p.otrosEseDia ? ` data-tip="${esc(`Sin registro tuyo. Ese día registró atención: ${p.otrosEseDia}`)}"` : '';
+    return `<span class="dx-none"${pista}>${p.atencionId ? 'Sin diagnóstico' : '—'}</span>`;
+  }
   const d0  = list[0];
   const tip = list.map(d => `${d.nombre}${d.clasificacion && d.clasificacion !== d.nombre ? ` [${d.clasificacion}]` : ''}${d.certeza ? ` (${d.certeza})` : ''}${d.esAuge ? ' GES' : ''}`).join('\n');
   return `<span class="dx-main" data-tip="${esc(tip)}">${esc(d0.nombre)}</span>` +
@@ -71,7 +76,7 @@ function sicLine(s, role, extra = '') {
             : role === 'other' ? (s.registrador.nombre ? `por ${s.registrador.nombre}` : '')
             : (s.ejecutor.nombre ? `a ${s.ejecutor.nombre}` : '');
   const tip = `SIC #${s.id} · ${s.fecha} · ${s.estado}${who ? ` · ${who}` : ''}${s.cie10 ? ` · ${s.cie10}` : ''}${s.diagnostico ? ` · ${s.diagnostico}` : ''}${extra ? `\n${extra}` : ''}`;
-  return `<div class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="0" data-tip="${esc(tip)}">` +
+  return `<div class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="-1" data-tip="${esc(tip)}">` +
     `<span class="rol rol-${role}">${ROLE_LABEL[role]}</span>` +
     `<span class="ic-esp">${esc(s.especialidad)}</span>` +
     stateDot(s.estado, { tone: sicTone(s.grupo), small: true }) +
@@ -96,31 +101,38 @@ function icCell(p, { sicsById, sicsByRun }) {
       `<span class="rol rol-in">Recibí</span><span class="muted">SIC ${esc(p.icSIC || '?')}</span></div>`);
   }
 
+  // Una sola línea por fila: si ya hay una SIC de origen no se añade otra; si
+  // no, la primera del paciente. Las demás quedan en «+n», que lleva a
+  // Interconsultas filtrado por este RUN. Apilar hasta cuatro dejaba filas de
+  // 132 px y cinco visibles de 289.
   const others = (p.run ? sicsByRun.get(p.run) ?? [] : []).filter(s => !origin || s.id !== origin.id);
-  others.slice(0, 3).forEach(s => lines.push(sicLine(s, sicRole(s))));
-  if (others.length > 3) {
-    lines.push(`<div class="ic-line"><span class="ic-chip bg sic-run" data-run="${esc(p.run)}" data-tip="Ver todas en Interconsultas">+${others.length - 3} más</span></div>`);
+  const shown = lines.length ? 0 : Math.min(others.length, 1);
+  others.slice(0, shown).forEach(s => lines.push(sicLine(s, sicRole(s))));
+  if (others.length > shown) {
+    lines.push(`<span class="ic-chip bg sic-run" data-run="${esc(p.run)}" data-tip="${esc(others.slice(shown).map(s => `${s.especialidad} · ${s.estado}`).join('\n'))}">+${others.length - shown}</span>`);
   }
   return lines.join('');
 }
 
-function row(p, ctx) {
+/** Exportada para poner bajo prueba el contrato de la fila (una parada de tabulación, una SIC). */
+export function row(p, ctx) {
   const noteEl = p.note
     ? `<span class="note-text" data-tip="${esc(p.note)}">${esc(p.note)}</span>`
     : `<span class="note-empty">—</span>`;
   const flags = [
-    p.esUrgencia   ? `<span class="flag flag-urg" data-tip="Urgencia">U</span>` : '',
-    p.esEspontanea ? `<span class="flag flag-esp" data-tip="Espontánea (sin cita)">E</span>` : '',
-    p.adjuntos?.length ? `<span class="flag flag-adj" data-tip="${esc(p.adjuntos.map(a => a.nombre).join('\n'))}">📎${p.adjuntos.length}</span>` : '',
+    // Los iconos de una letra llevan nombre accesible: el tooltip sólo lo lee quien ve.
+    p.esUrgencia   ? `<span class="flag flag-urg" role="img" aria-label="Urgencia" data-tip="Urgencia">U</span>` : '',
+    p.esEspontanea ? `<span class="flag flag-esp" role="img" aria-label="Espontánea, sin cita" data-tip="Espontánea (sin cita)">E</span>` : '',
+    p.adjuntos?.length ? `<span class="flag flag-adj" role="img" aria-label="${p.adjuntos.length} ${p.adjuntos.length === 1 ? 'adjunto' : 'adjuntos'}" data-tip="${esc(p.adjuntos.map(a => a.nombre).join('\n'))}">📎${p.adjuntos.length}</span>` : '',
   ].join('');
   const prest = p.prestador && !/opazo/i.test(p.prestador)
     ? `<span class="prest-other" data-tip="Atendido por ${esc(p.prestador)}">${esc(p.prestador)}</span>` : '';
   const rowCls = [p.origen === 'ficha' ? 'r-ficha' : '', /presentó/i.test(p.estado) ? 'r-ns' : ''].filter(Boolean).join(' ');
   const edadTip = [p.dob ? `Nac. ${p.dob}` : '', p.edadLabel].filter(Boolean).join(' · ');
 
-  return `<tr data-id="${esc(p.id)}" class="${rowCls}">
-    <td data-c="fechaAtencion" class="sticky s1"><span class="fd">${p.fechaAtencion}</span><span class="info" tabindex="0" data-tip="${esc(whenLabel(p))}">i</span></td>
-    <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="0" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run copy-run" data-run="${esc(p.runStr)}" role="button" tabindex="0" data-tip="Copiar RUN">${p.runStr}</span>` : ''}</td>
+  return `<tr data-id="${esc(p.id)}" class="${rowCls}" tabindex="-1">
+    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}</td>
+    <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="-1" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run copy-run" data-run="${esc(p.runStr)}" role="button" tabindex="-1" data-tip="Copiar RUN">${p.runStr}</span>` : ''}</td>
     <td data-c="edad" class="num"><span class="tip" data-tip="${esc(edadTip)}">${p.edad ?? ''}</span></td>
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>
     <td data-c="razon">${esc(p.razon)}</td>
@@ -155,19 +167,26 @@ export function renderTable(data, total, ctx = { sicsById: new Map(), sicsByRun:
   updateCount(total);
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="${COLUMN_COUNT}" class="empty">Sin resultados</td></tr>`;
+    // Dos vacíos distintos: sin datos cargados (la página quedaba en blanco) y
+    // sin coincidencias para los filtros. Cada uno dice qué hacer.
+    tbody.innerHTML = Number(total)
+      ? `<tr><td colspan="${COLUMN_COUNT}" class="empty"><div class="empty-state"><b>Sin atenciones para estos filtros</b>Prueba con otro período o quita algún filtro.</div></td></tr>`
+      : `<tr><td colspan="${COLUMN_COUNT}" class="empty"><div class="empty-state"><b>Carga los datos para ver tus atenciones</b>Pulsa «Cargar datos» arriba a la derecha: se traen la agenda y, si está activada, la ficha clínica del período elegido.</div></td></tr>`;
     return;
   }
   tbody.innerHTML = '';
   appendChunk();
 }
 
+// Antes: «120 de 289 de 289 registros». Ahora cada número tiene su palabra.
 function updateCount(total = null) {
   const el = document.getElementById('countRow');
-  const shown = rendered < pending.length ? `${rendered} de ` : '';
-  const base = `${shown}${pending.length} de ${total ?? el.dataset.total} registros`;
   if (total !== null) el.dataset.total = total;
-  el.textContent = base;
+  const all = Number(el.dataset.total ?? pending.length);
+  const matching = pending.length;
+  const shown = rendered < matching ? `${rendered} en pantalla · ` : '';
+  const conteo = matching < all ? `${matching} de ${all} registros` : `${all} ${all === 1 ? 'registro' : 'registros'}`;
+  el.textContent = `${shown}${conteo}`;
 }
 
 /** Appends the next chunk. @returns {boolean} true if rows remain */

@@ -1,3 +1,4 @@
+import { state } from './state.js';
 import { CONFIG, SIC_ESTADOS, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO, sicGrupo } from './config.js';
 import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
 import { formatRun, fmtDate, localDateStr } from './parser.js';
@@ -30,7 +31,10 @@ export function parseSIC(raw) {
     fechaCreacion:  raw.FechaHoraCreacion ?? '',
     fechaEnvio:     raw.FechaHoraEnvioFormateado ?? '',
     fechaCita:      raw.FechaHoraCita ?? '',
-    antiguedadDias: raw.AntiguedadDias ?? 0,
+    // null cuando la API no lo trae: con `?? 0` las reglas de pendientes nunca
+    // llegaban a calcular los días por su cuenta y una SIC de ocho meses sin
+    // contrarreferencia no aparecía.
+    antiguedadDias: Number.isFinite(raw.AntiguedadDias) ? raw.AntiguedadDias : null,
     prioridad:      raw.Prioridad ?? si.Prioridad ?? 0,
 
     estadoId,
@@ -123,8 +127,21 @@ async function fetchDetails(token, ids) {
  * @returns {Promise<{ sics: object[], fromCache: boolean, savedAt: number, failed: number,
  *   staleFallback?: boolean, cancelled?: boolean }>}
  */
+/**
+ * Las interconsultas guardadas llevan teléfono y dirección del paciente. La
+ * retención elegida en Preferencias (3/6/13 meses) también las poda: antes
+ * sólo se podaban agenda y ficha y este almacén crecía sin límite.
+ */
+export function pruneByRetention(records, now = new Date()) {
+  const months = state.prefs?.retentionMonths ?? CONFIG.retentionMonths;
+  const min = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+  const min8 = `${min.getFullYear()}${String(min.getMonth() + 1).padStart(2, '0')}${String(min.getDate()).padStart(2, '0')}`;
+  return records.filter(r => !r.fecha8 || r.fecha8 >= min8);
+}
+
 export async function loadSICs(token, months, onProgress = () => {}, { force = false } = {}) {
   const cached = (await storageGet(CONFIG.sicKey)) ?? null;
+  if (cached?.records) cached.records = pruneByRetention(cached.records);
   if (!force && cached && cached.months >= months && Date.now() - cached.savedAt < CONFIG.sicTtlMs) {
     onProgress(100);
     return { sics: cached.records, fromCache: true, savedAt: cached.savedAt, failed: 0 };
@@ -174,7 +191,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     };
     return { sics, fromCache: false, savedAt: completedAt, failed, cancelled: run.cancelled };
   }
-  await storageSet(CONFIG.sicKey, { records: sics, savedAt: completedAt, months });
+  await storageSet(CONFIG.sicKey, { records: pruneByRetention(sics), savedAt: completedAt, months });
   return { sics, fromCache: false, savedAt: completedAt, failed: 0 };
 }
 

@@ -4,7 +4,7 @@ import { hasRetryableSync, loadSyncHealth, recoverStaleSyncSources, SYNC_SOURCES
 const LABELS = Object.freeze({ agenda: 'Agenda', historial: 'Ficha clínica', sics: 'Interconsultas' });
 const STATUS = Object.freeze({
   ok:       ['Actualizada', 'ok'],
-  cached:   ['Desde caché', 'neutral'],
+  cached:   ['Guardadas antes', 'neutral'],
   partial:  ['Parcial', 'warn'],
   error:    ['Sin actualizar', 'bad'],
   running:  ['Actualizando…', 'info'],
@@ -15,7 +15,7 @@ function formatWhen(value) {
   if (!value) return 'Nunca';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Nunca';
-  return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function formatItem(item) {
@@ -36,7 +36,23 @@ export function syncOverview(health) {
   return { text: complete ? 'Al día' : 'Sin comprobar', tone: complete ? 'ok' : 'neutral', pending };
 }
 
+/**
+ * Pinta el estado de sincronización. Nunca lanza: un fallo al leerlo se muestra
+ * en su propio sitio en vez de tumbar la carga que lo llamó. Antes cada llamada
+ * se protegía con su propio `.catch(() => {})` (ocho en total).
+ */
 export async function renderSyncStatus(health = null) {
+  try {
+    await renderSyncStatusBody(health);
+  } catch {
+    const panel = $('syncHealth');
+    panel.hidden = false;
+    $('syncOverall').textContent = 'No se pudo leer el estado de sincronización.';
+    $('syncOverall').className = 'sync-overall warn';
+  }
+}
+
+async function renderSyncStatusBody(health) {
   const data = health ?? await loadSyncHealth();
   const panel = $('syncHealth');
   const any = SYNC_SOURCES.some(source => data[source]);
@@ -46,7 +62,8 @@ export async function renderSyncStatus(health = null) {
   const overview = syncOverview(data);
   $('syncOverall').textContent = overview.text;
   $('syncOverall').className = `sync-overall ${overview.tone}`;
-  $('btnSyncDetails').className = `sync-summary ${overview.tone}`;
+  // El botón «Detalle» conserva su estilo; el tono lo lleva el texto de al lado.
+  $('btnSyncDetails').className = 'btn-mini';
   $('btnSyncDetails').setAttribute('aria-label', `${overview.text}. ${overview.pending ? `${overview.pending} pendientes. ` : ''}${$('syncDetails').hidden ? 'Ver detalle' : 'Ocultar detalle'}`);
   $('btnRetrySync').hidden = !hasRetryableSync(data);
 
@@ -72,8 +89,10 @@ export function initSyncStatus(onRetry) {
     const open = details.hidden;
     details.hidden = !open;
     $('btnSyncDetails').setAttribute('aria-expanded', String(open));
+    $('btnSyncDetails').textContent = open ? 'Ocultar' : 'Detalle';
     $('btnSyncDetails').setAttribute('aria-label', `${$('syncOverall').textContent}. ${open ? 'Ocultar detalle' : 'Ver detalle'}`);
   });
   $('btnRetrySync').addEventListener('click', onRetry);
-  recoverStaleSyncSources().then(() => renderSyncStatus()).catch(() => {});
+  // Si no se pudo recuperar una fuente colgada, se pinta lo que haya: renderSyncStatus no lanza.
+  recoverStaleSyncSources().catch(() => {}).then(() => renderSyncStatus());
 }

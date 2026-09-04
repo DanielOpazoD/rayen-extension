@@ -4,14 +4,17 @@ const DOW_SORTED = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 const MONTHS_ES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 // Colours come from the page's CSS tokens so the SVGs follow light/dark mode.
-const GREEN = 'var(--brand)', BLUE = 'var(--info)', TXT = 'var(--ink)', TXT2 = 'var(--ink-3)', TXT3 = 'var(--ink-4)', VAL = 'var(--brand-2)';
+// Las barras van en neutro: el verde de marca queda para acción y estado activo,
+// no para un gráfico. El valor se lee en el número, no en el color.
+const GREEN = 'var(--ink-3)', BLUE = 'var(--ink-4)', TXT = 'var(--ink)', TXT2 = 'var(--ink-3)', TXT3 = 'var(--ink-3)', VAL = 'var(--ink)';
 
 const pct = (v, total) => total > 0 ? Math.round(v / total * 100) : 0;
 
 // ── Primitives: every mark carries value and percentage ───────
 
 function barSVG({ labels, values, title, width = 300, height = 190, color = GREEN }) {
-  const P = { top: 30, bottom: 34, left: 8, right: 8 };
+  // 46 px arriba: el valor (y-11) y el % (y-2) de la barra más alta ya no pisan el título.
+  const P = { top: 46, bottom: 34, left: 8, right: 8 };
   const cw = width - P.left - P.right, ch = height - P.top - P.bottom;
   const max = Math.max(...values, 1), n = labels.length, total = values.reduce((a, b) => a + b, 0);
   const bw = Math.max(4, Math.floor(cw / n) - 3);
@@ -28,7 +31,14 @@ function barSVG({ labels, values, title, width = 300, height = 190, color = GREE
     ].join('');
   }).join('');
   return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
+    ${titleSVG(title, width)}${bars}</svg>`;
+}
+
+// Un título más largo que el ancho se comprime en vez de recortarse («% sin
+// contrarreferencia por especialidad (≥3 atendidas)» perdía el paréntesis).
+function titleSVG(title, width) {
+  const fit = title.length * 6.2 > width - 16 ? ` textLength="${width - 16}" lengthAdjust="spacingAndGlyphs"` : '';
+  return `<text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}"${fit}>${esc(title)}</text>`;
 }
 
 function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 96, filter = null }) {
@@ -49,14 +59,15 @@ function hBarSVG({ labels, values, title, width = 300, color = GREEN, labelW = 9
     wrap[1]].join('');
   }).join('');
   return `<svg viewBox="0 0 ${width} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(title)}" style="width:100%;display:block">
-    <text x="${width/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="${TXT}">${esc(title)}</text>${bars}</svg>`;
+    ${titleSVG(title, width)}${bars}</svg>`;
 }
 
 const topEntries = (counts, n) => Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);
 const count = (records, keyFn) => records.reduce((acc, r) => { const k = keyFn(r); if (k) acc[k] = (acc[k] || 0) + 1; return acc; }, {});
 const card = svg => svg ? `<div class="chart-card">${svg}</div>` : '';
 const hb = (counts, title, n = 10, opts = {}) => {
-  const e = topEntries(counts, n);
+  // `ordered`: categorías ordinales («1 visita», «2», «3–4», «5+») en su orden, no por valor.
+  const e = opts.ordered ? Object.entries(counts).slice(0, n) : topEntries(counts, n);
   return e.length ? hBarSVG({ labels: e.map(([k]) => k), values: e.map(([, v]) => v), title, ...opts }) : '';
 };
 
@@ -116,7 +127,7 @@ export function renderCharts(records, team, container, sics = []) {
   const mine = [
     `<h3 class="chart-h3">Mis atenciones · ${records.length} atenciones · ${unicos} pacientes</h3>`,
     `<div class="chart-section">${card(cDow)}${card(cMonth)}${card(cHour)}</div>`,
-    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4, { filter: 'filtSexo' }))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4))}</div>`,
+    `<div class="chart-section">${card(hb(bySex, 'Por sexo', 4, { filter: 'filtSexo' }))}${card(cAge)}${card(hb(freq, 'Visitas por paciente', 4, { ordered: true }))}</div>`,
     `<div class="chart-section">${card(hb(byEstado, 'Por estado', 6, { filter: 'filtEstado' }))}${card(hb(byRazon, 'Por razón', 6))}${card(hb(byGes, 'GES', 2))}</div>`,
     `<div class="chart-section">${card(hb(byTipo, 'Tipos de atención', 15, { labelW: 130, filter: 'filtTipo' }))}${card(hb(byDx, 'Diagnósticos más frecuentes', 15, { labelW: 140, filter: 'search' }))}${card(hb(byCert, 'Certeza del diagnóstico principal', 5))}</div>`,
     Object.keys(byPrest).length ? `<div class="chart-section">${card(hb(byPrest, 'Atendidas por otro prestador', 8, { labelW: 130, filter: 'filtPrest' }))}</div>` : '',

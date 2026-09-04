@@ -83,3 +83,37 @@ test('aggregateTeam counts atenciones per instrument, prestador and tipo', () =>
   assert.deepEqual(agg.byTipo, { 'Morbilidad Medica': 1, 'Poli Choque': 1 });
   assert.equal(agg.byPrestador['Kine Uno'], 1, 'duplicate prestador entries count once');
 });
+
+// Regresión del balance 2: /present/ aceptaba «No se presentó», y una cita a la
+// que el paciente no fue heredaba la atención de la matrona del mismo día.
+test('una cita «No se presentó» no hereda la atención de otro prestador ese día', () => {
+  const matrona = atencion({
+    Id: 901,
+    FuncionariosPrestadores: [{ Id: 777, NombreCompleto: 'Matrona X', NombreInstrumento: 'Matrona' }],
+    Diagnosticos: [{ DescripcionClasificacion: 'Embarazo- (Confirmada)', DescripcionDiagnostico: 'Embarazo' }],
+  });
+  const out = mergeHistorial([cita({ estado: 'No se presentó' })], [matrona]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].atencionId, null, 'la atención ajena no se cruza');
+  assert.deepEqual(out[0].diagnosticos, []);
+  // La atención del propio oficial sí se cruza: la agenda puede estar mal marcada.
+  const mine = mergeHistorial([cita({ estado: 'No se presentó' })], [atencion()]);
+  assert.equal(mine[0].atencionId, 1);
+});
+
+// Decisión de Daniel (03-09-2026): sólo sus diagnósticos. Una cita atendida
+// sin registro propio no hereda la atención de otro profesional; queda la
+// pista de quién atendió ese día.
+test('una cita «Atendido» sin atención propia no hereda la de otro prestador', () => {
+  const matrona = atencion({
+    Id: 902,
+    FuncionariosPrestadores: [{ Id: 777, NombreCompleto: 'Matrona X', NombreInstrumento: 'Matrona' }],
+    Diagnosticos: [{ DescripcionClasificacion: 'Embarazo- (Confirmada)', DescripcionDiagnostico: 'Embarazo' }],
+  });
+  const out = mergeHistorial([cita({ estado: 'Atendido' })], [matrona]);
+  assert.equal(out.length, 1, 'la atención ajena tampoco se añade como fila extra');
+  assert.equal(out[0].atencionId, null);
+  assert.deepEqual(out[0].diagnosticos, []);
+  assert.equal(out[0].prestador, '');
+  assert.equal(out[0].otrosEseDia, 'Matrona X', 'la pista de quién atendió ese día se conserva');
+});

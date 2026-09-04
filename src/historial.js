@@ -1,3 +1,4 @@
+import { state } from './state.js';
 import { CONFIG } from './config.js';
 import { apiPost, chunk, session, run } from './http.js';
 import { parseAtencion, matchKey, localDateStr } from './parser.js';
@@ -83,7 +84,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   store.extra.team ??= {};
 
   const min = new Date();
-  min.setMonth(min.getMonth() - CONFIG.retentionMonths);
+  min.setMonth(min.getMonth() - (state.prefs?.retentionMonths ?? CONFIG.retentionMonths));
   pruneStore(store, localDateStr(min));
 
   const todayStr = localDateStr(new Date());
@@ -156,10 +157,18 @@ export function mergeHistorial(citas, atenciones) {
   const used = new Set();
   const out  = citas.map(c => {
     // Same patient may have several atenciones that day (kinesiólogo, matrona…):
-    // prefer the one where the officer is a prestador, then the earliest unused.
+    // sólo se cruza la que registró el propio oficial. Decisión de Daniel
+    // (03-09-2026): «quiero ver sólo mis diagnósticos». Antes, una cita
+    // atendida sin registro propio heredaba la atención de la matrona y ese
+    // diagnóstico ajeno seguía a Pacientes, a Hoy, a las estadísticas y a las
+    // exportaciones como si fuera suyo. Quién más atendió ese día queda como
+    // pista (`otrosEseDia`), sin heredar nada.
     const cands = (idx.get(matchKey(c)) ?? []).filter(x => !used.has(x.id));
-    const a = cands.find(isOfficer) ?? cands[0];
-    if (!a) return c;
+    const a = cands.find(isOfficer);
+    if (!a) {
+      const otros = [...new Set(cands.flatMap(x => x.prestadores.map(p => p.nombre)).filter(Boolean))];
+      return otros.length ? { ...c, otrosEseDia: otros.join(', ') } : c;
+    }
     used.add(a.id);
     return {
       ...c,

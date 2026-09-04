@@ -7,6 +7,6 @@ test('el estado de una carga terminada muestra sólo el total útil', () => {
     text: '134 atenciones', cls: 'ok',
   });
   assert.deepEqual(summarizeLoad(1, { failedDays: 2, historialFailed: 0 }), {
-    text: '1 atención', cls: 'warn',
+    text: '1 atención · 2 días no se pudieron cargar', cls: 'warn',
   });
 });

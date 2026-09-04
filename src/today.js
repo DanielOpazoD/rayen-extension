@@ -23,11 +23,11 @@ function novedadesHTML({ cambios, firstRun, desde, vigiladas }, especialidades) 
   if (firstRun) {
     return `<section class="brief">
       <h3 class="brief-h">Novedades <span>${esc(esp)}</span></h3>
-      <div class="brief-empty">Primera lectura: quedaron registradas ${vigiladas} interconsultas vigiladas.
-        Desde la próxima carga se avisa aquí lo que cambie.</div></section>`;
+      <div class="brief-empty">Vigilancia iniciada: se seguirán ${vigiladas} ${vigiladas === 1 ? 'interconsulta' : 'interconsultas'} de estas especialidades.
+        Cuando alguna cambie de estado aparecerá aquí en la próxima carga.</div></section>`;
   }
   if (!cambios.length) {
-    const cuando = desde ? new Date(desde).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    const cuando = desde ? new Date(desde).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
     return `<section class="brief">
       <h3 class="brief-h">Novedades <span>${esc(esp)}</span></h3>
       <div class="brief-empty">Sin cambios en ${vigiladas} interconsultas vigiladas${cuando ? ` desde el ${cuando}` : ''}.</div></section>`;

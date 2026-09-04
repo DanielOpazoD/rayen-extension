@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Rayen Atenciones - Hospital Hanga Roa",
-  "version": "2.6.0",
+  "version": "2.18.0",
   "description": "Agenda, ficha clínica, interconsultas y recetas del Dr. Opazo desde Eloisa/Rayen, con caché local y exportación.",
   "icons": {
     "16": "icons/icon16.png",
@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["storage", "tabs", "scripting", "unlimitedStorage"],
-  "host_permissions": ["https://clinicohangaroa.eloisa.cl/*"],
+  "host_permissions": ["https://clinicohangaroa.eloisa.cl/*", "https://examenesusuarios.hsalvador.cl/*", "http://10.4.69.90/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Rayen Atenciones",

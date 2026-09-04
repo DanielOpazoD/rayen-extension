@@ -45,7 +45,11 @@ export function initTooltips() {
     const text = el.dataset.tip;
     if (!text) return;
     cur = el;
-    tt.textContent = text;
+    // Si el propio elemento está recortado con «…», el tooltip empieza por su
+    // texto completo: la celda del nombre lleva ya un tip («Ver ficha») y el
+    // RUN cortado no tenía cómo leerse.
+    const recortado = el.scrollWidth > el.clientWidth + 1 ? el.textContent.trim() : '';
+    tt.textContent = recortado && !text.startsWith(recortado) ? `${recortado}\n${text}` : text;
     tt.hidden = false;
     const r = el.getBoundingClientRect();
     const w = tt.offsetWidth, h = tt.offsetHeight;
@@ -56,10 +60,20 @@ export function initTooltips() {
     tt.style.top  = `${y}px`;
   };
 
+  // Una celda o un texto recortado con «…» entrega su contenido completo como
+  // `title` al pasar el cursor o enfocar: el RUN, la razón, el solicitante
+  // dejaban de leerse sin aviso.
+  const autoTitle = target => {
+    const el = target.closest?.('td, th, .pname, .dx-main, .ic-esp, #ppMeta, .pp-row-t');
+    if (!el || el.title || el.dataset.tip) return;
+    if (el.scrollWidth > el.clientWidth + 1) el.title = el.textContent.trim();
+  };
   document.addEventListener('mouseover', e => {
+    autoTitle(e.target);
     const el = e.target.closest('[data-tip]');
     if (el && el !== cur) show(el);
   });
+  document.addEventListener('focusin', e => autoTitle(e.target));
   document.addEventListener('mouseout', e => {
     const el = e.target.closest('[data-tip]');
     if (el && el === cur && !el.contains(e.relatedTarget)) hide();
@@ -90,6 +104,7 @@ export function initTablist(nav, onSelect, key) {
       t.setAttribute('aria-selected', String(on));
       t.tabIndex = on ? 0 : -1;
       if (on && focus) t.focus();
+      if (on) t.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); // la activa nunca queda fuera del riel
     }
     onSelect(id);
   };

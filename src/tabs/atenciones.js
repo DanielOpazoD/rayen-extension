@@ -1,3 +1,4 @@
+import { humanError } from '../errors.js';
 import { renderTable, sortRecords, appendChunk, hasMoreRows, rowSelector, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from '../table.js';
 import { buildFilters, filterRecords } from '../stats.js';
 import { exportCSV, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } from '../export.js';
@@ -9,6 +10,10 @@ import { state, on, tableCtx } from '../state.js';
 import { initChips, initFilterFold, initMenu, markSorted, debounce, setStatus } from '../ui.js';
 import { writeNote, openPatientById, copyRun, jumpToSIC } from '../actions.js';
 import { decodeMultiValue, initMultiSelect } from '../multi-select.js';
+
+// Guardar una preferencia fallaba en silencio: la persona creía que el orden o
+// las columnas quedaban y al volver no estaban.
+const prefsFailed = () => toast('No se pudo guardar la preferencia en este perfil de Chrome.', { tone: 'bad' });
 
 /** The agenda table: filters, sort, inline notes, columns, export. */
 
@@ -27,16 +32,30 @@ export function render() {
   const data = currentRows();
   state.rendered = data;
   renderTable(data, state.allData.length, tableCtx());
+  // Roving tabindex: la primera fila es la única parada de Tab.
+  const first = $('tbody').querySelector('tr[data-id]');
+  if (first) first.tabIndex = 0;
   updateFilterCount();
 }
 
-/** From a chart bar: one filter, everything else cleared. */
+/**
+ * From a chart bar: one filter, everything else cleared.
+ *
+ * Devuelve false si el valor no existe como opción: asignarlo a un <select>
+ * dejaba `value === ''`, es decir sin filtro, y la tabla completa se mostraba
+ * como si estuviera filtrada mientras el aviso decía «Filtrado por…».
+ */
 export function applyFilter(campo, valor) {
+  if (campo !== 'filtTipo') {
+    const sel = $(campo);
+    if (sel.tagName === 'SELECT' && ![...sel.options].some(o => o.value === valor)) return false;
+  }
   FILTER_IDS.forEach(id => { if (id !== 'filtTipo') $(id).value = ''; });
   typeSelect.setValues(campo === 'filtTipo' ? [valor] : [], { notify: false });
   perChips.reset();
   if (campo !== 'filtTipo') $(campo).value = valor;
   render();
+  return true;
 }
 
 /**
@@ -85,7 +104,7 @@ function buildColumnsMenu() {
     if (!cb) return;
     cb.checked ? hiddenCols.delete(cb.dataset.col) : hiddenCols.add(cb.dataset.col);
     applyColumnVisibility($('mainTable'), hiddenCols);
-    savePrefs({ hiddenCols: [...hiddenCols] }).catch(() => {});
+    savePrefs({ hiddenCols: [...hiddenCols] }).catch(prefsFailed);
   });
 }
 
@@ -109,7 +128,7 @@ export function init(prefs) {
     sortDir = col === sortCol ? sortDir * -1 : 1;
     sortCol = col;
     markSorted(headers, th, sortDir);
-    savePrefs({ sortCol, sortDir }).catch(() => {});
+    savePrefs({ sortCol, sortDir }).catch(prefsFailed);
     render();
   }));
 
@@ -142,7 +161,7 @@ export function init(prefs) {
   $('btnDensity').addEventListener('click', () => {
     const dense = !document.body.classList.contains('dense');
     applyDensity(dense);
-    savePrefs({ dense }).catch(() => {});
+    savePrefs({ dense }).catch(prefsFailed);
   });
   initMenu('btnCols', 'colsMenu');
 
@@ -153,6 +172,28 @@ export function init(prefs) {
     if (hasMoreRows() && w.scrollTop + w.clientHeight > w.scrollHeight - 600) appendChunk();
   }, { passive: true });
 
+  // Navegación por filas: ↑/↓ mueven el foco, Enter abre al paciente. Antes
+  // cada fila tenía tres paradas de tabulación (nombre, info, RUN): unas 360
+  // por tabla. La fila enfocada es la única con tabindex 0.
+  $('tbody').addEventListener('keydown', e => {
+    const row = e.target.closest('tr[data-id]');
+    if (!row || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const next = e.key === 'ArrowDown' ? row.nextElementSibling : row.previousElementSibling;
+      if (!next?.dataset.id) return;
+      e.preventDefault();
+      row.tabIndex = -1; next.tabIndex = 0; next.focus();
+    } else if ((e.key === 'Enter' || e.key === ' ') && e.target === row) {
+      e.preventDefault();
+      openPatientById(row.dataset.id);
+    }
+  });
+  $('tbody').addEventListener('focusin', e => {
+    const row = e.target.closest('tr[data-id]');
+    if (!row) return;
+    $('tbody').querySelectorAll('tr[tabindex="0"]').forEach(r => { if (r !== row) r.tabIndex = -1; });
+    row.tabIndex = 0;
+  });
   $('tbody').addEventListener('click', async e => {
     const sicChip = e.target.closest('.sic-link');
     if (sicChip) { jumpToSIC({ id: sicChip.dataset.sic }); return; }
@@ -181,12 +222,18 @@ export function init(prefs) {
     $('exportMenu').classList.remove('open');
     $('btnExport').setAttribute('aria-expanded', 'false');
     const rows = currentRows();
+    // Un archivo con nombre, RUN y diagnósticos sale del navegador: antes se
+    // generaba sin decir cuántos pacientes ni qué campos llevaba.
+    const pacientes = new Set(rows.map(r => r.run || r.nombre)).size;
+    const destino = EXPORT_LABEL[b.dataset.fmt] || 'un archivo de notas';
+    const aviso = `¿Exportar ${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'} de ${pacientes} ${pacientes === 1 ? 'paciente' : 'pacientes'} a ${destino}?\n\nEl archivo incluye nombre, RUN y diagnósticos. Guárdalo sólo en un equipo del hospital.`;
+    if (!window.confirm(aviso)) return;
     try {
       await EXPORTERS[b.dataset.fmt](rows);
       const lbl = EXPORT_LABEL[b.dataset.fmt];
       if (lbl) toast(`${lbl}: ${rows.length} atenciones`);
     } catch (err) {
-      setStatus(`No se pudo exportar: ${err.message}`, 'err');
+      setStatus(`No se pudo exportar. ${humanError(err, 'Chrome')}`, 'err');
       toast('No se pudo exportar', { tone: 'bad' });
     }
   });
@@ -197,6 +244,10 @@ export function init(prefs) {
   });
 
   on('data', () => {
+    // Si hay una nota a medio escribir, no se repinta: el refresco de 15 min
+    // vaciaba el <tbody> con el textarea dentro y el texto se perdía sin aviso.
+    // El render que hace la propia nota al terminar ya lee el estado nuevo.
+    if (document.querySelector('.note-edit')) return;
     const { tipos } = buildFilters(state.allData);
     typeSelect.setOptions(tipos);
     render();

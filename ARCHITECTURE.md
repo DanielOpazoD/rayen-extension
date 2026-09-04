@@ -7,8 +7,8 @@ Antes de cambiar código, lee también [`DOCUMENTATION_MAP.md`](DOCUMENTATION_MA
 ## Límites del sistema
 
 - Extensión Chrome Manifest V3, formada por módulos ES nativos y sin paso de compilación.
-- No tiene backend propio ni dependencias de ejecución: utiliza la sesión que ya está abierta en Eloisa.
-- `src/http.js` restringe todas las peticiones al origen `https://clinicohangaroa.eloisa.cl`.
+- No tiene backend propio. Las únicas dependencias de ejecución son dos librerías empaquetadas en `vendor/` (pdf.js para leer informes, pdf-lib para unirlos), cargadas bajo demanda. Utiliza las sesiones que el usuario ya tiene abiertas en Eloisa, en el portal del Hospital Salvador y en SysLab.
+- Tres transportes, cada uno con guardia de origen: `src/http.js` sólo habla con `https://clinicohangaroa.eloisa.cl`; `src/lab-http.js` sólo con `https://examenesusuarios.hsalvador.cl`; `src/syslab-http.js` sólo conduce pestañas de `http://10.4.69.90` (red interna del HHR). Son exactamente los tres `host_permissions` del manifest.
 - Agenda, ficha, SIC, preferencias y notas se conservan localmente en el perfil de Chrome. El token solo vive en `chrome.storage.session`.
 - La aplicación completa se compone en `app.js`; `popup-init.js` solo abre la experiencia completa y `report.js` prepara el reporte imprimible.
 
@@ -81,6 +81,8 @@ flowchart LR
 | Interconsultas | `src/sic.js`, `src/ic-tab.js`, `src/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
 | Vista Hoy | `src/today.js`, `src/tabs/hoy.js` | jornada vacía, antecedentes y navegación de paciente |
 | Panel o reporte de paciente | `src/patient-panel.js`, `src/patient-report.js`, `src/ficha.js` | identidad, escape de texto y variantes del reporte |
+| Laboratorio / ProactiveLIS (HSR) | `src/lab-http.js`, `src/lab-api.js`, `src/tabs/laboratorio.js` | sesión cookie, parsing de órdenes, guardia de origen |
+| Laboratorio / SysLab (HHR) | `src/syslab-http.js`, `src/syslab-api.js`, `src/tabs/laboratorio.js` | pestaña con sesión, espera de navegación, identidad del lote |
 | Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
 | Sistema visual y responsive | `styles/app.css`, `src/ui.js`, `src/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido |
 | Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
@@ -100,11 +102,29 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/dom.js` — utilidades DOM, escape, teclado, tooltips y esqueletos.
 - `src/explorer.js` — consultas controladas del Explorador API.
+- `src/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/export.js` — exportación filtrada a CSV, XLS, HTML, JSON y PDF.
 - `src/ficha.js` — ficha longitudinal, antecedentes y programas del paciente.
 - `src/historial.js` — historial diario y cruce con la agenda.
 - `src/http.js` — transporte autenticado, cancelación y guardia de origen.
 - `src/ic-tab.js` — presentación, filtros y orden de interconsultas.
+- `src/exam-request-catalog.js` — catálogo literal del formulario de solicitud: 10 categorías, 65 exámenes y sus tubos.
+- `src/exam-request-view.js` — dibujo del formulario de solicitud, en pantalla y para imprimir.
+- `src/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.
+- `src/lab-analytics.js` — identidad del paciente, lote íntegro, matriz comparativa y tendencias.
+- `src/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
+- `src/lab-api.js` — servicio ProactiveLIS: búsqueda de órdenes, PDF e informes.
+- `src/lab-charts.js` — series de tendencia en SVG, con las alteraciones destacadas.
+- `src/lab-http.js` — transporte cookie-based para el origen examenesusuarios.hsalvador.cl.
+- `src/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
+- `src/lab-parser.js` — interpretación clínica del texto de un informe y detección de fuera de rango.
+- `src/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
+- `src/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
+- `src/lab-search.js` — búsqueda en los dos laboratorios sin DOM: RUT buscado, token de ejecución, cancelación, filtro de período y resultados por callbacks.
+- `src/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
+- `src/lab-specimen.js` — clasifica la muestra biológica y decide qué entra en cada vista y en qué orden.
+- `src/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
+- `src/lab-trends.js` — agrupa las series en tarjetas clínicas y las filtra por período, texto y alteración.
 - `src/load-summary.js` — resumen honesto y compacto del resultado de carga.
 - `src/loader.js` — orquestación de carga, progreso, reintento y sesión vencida.
 - `src/lock.js` — pantalla local de privacidad por inactividad.
@@ -115,11 +135,14 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/patient-panel.js` — interacción y renderizado del panel lateral del paciente.
 - `src/patient-report.js` — modelo de historia clínica imprimible.
 - `src/patients.js` — agregación pura de atenciones por paciente.
+- `src/pdf-merge.js` — fusión de informes en un PDF único, con pdf-lib cargado bajo demanda.
 - `src/pdf.js` — obtención y presentación segura de documentos PDF.
 - `src/pendientes.js` — reglas explicables de pendientes clínico-administrativos.
 - `src/period.js` — periodos rápidos y rangos explícitos.
 - `src/sic.js` — carga y normalización de interconsultas.
 - `src/state.js` — fuente única de verdad y eventos de la aplicación.
+- `src/syslab-api.js` — servicio SysLab HHR: búsqueda por RUT y verificación de identidad del lote.
+- `src/syslab-http.js` — conducción de la pestaña SysLab (navegación por estado) y lectura de su DOM.
 - `src/stats.js` — cálculos puros para estadísticas.
 - `src/sync-health.js` — persistencia técnica de intentos, éxitos y pendientes por fuente.
 - `src/sync-status.js` — presentación de la salud de sincronización.
@@ -129,6 +152,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 - `src/tabs/explorador.js` — controlador del Explorador API.
 - `src/tabs/hoy.js` — controlador de fecha y jornada de Hoy.
 - `src/tabs/interconsultas.js` — carga bajo demanda y eventos de SIC.
+- `src/tabs/laboratorio.js` — controlador de la pestaña Laboratorio: Hospital Salvador (ProactiveLIS) y HHR (SysLab), análisis y solicitud de exámenes.
 - `src/tabs/pacientes.js` — controlador de agregación, filtros y tabla de pacientes.
 - `src/toast.js` — confirmaciones transitorias y acciones de deshacer.
 - `src/today.js` — novedades y agenda diaria con antecedentes.

@@ -113,7 +113,9 @@ export function applyFilters(allData, f, ctx = EMPTY_CTX) {
   };
 
   return allData.filter(p =>
-    (!f.q      || [p.nombre, p.ap, p.am, p.runStr, p.run, p.note, ...(p.diagnosticos ?? []).map(x => x.nombre)]
+    // La clasificación entra en la búsqueda porque es con lo que se rotulan las
+    // barras de diagnóstico: filtrar por ella devolvía cero filas.
+    (!f.q      || [p.nombre, p.ap, p.am, p.runStr, p.run, p.note, ...(p.diagnosticos ?? []).flatMap(x => [x.nombre, x.clasificacion])]
                     .some(v => String(v ?? '').toLowerCase().includes(f.q))) &&
     inRange(p.fecha8, from8, to8) &&
     (!f.fecha  || p.fechaAtencion === f.fecha) &&

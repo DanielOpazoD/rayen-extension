@@ -27,13 +27,16 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   await expect(page.getByText('DEV · DATOS SINTÉTICOS')).toBeVisible();
 
   await page.locator('#btnFetch').click();
-  await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones$/);
+  await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones( · .+)?$/);
   await expect(page.locator('#syncOverall')).toHaveText(/^(Al día|Pendiente)$/);
   const total = Number((await page.locator('#statusBar').innerText()).split(' ')[0]);
   expect(total).toBeGreaterThan(0);
 
-  const compactHeader = await page.locator('.status-line').boundingBox();
-  expect(compactHeader.height).toBeLessThanOrEqual(40);
+  // El estado vive en el riel de pestañas (una sola banda de ≤40 px) y el
+  // detalle de sincronización se despliega encima sin empujar las pestañas.
+  const rail = await page.locator('.rail').boundingBox();
+  const narrowViewport = (await page.evaluate(() => document.documentElement.clientWidth)) <= 760;
+  expect(rail.height).toBeLessThanOrEqual(narrowViewport ? 84 : 40); // bajo 760 px el estado baja a una segunda línea del riel
   const tabsBeforeDetails = await page.locator('.tabs').first().boundingBox();
   await page.locator('#btnSyncDetails').click();
   await expect(page.locator('#syncDetails')).toBeVisible();
@@ -58,9 +61,10 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   await expect(page.locator('#filtTipoButton')).toHaveText('2 seleccionados');
 
   const countText = await page.locator('#countRow').innerText();
-  const count = countText.match(/^(?:(\d+) de )?(\d+) de (\d+) registros$/);
+  // «N en pantalla · M de T registros», «M de T registros» o «T registros».
+  const count = countText.match(/^(?:(\d+) en pantalla · )?(?:(\d+) de )?(\d+) registros?$/);
   expect(count, `contador inesperado: ${countText}`).not.toBeNull();
-  const [visible, matching, all] = [Number(count[1] ?? count[2]), Number(count[2]), Number(count[3])];
+  const all = Number(count[3]), matching = Number(count[2] ?? count[3]), visible = Number(count[1] ?? matching);
   expect(visible).toBeLessThanOrEqual(matching);
   expect(matching).toBeLessThan(total);
   expect(all).toBe(total);
@@ -96,6 +100,116 @@ test('el salto al contenido funciona con teclado', async ({ page }) => {
   await expect(page).toHaveURL(/#mainContent$/);
 
   expect(runtime.externalRequests).toEqual([]);
+  expect(runtime.consoleIssues).toEqual([]);
+  expect(runtime.pageErrors).toEqual([]);
+});
+
+// Etapa 2, fase B: una parada de tabulación por fila. Antes cada fila tenía
+// tres (nombre, «i», RUN) más una por interconsulta. Aquí se recorre la tabla
+// con ↑/↓, se comprueba que sólo una fila es parada y que Enter abre al paciente.
+test('la tabla se recorre por filas con el teclado y cada fila cabe en una línea', async ({ page }) => {
+  const runtime = observeRuntime(page);
+
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.locator('#btnFetch').click();
+  await expect(page.locator('#statusBar')).toHaveText(/^\d+ atenciones( · .+)?$/);
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones' }).click();
+
+  const rows = page.locator('#tbody tr[data-id]');
+  await expect(rows.first()).toHaveAttribute('tabindex', '0');
+  await expect(page.locator('#tbody [tabindex="0"]')).toHaveCount(1);
+
+  const heights = await rows.evaluateAll(list => list.slice(0, 40).map(tr => tr.offsetHeight));
+  expect(Math.max(...heights), `filas de ${heights.join(', ')} px`).toBeLessThanOrEqual(48);
+  const dateFits = await page.locator('#tbody td[data-c="fechaAtencion"]').first()
+    .evaluate(td => td.scrollWidth <= td.clientWidth);
+  expect(dateFits, 'la fecha no debe recortarse').toBe(true);
+
+  await rows.first().focus();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(rows.nth(2)).toBeFocused();
+  await expect(page.locator('#tbody [tabindex="0"]')).toHaveCount(1);
+  await page.keyboard.press('ArrowUp');
+  await expect(rows.nth(1)).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  const panel = page.locator('#patientPanel');
+  await expect(panel).toBeVisible();
+  // Fase E: diálogo real. El foco entra al diálogo, el fondo queda inerte, Tab
+  // no sale del panel, y Escape cierra devolviendo el foco a la fila de origen.
+  await expect(panel).toBeFocused();
+  await expect(page.locator('#mainContent')).toHaveJSProperty('inert', true);
+  await expect(page.locator('#topbar')).toHaveJSProperty('inert', true);
+  for (let i = 0; i < 25; i++) {
+    await page.keyboard.press('Tab');
+    const inside = await page.evaluate(() => document.getElementById('patientPanel').contains(document.activeElement));
+    expect(inside, `Tab nº ${i + 1} salió del diálogo`).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(page.locator('#mainContent')).toHaveJSProperty('inert', false);
+  await expect(rows.nth(1)).toBeFocused();
+  // Cerrado, ningún control del panel es alcanzable con Tab.
+  await page.keyboard.press('Tab');
+  const escaped = await page.evaluate(() => document.getElementById('patientPanel').contains(document.activeElement));
+  expect(escaped).toBe(false);
+
+  expect(runtime.externalRequests).toEqual([]);
+  expect(runtime.consoleIssues).toEqual([]);
+  expect(runtime.pageErrors).toEqual([]);
+});
+
+// Etapa 2, fase A: bajo 1100 px la cabecera es una línea y las opciones se
+// pliegan tras «⋯». En escritorio el botón no existe y todo está a la vista.
+test('la cabecera pliega sus opciones en pantallas estrechas y las muestra en escritorio', async ({ page }) => {
+  const runtime = observeRuntime(page);
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+
+  const narrow = (await page.evaluate(() => document.documentElement.clientWidth)) <= 1100;
+  const more = page.locator('#btnMore');
+  await expect(page.locator('#btnFetch')).toBeVisible();
+  if (narrow) {
+    await expect(more).toBeVisible();
+    await expect(page.locator('#btnSettings')).toBeHidden();
+    const headerHeight = await page.locator('#hdrWrap').evaluate(el => el.offsetHeight);
+    expect(headerHeight, 'la cabecera estrecha cabe en una línea').toBeLessThanOrEqual(64);
+    await more.click();
+    await expect(more).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#btnSettings')).toBeVisible();
+    await expect(page.locator('#months')).toBeVisible();
+    // Menú anidado: cerrar «⋯» con Preferencias abiertas debe cerrar también
+    // Preferencias; antes quedaba marcado abierto e invisible.
+    await page.locator('#btnSettings').click();
+    await expect(page.locator('#settingsMenu')).toBeVisible();
+    await more.click();
+    await expect(page.locator('#settingsMenu')).toBeHidden();
+    await expect(page.locator('#btnSettings')).toHaveAttribute('aria-expanded', 'false');
+    await more.click();
+    await expect(page.locator('#settingsMenu')).toBeHidden();
+    await page.keyboard.press('Escape');
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await expect(more).toBeFocused();
+    await more.click();
+    const box = await page.locator('#hdrMore').boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual((await page.evaluate(() => document.documentElement.clientWidth)) + 1);
+    await page.locator('#mainContent').click();
+    await expect(page.locator('#btnSettings')).toBeHidden();
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+  } else {
+    await expect(more).toBeHidden();
+    await expect(page.locator('#btnSettings')).toBeVisible();
+    await expect(page.locator('#months')).toBeVisible();
+    // Escape cierra el menú abierto y devuelve el foco a su botón.
+    await page.locator('#btnSettings').click();
+    await expect(page.locator('#settingsMenu')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#settingsMenu')).toBeHidden();
+    await expect(page.locator('#btnSettings')).toBeFocused();
+  }
   expect(runtime.consoleIssues).toEqual([]);
   expect(runtime.pageErrors).toEqual([]);
 });

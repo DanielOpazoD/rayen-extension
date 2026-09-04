@@ -13,7 +13,7 @@ test('la aplicación carga una única hoja visual local y empaquetada', () => {
   assert.doesNotMatch(html, /<style\b/i, 'app.html no debe volver a concentrar estilos');
 
   const pkg = JSON.parse(read('package.json'));
-  assert.match(pkg.scripts.pack, /\bsrc styles icons\b/, 'el ZIP debe incluir la hoja visual');
+  assert.match(pkg.scripts.pack, /\bsrc styles vendor icons\b/, 'el ZIP debe incluir la hoja visual y las bibliotecas locales');
   assert.match(dev, /querySelectorAll\('link\[href\]'\)/, 'el arnés debe trasladar recursos enlazados');
   assert.match(dev, /new URL\(link\.getAttribute\('href'\), appRoot\)/, 'el arnés debe resolverlos desde la raíz de la app');
 });

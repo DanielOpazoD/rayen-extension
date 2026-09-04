@@ -1,3 +1,4 @@
+import { humanError } from '../errors.js';
 import { getToken } from '../auth.js';
 import { loadSICs } from '../sic.js';
 import { AuthError } from '../http.js';
@@ -52,7 +53,7 @@ export async function ensureSICs(force = false) {
     await finishSyncSource('sics', {
       attemptedAt, failedItems: ['sesión pendiente'], hasData: state.sics.length > 0, error: true,
     });
-    await renderSyncStatus().catch(() => {});
+    await renderSyncStatus();
     $('sicStatus').textContent = 'Sin sesión activa en Eloisa.';
     loading = false;
     $('btnSicRefresh').disabled = false;
@@ -64,7 +65,7 @@ export async function ensureSICs(force = false) {
   const health = await loadSyncHealth();
   const effectiveForce = force || pendingSyncItems(health, 'sics').size > 0;
   await beginSyncSource('sics', attemptedAt, ['llamadas pendientes'], operationId);
-  await renderSyncStatus().catch(() => {});
+  await renderSyncStatus();
   $('sicStatus').textContent = 'Cargando interconsultas…';
   try {
     const res = await loadSICs(token, state.loadedMonths, pct => { $('sicStatus').textContent = `Cargando interconsultas… ${pct}%`; }, { force: effectiveForce });
@@ -84,9 +85,15 @@ export async function ensureSICs(force = false) {
       error: res.failed > 0,
       operationId,
     });
-    const when = new Date(res.savedAt).toLocaleTimeString('es-CL');
-    const source = res.staleFallback ? 'caché anterior conservado' : (res.fromCache ? 'caché' : 'red');
-    $('sicStatus').textContent = `${res.sics.length} SIC · ${source} · ${when}${res.failed ? ` · ⚠ ${res.failed} llamadas fallaron` : ''}`;
+    // Antes: «28 SIC · caché · 8:37:29 p. m.». La persona necesita saber cuántas
+    // hay, de cuándo son y si algo quedó sin actualizar.
+    const hora = new Date(res.savedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const n = res.sics.length;
+    const cuenta = `${n} ${n === 1 ? 'interconsulta' : 'interconsultas'}`;
+    const origen = res.staleFallback ? `se muestra la copia anterior (${hora}); la actualización no se completó`
+      : res.fromCache ? `guardadas a las ${hora}` : `actualizadas a las ${hora}`;
+    const fallos = res.failed && !res.staleFallback ? ` · ${res.failed} ${res.failed === 1 ? 'llamada falló' : 'llamadas fallaron'}` : '';
+    $('sicStatus').textContent = `${cuenta} · ${origen}${fallos}`;
     $('btnSicExport').style.display = '';
     $('btnSicExportXls').style.display = '';
   } catch (err) {
@@ -97,10 +104,10 @@ export async function ensureSICs(force = false) {
       error: true,
       operationId,
     });
-    $('sicStatus').textContent = err instanceof AuthError ? 'Sesión de Eloisa vencida.' : `Error: ${err.message}`;
+    $('sicStatus').textContent = err instanceof AuthError ? 'La sesión de Eloisa venció. Ábrela e inicia sesión.' : humanError(err, 'Eloisa');
     if (err instanceof AuthError) showExpired();
   } finally {
-    await renderSyncStatus().catch(() => {});
+    await renderSyncStatus();
     loading = false;
     $('btnSicRefresh').disabled = false;
   }
@@ -123,8 +130,18 @@ export function init() {
   $('btnSicClear').addEventListener('click', () => { clearFilters(); render(); });
   $('btnSicRefresh').addEventListener('click', () => ensureSICs(true));
   document.addEventListener('rayen:retry-sics', () => ensureSICs(true));
-  $('btnSicExport').addEventListener('click',    () => { const r = sortSICs(filterSICs(state.sics)); exportSICsCSV(r); toast(`CSV: ${r.length} interconsultas`); });
-  $('btnSicExportXls').addEventListener('click', () => { const r = sortSICs(filterSICs(state.sics)); exportSICsXLS(r); toast(`Excel: ${r.length} interconsultas`); });
+  // Como en Atenciones: un archivo con nombre, RUN y diagnóstico sale del
+  // navegador, así que se confirma diciendo cuántos pacientes lleva.
+  const exportSics = (fmt, exporter) => {
+    const r = sortSICs(filterSICs(state.sics));
+    const pacientes = new Set(r.map(s => s.paciente?.run || s.paciente?.nombre)).size;
+    const aviso = `¿Exportar ${r.length} ${r.length === 1 ? 'interconsulta' : 'interconsultas'} de ${pacientes} ${pacientes === 1 ? 'paciente' : 'pacientes'} a ${fmt}?\n\nEl archivo incluye nombre, RUN y diagnóstico. Guárdalo sólo en un equipo del hospital.`;
+    if (!window.confirm(aviso)) return;
+    exporter(r);
+    toast(`${fmt}: ${r.length} interconsultas`);
+  };
+  $('btnSicExport').addEventListener('click',    () => exportSics('CSV', exportSICsCSV));
+  $('btnSicExportXls').addEventListener('click', () => exportSics('Excel', exportSICsXLS));
 
   $('sicBody').addEventListener('click', async e => {
     const pdf = e.target.closest('.pdf-sic');

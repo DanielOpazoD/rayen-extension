@@ -9,7 +9,7 @@
 <body>
 <a class="skip-link" href="#mainContent">Saltar al contenido</a>
 <div class="topbar" id="topbar">
-<header>
+<header id="hdrWrap">
   <div class="brand">
     <span class="mark" aria-hidden="true"></span>
     <div>
@@ -17,7 +17,7 @@
       <p>Hospital Hanga Roa · Dr. Daniel Opazo Damiani</p>
     </div>
   </div>
-  <div class="hdr-r">
+  <div class="hdr-r" id="hdrMore">
     <div class="load-options" aria-label="Opciones de actualización">
       <label class="period-control"><span>Período</span>
         <select id="months">
@@ -32,8 +32,6 @@
       </label>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" id="btnFetch">Cargar datos</button>
-      <button class="btn btn-danger" id="btnCancel" style="display:none">Cancelar</button>
       <div class="menu-wrap" id="exportWrap" style="display:none">
         <button class="btn" id="btnExport" aria-haspopup="menu" aria-expanded="false">Exportar</button>
         <div class="menu" id="exportMenu" role="menu">
@@ -49,13 +47,15 @@
       <div class="menu-wrap" id="settingsWrap">
         <button class="btn" id="btnSettings" aria-haspopup="true" aria-expanded="false" data-tip="Refresco, privacidad y datos locales">Preferencias</button>
         <div class="menu settings" id="settingsMenu">
-          <div class="set-grid">
+          <div class="set-grid set-4">
             <label>Refresco automático
               <select id="setRefresh"><option value="0">Apagado</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
             <label>Bloqueo por inactividad
               <select id="setLock"><option value="0">Apagado</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
             <label>Pestaña inicial
-              <select id="setStartTab"><option value="hoy">Hoy</option><option value="atenciones">Atenciones</option><option value="interconsultas">Interconsultas</option><option value="estadisticas">Estadísticas</option></select></label>
+              <select id="setStartTab"><option value="hoy">Hoy</option><option value="atenciones">Atenciones</option><option value="interconsultas">Interconsultas</option><option value="estadisticas">Estadísticas</option><option value="laboratorio">Laboratorio</option></select></label>
+            <label>Conservar datos locales
+              <select id="setRetention" data-tip="Agenda, ficha e interconsultas más antiguas que esto se borran en la siguiente carga"><option value="3">3 meses</option><option value="6">6 meses</option><option value="13">13 meses</option></select></label>
           </div>
           <div class="set-h">Umbrales de pendientes <small>días</small></div>
           <div class="set-grid set-4">
@@ -77,28 +77,35 @@
       </div>
     </div>
   </div>
+  <div class="hdr-primary">
+    <button class="btn btn-primary" id="btnFetch">Cargar datos</button>
+    <button class="btn btn-danger" id="btnCancel" style="display:none">Cancelar</button>
+    <button class="btn" id="btnMore" aria-haspopup="true" aria-expanded="false" aria-controls="hdrMore" aria-label="Más opciones" data-tip="Período, ficha clínica, exportar y preferencias">⋯</button>
+  </div>
 </header>
 <progress id="progress" value="0" max="100" style="display:none"></progress>
-<div class="status-line">
-  <div id="statusBar" class="idle" role="status" aria-live="polite">Presiona "Cargar datos" para comenzar.</div>
-  <section id="syncHealth" class="sync-health" aria-label="Estado de sincronización" hidden>
-    <div class="sync-health-h">
-      <button type="button" class="sync-summary" id="btnSyncDetails" aria-expanded="false" aria-controls="syncDetails">
-        <span class="sync-dot" aria-hidden="true"></span><span id="syncOverall" class="sync-overall">Sin comprobar</span><span class="sync-chevron" aria-hidden="true">⌄</span>
-      </button>
-      <button class="btn-mini" id="btnRetrySync" hidden>Reintentar</button>
-    </div>
-    <div id="syncDetails" class="sync-details" hidden><div id="syncSources"></div></div>
-  </section>
-</div>
+<div class="rail">
 <nav class="tabs" role="tablist" aria-label="Secciones">
   <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-hoy" data-tab="hoy">Hoy</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-atenciones" data-tab="atenciones">Atenciones</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-pacientes" data-tab="pacientes">Pacientes</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-estadisticas" data-tab="estadisticas">Estadísticas</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-interconsultas" data-tab="interconsultas">Interconsultas</button>
+  <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-laboratorio" data-tab="laboratorio">Laboratorio</button>
   <button class="tab-btn" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-explorador" data-tab="explorador">Explorador API</button>
 </nav>
+<div class="rail-status">
+  <div id="statusBar" class="idle" role="status" aria-live="polite">Pulsa «Cargar datos» para comenzar.</div>
+  <section id="syncHealth" class="sync-health" aria-label="Estado de sincronización" hidden>
+    <div class="sync-health-h">
+      <span id="syncOverall" class="sync-overall">Sin comprobar</span>
+      <button class="btn-mini" id="btnSyncDetails" aria-expanded="false" aria-controls="syncDetails">Detalle</button>
+      <button class="btn-mini" id="btnRetrySync" hidden>Reintentar</button>
+    </div>
+    <div id="syncDetails" class="sync-details" hidden><div id="syncSources"></div></div>
+  </section>
+</div>
+</div>
 </div>
 
 <main id="mainContent" tabindex="-1">
@@ -170,7 +177,7 @@
   <div class="fp-foot"><button class="btn-mini" id="btnClearFilters">Limpiar filtros</button></div>
 </div>
 </div>
-<div class="tbl-wrap" id="tblWrap" style="display:none">
+<div class="tbl-wrap" id="tblWrap">
 <table id="mainTable" aria-label="Atenciones">
   <colgroup>
     <col class="c-fecha"><col class="c-nombre"><col class="c-edad"><col class="c-sexo">
@@ -188,7 +195,7 @@
     <th class="ns" data-c="ic" data-tip="SIC que originó la cita (solicitante real, especialidad, estado) y otras SIC del paciente">Interconsulta</th>
     <th class="ns" data-c="nota" data-tip="Clic en una celda para editar">Notas</th>
   </tr></thead>
-  <tbody id="tbody"></tbody>
+  <tbody id="tbody"><tr><td colspan="10" class="empty"><div class="empty-state"><b>Carga los datos para ver tus atenciones</b>Pulsa «Cargar datos» arriba a la derecha: se traen la agenda y, si está activada, la ficha clínica del período elegido.</div></td></tr></tbody>
   <tfoot><tr><td colspan="10" id="countRow"></td></tr></tfoot>
 </table>
 </div>
@@ -280,13 +287,131 @@
         <th data-sort="paciente" tabindex="0" aria-sort="none">Paciente</th>
         <th data-sort="especialidad" tabindex="0" aria-sort="none">Especialidad · motivo</th>
         <th class="ns">Diagnóstico (CIE-10)</th>
-        <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Código de prioridad tal como lo entrega Rayen. La API no envía etiqueta; pasa el cursor sobre cada código.">Prior.</th>
+        <th data-sort="prioridad" tabindex="0" aria-sort="none" data-tip="Prioridad con que se pidió la interconsulta: P1 alta, P2 media, P3 baja. Rayen entrega sólo el código; la etiqueta es inferida.">Prior.</th>
         <th data-sort="estado" tabindex="0" aria-sort="none">Estado</th>
         <th data-sort="solicitante" tabindex="0" aria-sort="none">Solicitante</th>
       </tr></thead>
       <tbody id="sicBody"><tr><td colspan="8" class="empty">Sin datos todavía.</td></tr></tbody>
       <tfoot><tr><td colspan="8" id="sicCount"></td></tr></tfoot>
     </table>
+  </div>
+</div>
+
+<!-- Tab: Laboratorio -->
+<div class="tab-pane" id="tab-laboratorio" role="tabpanel">
+  <div class="lab">
+    <div class="lab-header">
+      <span class="lab-origin"><span id="labHsrStatus" class="lab-session checking">HSR…</span><button class="btn-mini ghost" id="labCheckHsr" aria-label="Volver a comprobar la sesión del Hospital Salvador" data-tip="Volver a comprobar la sesión">↻</button></span>
+      <span class="lab-origin"><span id="labHhrStatus" class="lab-session checking">HHR…</span><button class="btn-mini ghost" id="labCheckHhr" aria-label="Volver a comprobar la sesión de SysLab" data-tip="Volver a comprobar la sesión">↻</button></span>
+    </div>
+    <div class="lab-search-row">
+      <input type="text" id="labRut" placeholder="RUT paciente (ej: 16.940.645-6)" aria-label="RUT del paciente" spellcheck="false">
+      <label class="lab-date-label">Período
+        <select id="labPeriodo" data-tip="Salvador filtra en el servidor; Hanga Roa devuelve todo y se filtra aquí">
+          <option value="0.5">6 meses</option>
+          <option value="1">1 año</option>
+          <option value="2" selected>2 años</option>
+          <option value="5">5 años</option>
+          <option value="0">Todo</option>
+        </select>
+      </label>
+      <label class="lab-date-label">Desde <input type="date" id="labDesde" aria-label="Fecha desde"></label>
+      <label class="lab-date-label">Hasta <input type="date" id="labHasta" aria-label="Fecha hasta"></label>
+      <button class="btn btn-primary" id="labSearchBtn">Buscar</button>
+      <button class="btn-mini" id="labAnalyze" hidden>Analizar</button>
+      <button class="btn-mini" id="labDownloadAll" hidden>Todos los PDF</button>
+      <button class="btn-mini" id="labRequestOpen" data-tip="Formulario de solicitud para imprimir y entregar">Solicitud</button>
+      <button class="btn-mini" id="labClear">Limpiar</button>
+    </div>
+    <section class="lab-request" id="labRequest" hidden aria-label="Solicitud de exámenes">
+      <div class="lab-analysis-head">
+        <strong>Solicitud de laboratorio</strong>
+        <span class="muted" id="labRequestCount">0 exámenes</span>
+        <label class="lab-date-label">Previsión
+          <select id="labRequestPrev">
+            <option value="">Sin especificar</option>
+            <option value="FONASA A">FONASA A</option>
+            <option value="FONASA B">FONASA B</option>
+            <option value="FONASA C">FONASA C</option>
+            <option value="FONASA D">FONASA D</option>
+            <option value="PRAIS">PRAIS</option>
+          </select>
+        </label>
+        <button class="btn-mini" id="labRequestClear">Desmarcar</button>
+        <button class="btn btn-primary btn-mini" id="labRequestPrint">Imprimir</button>
+        <button class="btn-mini" id="labRequestClose">Cerrar</button>
+      </div>
+      <div id="labRequestBody"></div>
+    </section>
+    <div id="labError" class="lab-msg"></div>
+    <div id="labStale" class="lab-msg error" role="status" aria-live="polite" hidden></div>
+    <div class="lab-results" id="labResults">
+      <span id="labHsrCount" class="lab-count"></span>
+      <div class="tbl-wrap">
+        <table class="lab-table" aria-label="Órdenes Hospital Salvador (ProactiveLIS)">
+          <thead><tr>
+            <th class="lab-pick"><input type="checkbox" id="labPickAllHsr" aria-label="Seleccionar todas las órdenes del Hospital Salvador"></th>
+            <th>Fecha</th>
+            <th>N° Orden</th>
+            <th>Paciente</th>
+            <th data-tip="Validadas / Total">Progreso</th>
+            <th>Rechazos</th>
+            <th>Procedencia</th>
+            <th>Áreas</th>
+            <th>PDF</th>
+          </tr></thead>
+          <tbody id="labHsrBody"></tbody>
+        </table>
+      </div>
+      <span id="labHhrCount" class="lab-count"></span>
+      <div class="tbl-wrap">
+        <table class="lab-table" aria-label="Órdenes Hospital Hanga Roa (SysLab)">
+          <thead><tr>
+            <th class="lab-pick"><input type="checkbox" id="labPickAllHhr" aria-label="Seleccionar todas las órdenes del Hospital Hanga Roa"></th>
+            <th>Fecha</th>
+            <th>N° Orden</th>
+            <th>Paciente</th>
+            <th>Hora</th>
+            <th>Procedencia</th>
+            <th>Exámenes</th>
+            <th>PDF</th>
+          </tr></thead>
+          <tbody id="labHhrBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="lab-analysis" id="labAnalysis" hidden aria-label="Análisis de laboratorio">
+      <div class="lab-analysis-head">
+        <strong id="labAnalysisTitle">Análisis</strong>
+        <span id="labAnalysisMeta" class="muted"></span>
+        <nav class="lab-views" id="labViews" role="tablist" aria-label="Vistas del análisis">
+          <button type="button" role="tab" data-view="comparacion" aria-controls="labAnalysisBody" aria-selected="true">Comparación</button>
+          <button type="button" role="tab" data-view="tendencias" aria-controls="labAnalysisBody" aria-selected="false">Tendencias</button>
+          <button type="button" role="tab" data-view="microbiologia" aria-controls="labAnalysisBody" aria-selected="false" hidden>Microbiología</button>
+          <button type="button" role="tab" data-view="informes" aria-controls="labAnalysisBody" aria-selected="false">Informes</button>
+        </nav>
+        <button class="btn-mini" id="labCopySummary" data-tip="Copiar el resumen de una línea para pegar en la evolución">Resumen</button>
+        <button class="btn-mini" id="labCopyTable" data-tip="Copiar la matriz como texto para pegar en una planilla">Copiar</button>
+        <button class="btn-mini" id="labCloseAnalysis">Cerrar</button>
+      </div>
+      <div id="labAnalysisWarn" class="lab-msg" role="status" aria-live="polite"></div>
+      <div class="lab-trend-bar" id="labTrendBar" hidden>
+        <label class="lab-date-label">Ventana
+          <select id="labTrendRange">
+            <option value="24h">24 h</option>
+            <option value="3d">3 días</option>
+            <option value="7d">7 días</option>
+            <option value="30d">30 días</option>
+            <option value="all" selected>Todo</option>
+          </select>
+        </label>
+        <input type="search" id="labTrendSearch" placeholder="Filtrar variable…" aria-label="Filtrar variables de tendencia">
+        <label class="lab-check-label"><input type="checkbox" id="labTrendAltered"> Sólo alteradas</label>
+        <span class="muted" id="labTrendCount"></span>
+      </div>
+      <div id="labAnalysisBody" role="tabpanel" tabindex="0"></div>
+    </section>
   </div>
 </div>
 
@@ -313,7 +438,7 @@
 
 </main>
 <div id="panelBackdrop"></div>
-<aside id="patientPanel" role="dialog" aria-modal="true" aria-labelledby="ppName">
+<aside id="patientPanel" role="dialog" aria-modal="true" aria-labelledby="ppName" tabindex="-1">
   <div class="pp-header" id="ppHeader">
     <div class="pp-avatar" id="ppAvatar" aria-hidden="true"></div>
     <div class="pp-info">
@@ -338,6 +463,7 @@
       </div>
     </div>
     <button id="ppDatosBtn" class="pp-hbtn" data-tip="Contacto, inscripción, alertas y vigencias" aria-expanded="false" aria-controls="ppDatos">Datos</button>
+    <button id="ppLabBtn" class="pp-hbtn" data-tip="Buscar exámenes de laboratorio (HSR + HHR)" aria-label="Laboratorio">Lab</button>
     <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>
   </div>
   <div class="pp-datos" id="ppDatos" hidden></div>
