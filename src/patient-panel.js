@@ -115,7 +115,7 @@ export function initPanel({ saveNote, onNavigate, onLabSearch } = {}) {
     if (!cur?.record?.run || !labSearch) return;
     const run = cur.record.run;
     close();
-    labSearch(run);
+    labSearch(run, cur.record.sexo);
   });
 
   // Tabs: click or ←/→; remembered across patients

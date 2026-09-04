@@ -1,3 +1,4 @@
+import { normalizeSexo } from '../lab-parser.js';
 import { humanCase, formatRun } from '../parser.js';
 import { humanError } from '../errors.js';
 import { esc, $ } from '../dom.js';
@@ -22,6 +23,10 @@ import { openReport } from '../export.js';
 let initialized = false;
 /** Claves «hsr:id» / «hhr:id» de las órdenes marcadas para analizar. */
 const selected = new Set();
+// Sexo del paciente para elegir la referencia por grupo: el del portal del
+// Salvador si respondió, si no el de la ficha desde donde se abrió el laboratorio.
+let patientSexo = '';
+const sexoPaciente = () => normalizeSexo(search.results.hsr[0]?.sexo) || normalizeSexo(patientSexo);
 /**
  * Identidad de la búsqueda vigente.
  *
@@ -408,7 +413,7 @@ async function analyzeSelected() {
 
   try {
     const { details, errors } = await buildDetails(
-      items.map((it, i) => ({ examId: String(i + 1), expectedRutBody, loadBytes: it.loadBytes })),
+      items.map((it, i) => ({ examId: String(i + 1), expectedRutBody, loadBytes: it.loadBytes, sexo: sexoPaciente() })),
       (done, total) => { btn.textContent = `Analizando ${done}/${total}…`; }
     );
 
@@ -481,7 +486,8 @@ function renderComparison(a) {
     ${a.columns.map(c => {
       const f = row.values[c.key];
       if (!f) return '<td class="lab-gap">—</td>';
-      return `<td class="${f.alert ? 'lab-out' : ''}" title="${esc(f.refValue ? `Referencia ${f.refValue}` : 'Sin referencia')}">${esc(f.result)}</td>`;
+      const ref = f.refValue ? `Referencia ${f.refValue}${f.refGroup ? ` (${f.refGroup})` : ''}${f.refUncertain ? ' · sexo no informado, sin alerta' : ''}${f.flag ? ` · marcado ${f.flag} por el laboratorio` : ''}` : 'Sin referencia';
+      return `<td class="${f.alert ? 'lab-out' : ''}" title="${esc(ref)}">${esc(f.result)}</td>`;
     }).join('')}
   </tr>`).join('');
   return `<div class="tbl-wrap"><table class="lab-table lab-matrix">
@@ -500,7 +506,7 @@ function renderReports(a) {
         <tbody>${r.findings.map(f => `<tr class="${f.alert ? 'lab-out-row' : ''}">
           <td>${esc(f.section)}</td><td>${esc(f.analysis)}</td>
           <td class="${f.alert ? 'lab-out' : ''}">${esc(f.result)}</td>
-          <td>${esc(f.unit)}</td><td>${esc(f.refValue)}</td></tr>`).join('')}</tbody>
+          <td>${esc(f.unit)}</td><td>${esc(f.refValue)}${f.refGroup ? ` <span class="muted">${esc(f.refGroup)}</span>` : ''}${f.flag ? ` <span class="lab-out">${esc(f.flag)}</span>` : ''}</td></tr>`).join('')}</tbody>
       </table></div>
     </details>`;
   }).join('');
@@ -692,6 +698,7 @@ function clearResults() {
   $('labPickAllHsr').checked = false;
   $('labPickAllHhr').checked = false;
   search.reset();
+  patientSexo = '';
   selected.clear();
   closeAnalysis();
   updateSelectionUI();
@@ -704,8 +711,9 @@ function clearResults() {
  * una ráfaga de errores de sesión que no dice nada útil. Si ningún laboratorio
  * responde, se explica qué abrir en vez de buscar.
  */
-export async function searchFromPatient(run) {
+export async function searchFromPatient(run, sexo = '') {
   if (!run) return;
+  patientSexo = sexo;
   $('labRut').value = formatRun(run).runStr || run;
   $('labError').textContent = '';
   const { hsr, hhr } = await sessions.check();

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseMeasurement, referenceBounds, findingAlert, parseReportText,
-  normalizeAnalysisName, isSystemicTrendEligible, extractRutBodyFromReportText,
+  normalizeAnalysisName, isSystemicTrendEligible, extractRutBodyFromReportText, normalizeSexo,
 } from '../src/lab-parser.js';
 
 // Informe con la forma real de SysLab: cabecera que se descarta, secciones en
@@ -318,4 +318,38 @@ test('«4.500» sin unidad es ambiguo sólo cuando es un recuento', () => {
   assert.deepEqual(parseMeasurement('4.500', { analysis: 'Recuento Leucocitos', unit: '', refValue: '' }), { comparator: '=', value: 4.5, ambiguous: true });
   assert.deepEqual(parseMeasurement('4.500', { analysis: 'Recuento Leucocitos', unit: '/uL', refValue: '4.000 - 10.000' }), { comparator: '=', value: 4500 });
   assert.deepEqual(parseMeasurement('1.020', { analysis: 'Densidad', unit: '', refValue: '' }), { comparator: '=', value: 1.02 });
+});
+
+// Balance 5: el laboratorio marcaba el valor como anormal y el parser lo
+// dejaba sin alerta; la referencia por sexo se elegía por posición.
+test('una marca de anormalidad al final conserva la referencia y fuerza la alerta', () => {
+  const out = parseReportText(['QUIMICA', 'Glucosa: 105 mg/dL 70 - 100 *', 'Calcio: 8,2 mg/dL 8,5 - 10,5 (*)', 'Urea: 60 mg/dL 15 - 45 H', 'Sodio: 140 mEq/L 135 - 145'].join('\n'));
+  const by = Object.fromEntries(out.map(f => [f.analysis, f]));
+  assert.deepEqual([by.Glucosa.unit, by.Glucosa.refValue, by.Glucosa.flag], ['mg/dL', '70 - 100', '*']);
+  assert.equal(findingAlert(by.Glucosa), true);
+  assert.equal(by.Calcio.flag, '(*)'); assert.equal(findingAlert(by.Calcio), true);
+  assert.equal(by.Urea.flag, 'H'); assert.equal(findingAlert(by.Urea), true);
+  assert.equal(by.Sodio.flag, undefined); assert.equal(findingAlert(by.Sodio), false);
+});
+
+test('la referencia por sexo se elige con el sexo del paciente; sin él no alerta y lo dice', () => {
+  const linea = 'HEMATOLOGIA\nHemoglobina: 13,0 g/dL Mujeres: 12,0 - 16,0 Hombres: 13,5 - 17,5';
+  const [hombre] = parseReportText(linea, { sexo: 'Masculino' });
+  assert.deepEqual([hombre.refValue, hombre.refGroup, findingAlert(hombre)], ['13,5 - 17,5', 'Hombres', true], 'un hombre con 13,0 está anémico');
+  const [mujer] = parseReportText(linea, { sexo: 'F' });
+  assert.deepEqual([mujer.refValue, mujer.refGroup, findingAlert(mujer)], ['12,0 - 16,0', 'Mujeres', false]);
+  const [sinSexo] = parseReportText(linea);
+  assert.equal(sinSexo.refUncertain, true);
+  assert.equal(findingAlert(sinSexo), false, 'sin sexo no se alerta por una referencia elegida al azar');
+  assert.equal(normalizeSexo('Mujer'), 'mujer'); assert.equal(normalizeSexo('M'), 'hombre'); assert.equal(normalizeSexo(''), '');
+});
+
+test('«rango terapéutico», fechas administrativas y rangos como resultado', () => {
+  const out = parseReportText(['COAGULACION', 'INR: 1,1 0,8 - 1,2 Rango terapéutico: 2,0 - 3,0', 'Fecha de toma: 01/09/2026', 'Medico solicitante: Dr. X',
+    'SEDIMENTO URINARIO', 'Leucocitos: 2 - 4 por campo', 'Bacterias: ESCASAS'].join('\n'));
+  const by = Object.fromEntries(out.map(f => [f.analysis, f]));
+  assert.equal(by.INR.refValue, '0,8 - 1,2'); assert.equal(findingAlert(by.INR), false, 'el rango terapéutico no es su referencia');
+  assert.equal(by['Fecha de toma'], undefined); assert.equal(by['Medico solicitante'], undefined);
+  assert.equal(by.Leucocitos.result, '2 - 4 por campo'); assert.equal(by.Leucocitos.qualitative, true);
+  assert.equal(by.Bacterias.result, 'ESCASAS');
 });

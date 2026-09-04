@@ -66,9 +66,9 @@ initPanel({
     const next = list[i + dir];
     if (next) openPatient(next);
   },
-  onLabSearch(run) {                        // Lab button → switch tab and search
+  onLabSearch(run, sexo) {                  // Lab button → switch tab and search
     showTab('laboratorio');
-    laboratorio.searchFromPatient(run);
+    laboratorio.searchFromPatient(run, sexo);
   },
 });
 on('notes', syncNote);                      // undo from a toast must reach the open panel
