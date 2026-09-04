@@ -5,7 +5,7 @@ test('el informe con IA se prepara sin nombre ni RUN, y se arma con la identidad
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
   await page.locator('#btnFetch').click();
   await expect(page.locator('#statusBar')).toContainText('atenciones');
-  await page.getByRole('tab', { name: 'Atenciones', exact: true }).click();
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones', exact: true }).click();
   await page.locator('#tbody tr[data-id] .pat-link').first().click();
   await expect(page.locator('#ppName')).not.toBeEmpty();
   const nombre = (await page.locator('#ppName').innerText()).trim();

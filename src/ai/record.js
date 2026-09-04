@@ -11,6 +11,7 @@
  */
 import { rankProblems, prescripcionEstado } from '../core/ficha-rank.js';
 import { isMine as sicEsMia } from '../io/sic.js';
+import { formatRun } from '../core/parser.js';
 
 const RECORD_VERSION = 1;
 
@@ -80,7 +81,7 @@ export function buildClinicalRecord({ record, ficha = null, visits = [], sics = 
   return {
     version: RECORD_VERSION, generado, fuentes,
     paciente: {
-      nombre: texto(record.nombre), run: texto(record.run), edad: record.edad ?? null, sexo: texto(record.sexo),
+      nombre: texto(record.nombre), run: formatRun(texto(record.run)).runStr || texto(record.run), edad: record.edad ?? null, sexo: texto(record.sexo),
       prevision: texto(record.prevision ?? ficha?.master?.prevision), idUsp: record.idUsp ?? ficha?.master?.idUsp ?? null,
     },
     problemas, atenciones,
