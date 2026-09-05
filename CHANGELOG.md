@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 2.46.0 — 2026-09-04
+
+- **La fecha de una atención es la de su cita.** Si la ficha se guardó o cerró otro día (al día siguiente o semanas después), el panel, la historia imprimible y el informe IA la ordenan y fechan por la cita, y muestran «registrada el dd-mm-aaaa» al lado. Antes la fecha de guardado competía con la de la cita. Aplica a la ficha por paciente, que trae `FechaCita`; el historial diario por nodo no la trae y sigue por fecha de guardado.
+- Arnés: cada cuarta atención mía se guarda dos días después de la cita.
+
 ## 2.45.1 — 2026-09-04
 
 - **Pantalla de PIN rediseñada**: emblema de candado, nombre de la aplicación, seis casillas que se van llenando (el campo real queda invisible encima), botón a todo el ancho y pie con lo esencial. Al sexto dígito, desbloquea sola; al crear, pasa a la confirmación. Un PIN incorrecto sacude la tarjeta y vacía las casillas. Modo oscuro cuidado.

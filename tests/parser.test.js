@@ -97,6 +97,23 @@ test('parseAtencion compacts a HistorialAtencion item', () => {
   assert.equal(a.actividades[0].descripcion, 'Sesiones de Kinesioterapia Respiratoria');
   assert.equal(a.prestadores[0].id, 439550);
   assert.equal(a.adjuntos[0].nombre, 'informe.pdf');
+  assert.equal(a.fechaRegistro, '', 'sin FechaCita, la fecha de guardado es la referencia y no se repite');
+});
+
+test('parseAtencion: la cita es la referencia cuando la ficha se guardó otro día; el registro queda aparte', () => {
+  // Cita del 28-08 a las 09:00, ficha cerrada el 30-08 por la tarde (consulta por paciente, con FechaCita).
+  const tarde = parseAtencion({ ...ATENCION, Fecha: '20260830 174512', FechaCita: '20260828 090000', IdCita: 795307447 });
+  assert.equal(tarde.fecha8, '20260828');
+  assert.equal(tarde.fechaAtencion, '28-08-2026');
+  assert.equal(tarde.hora, '09:00');
+  assert.equal(tarde.fechaRegistro, '30-08-2026');
+  // Mismo día: no hay nada que aclarar.
+  const mismoDia = parseAtencion({ ...ATENCION, Fecha: '20260828 104023', FechaCita: '20260828 113000' });
+  assert.equal(mismoDia.fecha8, '20260828');
+  assert.equal(mismoDia.fechaRegistro, '');
+  // Urgencia o consulta por nodo: FechaCita nula o ausente → manda Fecha.
+  assert.equal(parseAtencion({ ...ATENCION, FechaCita: '00010101 000000' }).fecha8, '20260902');
+  assert.equal(parseAtencion({ ...ATENCION, FechaCita: null }).fecha8, '20260902');
 });
 
 // ── Cita (ListaPacientesCitados) ──────────────────────────────

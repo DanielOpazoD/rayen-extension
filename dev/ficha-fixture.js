@@ -29,8 +29,12 @@ function visita(p, r, d8, i, mine, urgencia) {
   const dx = pick(r, DX), dx2 = r() < 0.4 ? pick(r, DX) : null;
   const receta = 590000000 + p.idUsp % 1000 * 10 + i;
   const sug = new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8) + 60);
+  // Como en la consulta por paciente: FechaCita es la cita; Fecha, cuándo se guardó (a veces días después).
+  const tarde = mine && !urgencia && i % 4 === 1;
+  const guardado = tarde ? localDateStr(new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8) + 2)) : d8;
   const base = {
-    Id: 736000000 + p.idUsp % 100000 * 20 + i, IdCita: 0, IdUsp: p.idUsp, Fecha: `${d8} ${hh}1500`, RutPaciente: p.rut, NombreCompleto: p.nombre,
+    Id: 736000000 + p.idUsp % 100000 * 20 + i, IdCita: urgencia ? 0 : 790000000 + i, IdUsp: p.idUsp, Fecha: `${guardado} ${hh}1500`,
+    FechaCita: urgencia ? '00010101 000000' : `${d8} ${hh}0000`, RutPaciente: p.rut, NombreCompleto: p.nombre,
     EdadExacta: edadExacta(p.dob, d8), FechaNacimiento: `${p.dob} 000000`, IdSexo: p.sexo === 'Mujer' ? 2 : 3,
     TipoDeAtencion: urgencia ? 'Atención de Urgencia' : mine ? pick(r, TIPOS_MIOS) : 'Kinesiología', EsUrgencia: urgencia, EsEspontanea: urgencia,
     Diagnosticos: [{ DescripcionClasificacion: dx[0], DescripcionDiagnostico: dx[1], CodigoCIE10: dx[2], EsAuge: dx[3] },

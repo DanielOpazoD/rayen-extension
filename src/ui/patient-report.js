@@ -84,7 +84,7 @@ function visitHTML(v, officerId) {
   const who  = (v.prestadores ?? []).map(p => `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections ?? {});
   return `<div class="visit ${mine ? 'mine' : ''}">
-    <div class="vh"><b>${esc(v.fechaAtencion)}</b><span class="muted">${esc(whenLabel(v))}</span><span class="t">${esc(v.tipoAtencion || v.razon || '')}</span>${v.esUrgencia ? '<span class="muted">· urgencia</span>' : ''}</div>
+    <div class="vh"><b>${esc(v.fechaAtencion)}</b><span class="muted">${esc(whenLabel(v))}</span><span class="t">${esc(v.tipoAtencion || v.razon || '')}</span>${v.esUrgencia ? '<span class="muted">· urgencia</span>' : ''}${v.fechaRegistro ? `<span class="muted">· registrada el ${esc(v.fechaRegistro)}</span>` : ''}</div>
     ${who ? `<div class="who">${esc(who)}</div>` : ''}
     ${(v.diagnosticos ?? []).map(d => `<div class="dx">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <span class="muted">· ${esc(d.clasificacion)}</span>` : ''}${d.certeza ? ` <span class="muted">(${esc(d.certeza)})</span>` : ''}${d.esAuge ? '<span class="ges">GES</span>' : ''}</div>`).join('')}
     ${v.anamnesis?.motivo   ? `<div class="sec"><span class="sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}

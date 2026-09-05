@@ -39,7 +39,7 @@ const lista = (arr, f = x => x) => arr.length ? arr.map(x => `- ${f(x)}`).join('
 const quien = p => p.esMio ? 'médico tratante' : `otro profesional${p.instrumento ? ` (${p.instrumento})` : ''}`;
 
 function seccionAtencion(a, fecha) {
-  const l = [`### ${fecha(a.fecha)} · ${a.tipo || 'Atención'}${a.esUrgencia ? ' · urgencia' : ''} · ${a.prestadores.length ? [...new Set(a.prestadores.map(quien))].join(', ') : 'sin prestador registrado'}`];
+  const l = [`### ${fecha(a.fecha)} · ${a.tipo || 'Atención'}${a.esUrgencia ? ' · urgencia' : ''}${a.fechaRegistro ? ` · registrada ${fecha(a.fechaRegistro)}` : ''} · ${a.prestadores.length ? [...new Set(a.prestadores.map(quien))].join(', ') : 'sin prestador registrado'}`];
   if (a.diagnosticos.length) l.push(`Diagnósticos: ${a.diagnosticos.map(d => `${d.nombre}${d.codigo ? ` (${d.codigo})` : ''}${d.esAuge ? ' [GES]' : ''}`).join('; ')}`);
   if (a.motivo) l.push(`Motivo: ${a.motivo}`);
   if (a.historia) l.push(`Historia/evolución: ${a.historia}`);

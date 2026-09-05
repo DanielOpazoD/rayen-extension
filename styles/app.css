@@ -524,6 +524,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-visit.expanded .pp-expand{transform:rotate(180deg)}
 .pp-date{font-size:var(--t-sm);font-weight:500;font-variant-numeric:tabular-nums}
 .pp-hora{font-size:var(--t-xs);color:var(--ink-3)}
+.pp-reg{font-size:var(--t-xs);color:var(--warn);background:var(--warn-soft);border-radius:var(--r-full);padding:0 7px;white-space:nowrap}
 .pp-tipo{font-size:var(--t-sm);color:var(--ink-2)}
 .pp-razon{font-size:var(--t-xs);color:var(--ink-3)}
 .pp-who{font-size:var(--t-xs);color:var(--ink-3);margin:1px 0 3px}
