@@ -65,30 +65,62 @@ function historial(p, r, today) {
   return out;
 }
 
-function antecedentes(p, r) {
+/**
+ * Detalle de la receta (Farmacia/Receta/id=…): claves reales del HAR «ficha amb»
+ * del 04-09-2026. Cada tercera receta lleva una prescripción suspendida y un
+ * despacho parcial, para que el panel muestre esos estados.
+ */
+function recetaDetalle(v) {
+  const rec = v.Recetas?.[0];
+  if (!rec) return null;
+  const d8 = v.Fecha.slice(0, 8);
+  const fin = new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8) + 90);
+  const susp = rec.Id % 3 === 0;
+  const presc = (Id, DescripcionArticulo, Descripcion, extra) => ({
+    Id, IdReceta: rec.Id, DescripcionArticulo, Descripcion, DosisUnitaria: 1, Intervalo: 12, Duracion: 6, TipoUnidadIntervalo: 3, TipoUnidadDuracion: 6,
+    TotalRecetado: 360, TotalADespachar: 360, CantidadDespachada: 0, SaldoPendiente: 360, CantidadPorPrescripcion: 30, Observacion: '',
+    SuspenderTratamiento: 0, FechaSuspendeTratamiento: '00010101 000000', FechaProximoDespacho: rec.FechaProximoDespacho,
+    Controlado: false, Psicotropico: false, EsBorrado: false, ...extra,
+  });
+  return {
+    Id: rec.Id, Estado: 1, IdTipoReceta: 47, FechaGeneracion: rec.FechaGeneracion, TerminoVigencia: `${localDateStr(fin)} 000000`,
+    Periodicidad: 30, FechaProximoDespacho: rec.FechaProximoDespacho, FechaHoraCierreReceta: '00010101 000000', EsExterna: false, EsAdministrativa: false,
+    Prescripciones: [
+      presc(rec.Id * 10 + 1, 'Losartan Potasico 50 mg Comprimidos', 'Losartan Potasico 50 mg Comprimidos : 1 Comprimido cada 12 horas por 6 meses', susp ? { CantidadDespachada: 60, SaldoPendiente: 300 } : {}),
+      ...(susp ? [presc(rec.Id * 10 + 2, 'Metformina Clorhidrato 850 mg Comprimidos', 'Metformina Clorhidrato 850 mg Comprimidos : 1 Comprimido cada 12 horas por 6 meses',
+        { SuspenderTratamiento: 1, FechaSuspendeTratamiento: `${d8} 120000`, Observacion: 'Intolerancia digestiva' })] : []),
+    ],
+  };
+}
+
+function antecedentes(p, r, recetaEnUso) {
   const cronico = r() < 0.7;
   return {
     antecedenteMedicoPersonal: cronico ? [{ EsMorbido: false, Diagnostico: 'Hipertensión arterial', Fecha: '20200714 145446', Seleccionado: true, EsBorrado: false }] : [],
-    farmacoEnUsos: { medications: cronico ? [{ Descripcion: 'Losartan Potasico 50 mg Comprimidos : 1 Comprimido cada 12 horas por 6 meses \n Nº Receta: 1. Estado Receta: Pendiente', DescripcionArticulo: 'Losartan Potasico 50 mg Comprimidos', IdReceta: 1, FechaReceta: '20260828 000000', EsHearts: true }] : [] },
+    // Misma lista que FichaClinica/FarmacoEnUso: la receta citada existe en el historial, así el panel ejercita la autoridad de Rayen.
+    farmacoEnUsos: { medications: cronico && recetaEnUso ? [{ Descripcion: `Losartan Potasico 50 mg Comprimidos : 1 Comprimido cada 12 horas por 6 meses \n Nº Receta: ${recetaEnUso.Id}. Estado Receta: Por Despachar`, DescripcionArticulo: 'Losartan Potasico 50 mg Comprimidos', IdReceta: recetaEnUso.Id, IdTipoReceta: 47, FechaReceta: recetaEnUso.FechaGeneracion, FarmPopular: -1, EsHearts: true, EsBorrado: false, Id: recetaEnUso.Id }] : [] },
     alergia: { reaccionAdversa: [], alergiasUsuario: r() < 0.25 ? [{ IdUsuarioAps: p.idUsp, Descripcion: 'Penicilina', EsBorrado: false }] : [] },
     eventoAdverso: { categories: [] },
   };
 }
 
-/** @returns {{ byRunBody: Map<string, object>, byId: Map<number, object> }} */
+/** @returns {{ byRunBody: Map<string, object>, byId: Map<number, object>, byReceta: Map<number, object> }} */
 export function buildFichaResponses(today = new Date()) {
-  const byRunBody = new Map(), byId = new Map();
+  const byRunBody = new Map(), byId = new Map(), byReceta = new Map();
   for (const p of PATIENTS) {
     const r = rng(p.idUsp);
     byRunBody.set(p.run, master(p));
+    const hist = historial(p, r, today);
+    const conReceta = hist.filter(v => v.Recetas?.length).sort((a, b) => b.Fecha.localeCompare(a.Fecha));
+    for (const v of conReceta) byReceta.set(v.Recetas[0].Id, recetaDetalle(v));
     byId.set(p.idUsp, {
-      historial: historial(p, r, today),
-      antecedentes: antecedentes(p, r),
+      historial: hist,
+      antecedentes: antecedentes(p, r, conReceta[0]?.Recetas[0]),
       programas: r() < 0.6 ? [{ IdPrograma: 5, NombrePrograma: 'Programa Salud Cardiovascular', Estado: 1, FechaHora: '20240101 000000' }] : [],
       vigencias: r() < 0.5 ? [{ Ok: false, Mensaje: 'EMP no vigente', Alert: 1 }] : [{ Ok: true, Mensaje: 'EMP vigente', Alert: 0 }],
       riesgo: r() < 0.5 ? [{ Activo: true, Estratificacion: 'G2', FechaHoraIngreso: '20250301 000000' }] : [],
       ram: [],
     });
   }
-  return { byRunBody, byId };
+  return { byRunBody, byId, byReceta };
 }

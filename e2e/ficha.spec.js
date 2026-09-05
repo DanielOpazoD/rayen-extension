@@ -27,6 +27,17 @@ test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo,
   await expect(page.locator('#ppPaneAt .pp-print').first()).toBeVisible(); // la impresora de la receta, dentro de la atención
   await page.locator('.pp-tab[data-pt="rx"]').click();
   await expect(page.locator('#ppPaneRx')).toContainText(/Recetas por atención|Sin recetas/);
+  // Cada receta dice quién afirma su estado y se despliega con su vigencia y despacho (consulta bajo demanda).
+  if (!(await page.locator('#ppPaneRx button[data-receta]').count())) await page.locator('#ppPaneRx [data-scope="rx"][data-seg="vencidas"]').click();
+  await expect(page.locator('#ppPaneRx .pp-rx-r small').first()).toContainText(/según Rayen|por duración escrita/);
+  const rxBtn = page.locator('#ppPaneRx button[data-receta]').first();
+  await rxBtn.click();
+  await expect(rxBtn).toHaveAttribute('aria-expanded', 'true');
+  const det = page.locator('#ppPaneRx .pp-rx-det:not([hidden])').first();
+  await expect(det.locator('.pp-rx-cab')).toContainText(/vigente hasta|vencida el/);
+  await expect(det.locator('.pp-item').first()).toContainText('Losartan');
+  await rxBtn.click();
+  await expect(rxBtn).toHaveAttribute('aria-expanded', 'false');
   await page.locator('#ppIaBtn').click();
   await expect(page.locator('#iaFuentes')).toContainText('eloisa-ficha · completa');
   await expect(page.locator('#iaCtxMeta')).toHaveText(/comprobado: sin paciente, profesionales, RUT/);

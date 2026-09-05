@@ -14,7 +14,8 @@ import { renderHeader, renderDatos } from './panel/datos.js';
 import { renderDx } from './panel/problemas.js';
 import { renderAt } from './panel/atenciones.js';
 import { renderIc } from './panel/interconsultas.js';
-import { renderRx } from './panel/recetas.js';
+import { renderRx, toggleRecetaDetalle } from './panel/recetas.js';
+import { olvidarRecetas } from '../io/receta.js';
 import { renderNotes, initNotas } from './panel/notas.js';
 import { initPdfMenu } from './panel/pdf-menu.js';
 import { setFichaStatus, fichaStatusHtml } from './panel/ficha-status.js';
@@ -154,6 +155,8 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   });
 
   $('patientPanel').addEventListener('click', async e => {
+    const det = e.target.closest('button[data-receta]');
+    if (det) { toggleRecetaDetalle(det); return; }
     const pdf = e.target.closest('button[data-pdf]');
     if (pdf) {
       pdf.disabled = true;
@@ -206,6 +209,7 @@ async function loadAndRenderFicha(force = false) {
   if (!token) { setFichaStatus(`<span class="al al-warn">Sin sesión en Eloisa — solo agenda</span>`, 'warn'); return; }
   if (!record.run && !record.idUsp) { setFichaStatus(`<span class="al al-warn">Paciente sin RUN — no se puede consultar la ficha</span>`, 'warn'); return; }
   try {
+    if (force) olvidarRecetas(); // el detalle de despacho se vuelve a pedir con la ficha
     const ficha = await loadFicha(token, { run: record.run, idUsp: record.idUsp }, { force });
     if (cur !== me) return; // user moved to another patient meanwhile
     me.ficha = ficha;

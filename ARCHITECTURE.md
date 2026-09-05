@@ -70,6 +70,7 @@ flowchart LR
 2. `io/ficha-load.js → loadFicha` pide la ficha administrativa y luego seis fuentes en paralelo, con memoización por paciente sólo cuando todas respondieron; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran; una sesión vencida se lee del transporte y avisa como la carga principal.
 3. El panel es un diálogo modal real: fondo inerte, trampa de Tab, foco devuelto a la fila. Escape cierra lo más interno: menú, hoja de informe, panel.
 4. La pestaña Antecedentes (`panel/problemas.js`) es la portada: diagnósticos por peso (`core/ficha-rank.js`) y antecedentes mórbidos en una sola lista. Cada receta de una atención lleva su impresora (PDF de Eloisa).
+5. En Recetas, «activa» lo afirma la lista de fármacos en uso de Rayen (`core/receta.js`, la misma lista que `RecuperarAntecedentes` y `FichaClinica/FarmacoEnUso`); una receta fuera de esa lista se clasifica por la duración escrita y la pestaña lo dice. Desplegar una receta pide su detalle a Eloisa (`io/receta.js`, `Farmacia/Receta/id=…`) y muestra vigencia, despacho y prescripciones suspendidas; no se escribe nada.
 
 ### Interconsultas y pendientes
 
@@ -175,6 +176,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.
 - `src/core/ficha-rank.js` — orden clínico sin DOM: problemas con peso (GES, crónicos, recurrentes) y vigencia de prescripciones.
 - `src/core/ficha.js` — análisis de la ficha clínica (atenciones, secciones, textos libres, antecedentes, programas, maestro), sin red.
+- `src/core/receta.js` — recetas sin red ni DOM: autoridad de Rayen (fármacos en uso) sobre la duración escrita, y detalle de vigencia, despacho y suspensiones.
 - `src/core/lab-analytics.js` — identidad del paciente, lote íntegro, matriz comparativa y tendencias.
 - `src/core/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
 - `src/core/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
@@ -206,6 +208,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
 - `src/io/notes.js` — identidad estable y notas locales por paciente.
 - `src/io/pdf.js` — obtención y presentación segura de documentos PDF.
+- `src/io/receta.js` — detalle de una receta desde Eloisa, bajo demanda y una vez por receta; recargar la ficha vacía la memoria.
 - `src/io/sic.js` — carga y normalización de interconsultas.
 - `src/io/state.js` — fuente única de verdad y eventos de la aplicación.
 - `src/io/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
@@ -237,7 +240,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/panel/problemas.js` — pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una sola lista, alergias y programas.
 - `src/ui/panel/atenciones.js` — pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o agenda.
 - `src/ui/panel/interconsultas.js` — pestaña Interconsultas (Mías / De otros) y derivaciones.
-- `src/ui/panel/recetas.js` — pestaña Recetas (activas / vencidas).
+- `src/ui/panel/recetas.js` — pestaña Recetas: activas según Rayen (duración escrita de respaldo) y detalle de despacho al desplegar.
 - `src/ui/panel/notas.js` — diario de notas del paciente y su cableado.
 - `src/ui/panel/pdf-menu.js` — menú «PDF ▾» de la historia del paciente.
 - `src/ui/panel/ficha-status.js` — estado de la ficha dentro de Datos (avatar), con su tono en el avatar.

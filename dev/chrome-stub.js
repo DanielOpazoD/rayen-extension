@@ -74,6 +74,8 @@ function routeEloisa(url, init) {
     const id = (() => { try { return JSON.parse(init?.body ?? '{}').IdUsuario; } catch { return null; } })();
     return json(captures.historial ?? ficha.byId.get(id)?.historial ?? []);
   }
+  const receta = idDe(/\/farmacia\/receta\/id=(\d+)/);
+  if (receta != null) return json({ Resultado: [ficha.byReceta.get(receta)].filter(Boolean), MonthLimit: 0 });
   const rutas = [
     [/\/fichaclinica\/recuperarantecedentes\/(\d+)/, 'antecedentes'],
     [/\/historialusuarioapsenprogramasalud\/idusuarioaps=(\d+)/, 'programas'],
