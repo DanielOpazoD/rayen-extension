@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { CONFIG } from '../core/config.js';
 import { apiPost, chunk, session, run } from './http.js';
-import { parseAtencion, matchKey, localDateStr } from '../core/parser.js';
+import { parseAtencion, matchKey, localDateStr, fmtDate } from '../core/parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 
 const PATH = '/API/api/rayen/FichaClinica/HistorialAtencion';
@@ -40,6 +40,34 @@ async function fetchHistorialDay(token, date8) {
   } catch (err) {
     return err?.name === 'CancelledError' ? undefined : null; // cancelado: pendiente, no fallido
   }
+}
+
+/**
+ * La consulta por nodo trae `IdCita` en 0 y sin `FechaCita`; la consulta por
+ * paciente sí los trae. Para cada atención mía sin cita ese mismo día (ficha
+ * abierta la víspera o cerrada tarde) se pide ese único día del paciente y se
+ * copia la cita exacta. Si la red falla, la atención sigue sin cita y el cruce
+ * con la agenda recurre a la heurística por cercanía, marcada como estimada.
+ * @returns {Promise<number>} cuántas atenciones quedaron resueltas
+ */
+async function resolverCitas(token, parsed, citaKeys, { signal = run.controller.signal } = {}) {
+  const pendientes = parsed.filter(a => isOfficer(a) && !a.esUrgencia && !a.idCita && !a.fechaCita8 && a.idUsp && a.fecha8 && !citaKeys.has(matchKey(a)));
+  let resueltas = 0;
+  await Promise.all(pendientes.map(async a => {
+    try {
+      const data = await apiPost(token, PATH, {
+        IdUsuario: a.idUsp, IdFuncionarioPrestador: null,
+        FechaInicio: `${a.fecha8} 000000`, FechaTermino: `${a.fecha8} 235959`,
+      }, { signal });
+      const raw = (Array.isArray(data) ? data : []).find(x => x?.Id === a.id);
+      const cita = String(raw?.FechaCita ?? '');
+      if (!raw) return;
+      a.idCita = raw.IdCita || 0;
+      if (/^\d{8} \d{4,6}$/.test(cita) && !cita.startsWith('00010101')) { a.fechaCita8 = cita.slice(0, 8); a.fechaCita = fmtDate(cita); }
+      if (a.idCita || a.fechaCita8) resueltas += 1;
+    } catch { /* sin red o cancelado: queda para la heurística */ }
+  }));
+  return resueltas;
 }
 
 /** Per-day aggregate for the whole node (team view) — small enough to keep for every day. */
@@ -101,9 +129,9 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
     const keep    = [];
     let retryMarkerChanged = false;
 
-    responses.forEach((raw, i) => {
+    for (const [i, raw] of responses.entries()) {
       const d8 = batch[i];
-      if (raw === undefined) { cancelledDates.push(d8); return; }
+      if (raw === undefined) { cancelledDates.push(d8); continue; }
       if (raw === null) {
         failed++;
         failedDates.push(d8);
@@ -113,14 +141,15 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
         if (refreshDates.has(d8)) {
           retryMarkerChanged = store.fetchedDates.delete(d8) || retryMarkerChanged;
         }
-        return;
+        continue;
       }
       okDates.push(d8);
       dropDay(store, d8);
       const parsed = raw.map(parseAtencion).filter(a => a.fecha8 === d8 || !a.fecha8);
       store.extra.team[d8] = aggregateTeam(parsed);
+      await resolverCitas(token, parsed, citaKeys);
       keep.push(...parsed.filter(a => isOfficer(a) || citaKeys.has(matchKey(a))));
-    });
+    }
 
     if (okDates.length || retryMarkerChanged) await saveStore(store, okDates, keep);
     done += batch.length;
@@ -200,22 +229,34 @@ export function mergeHistorial(citas, atenciones) {
   // abierta la víspera, como los jueves para las citas del viernes). La fecha
   // que manda es la de la cita (decisión de Daniel, 04-09-2026); el guardado
   // queda en `fechaRegistro`.
-  const porRun = new Map();
-  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId && !citaDescartada(c.estado)) { const k = matchKey({ ...c, fecha8: '' }); (porRun.get(k) ?? porRun.set(k, []).get(k)).push(i); } });
-  for (const a of atenciones) {
-    if (used.has(a.id) || !isOfficer(a) || a.esUrgencia) continue;
-    const dist = i => diasEntre(out[i].fecha8, a.fecha8); // > 0: cita antes del guardado; < 0: después
-    const cands = (porRun.get(matchKey({ ...a, fecha8: '' })) ?? []).filter(i => !out[i].atencionId && dist(i) !== 0 && dist(i) <= ANTES_DIAS && -dist(i) <= DESPUES_DIAS);
-    if (!cands.length) continue;
-    const i = cands.sort((x, y) => Math.abs(dist(x)) - Math.abs(dist(y)) || dist(y) - dist(x))[0];
+  const enlazar = (i, a, estimado) => {
     used.add(a.id);
     out[i] = {
       ...out[i],
       atencionId: a.id, diagnosticos: a.diagnosticos, actividades: a.actividades, prestadores: a.prestadores, adjuntos: a.adjuntos,
       prestador: a.prestadores.map(p => p.nombre).join(', '), esUrgencia: a.esUrgencia, esEspontanea: a.esEspontanea,
       tipoAtencion: out[i].tipoAtencion || a.tipoAtencion, edadLabel: a.edadLabel, sexo: out[i].sexo || a.sexo,
-      proximoControl: a.proximoControl ?? [], fechaRegistro: a.fechaAtencion,
+      proximoControl: a.proximoControl ?? [], fechaRegistro: a.fechaAtencion, ...(estimado ? { cruceEstimado: true } : {}),
     };
+  };
+  // Cruce exacto: la cita que Rayen mismo declara (resolverCitas), por id o por su fecha.
+  const porId = new Map(), porRunDia = new Map();
+  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId) { porId.set(c.id, i); porRunDia.set(matchKey(c), i); } });
+  for (const a of atenciones) {
+    if (used.has(a.id) || !isOfficer(a)) continue;
+    let i = a.idCita ? porId.get(a.idCita) : undefined;
+    if (i === undefined && a.fechaCita8) i = porRunDia.get(matchKey({ ...a, fecha8: a.fechaCita8 }));
+    if (i !== undefined && !out[i].atencionId) enlazar(i, a, false);
+  }
+  // Heurística, sólo para lo que no pudo resolverse: la cita más cercana, marcada como estimada.
+  const porRun = new Map();
+  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId && !citaDescartada(c.estado)) { const k = matchKey({ ...c, fecha8: '' }); (porRun.get(k) ?? porRun.set(k, []).get(k)).push(i); } });
+  for (const a of atenciones) {
+    if (used.has(a.id) || !isOfficer(a) || a.esUrgencia || a.idCita || a.fechaCita8) continue;
+    const dist = i => diasEntre(out[i].fecha8, a.fecha8); // > 0: cita antes del guardado; < 0: después
+    const cands = (porRun.get(matchKey({ ...a, fecha8: '' })) ?? []).filter(i => !out[i].atencionId && dist(i) !== 0 && dist(i) <= ANTES_DIAS && -dist(i) <= DESPUES_DIAS);
+    if (!cands.length) continue;
+    enlazar(cands.sort((x, y) => Math.abs(dist(x)) - Math.abs(dist(y)) || dist(y) - dist(x))[0], a, true);
   }
 
   for (const a of atenciones) {
