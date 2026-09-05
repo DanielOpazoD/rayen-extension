@@ -20,7 +20,7 @@ function patients() {
 const shown  = () => sortPatients(filterPatients(patients(), { q: $('pacSearch').value, modo: $('pacFilt').value }));
 const active = () => $('tab-pacientes').classList.contains('active');
 
-export function render() {
+function render() {
   const all = patients();
   renderPatients(all, shown());
   const has = all.length > 0;

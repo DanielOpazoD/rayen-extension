@@ -1,15 +1,8 @@
-import {
-  syslabStatus, syslabSearchByRut, resolveSyslabLink, syslabReportBytes,
-  syslabSession, resetSyslabSession, SYSLAB_ORIGIN, SYSLAB_BASE, SyslabAuthError,
-} from './syslab-http.js';
+import { syslabStatus, syslabSearchByRut, resolveSyslabLink, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from './syslab-http.js';
 
 import { normalizeRutBody, examRowsMatchRut } from '../core/lab-analytics.js';
 
-export {
-  syslabSession, resetSyslabSession, SyslabAuthError,
-  syslabReportBytes, SYSLAB_ORIGIN, SYSLAB_BASE,
-  normalizeRutBody, examRowsMatchRut,
-};
+export { resetSyslabSession, syslabReportBytes, SYSLAB_BASE, normalizeRutBody, examRowsMatchRut };
 
 export async function checkSyslabSession() {
   resetSyslabSession();
@@ -17,6 +10,11 @@ export async function checkSyslabSession() {
   return true;
 }
 
+/**
+ * @param {string} rutBody
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ */
 export async function buscarExamenesPorRut(rutBody, { signal } = {}) {
   const body = normalizeRutBody(rutBody);
   if (!/^\d{5,9}$/.test(body)) throw new Error('RUT sin dígito verificador no válido.');

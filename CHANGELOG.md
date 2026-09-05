@@ -1,5 +1,15 @@
 # Historial de cambios
 
+## 2.52.0 — 2026-09-05
+
+Herramientas de control del código (sin build ni framework).
+
+- **Tipos con JSDoc**: `tsc --noEmit` con `checkJs` sobre `core`, `io` y `ai`, dentro de `npm run check`. Los 60 avisos iniciales eran documentación que mentía sobre la forma de los datos (typedefs sin `cancelled`, `sync` o `dvOk`, `@param` con nombres que no existían, una ruta de `import()` de tipos que apuntaba al módulo movido) y algunos usos laxos (`Date` restadas, booleanos sumados); todos corregidos.
+- **`knip`** en `check`: encontró 29 reexportaciones sin uso (la fachada de `ai/index.js`, `dateToInt` en pendientes, sesiones y errores de los laboratorios, `render`/`currentRows` de las pestañas). La fachada de `ai` expone sólo lo que la interfaz consume.
+- **Cobertura con umbral** (`npm run coverage`): `core`+`io`+`ai` en 94 % de líneas y 81 % de ramas; umbral 90/75. Cada archivo de prueba corre en su proceso porque el runner nativo no escribe la cobertura de los hijos y sin aislamiento 28 pruebas chocan.
+- **Hook de pre-commit** (`.githooks`, activado por `npm install`): lint, tipos y unitarios.
+- Nueva sección «Herramientas de control del código» en ARCHITECTURE.md.
+
 ## 2.51.0 — 2026-09-05
 
 Saneamiento, tanda 4 de 4: pruebas y frontera `core`/`ui`.

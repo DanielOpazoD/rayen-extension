@@ -31,6 +31,7 @@ export function sessionState(source, outcome) {
  * @param {{ hsr: string, hhr: string }} deps.links  a dónde abrir para iniciar sesión
  * @param {(source: 'hsr'|'hhr', state: object) => void} deps.paint
  * @param {number} [deps.cacheMs]  ventana en que una comprobación reciente se reutiliza
+ * @param {() => number} [deps.now]  reloj inyectable (pruebas)
  */
 export function createSessionMonitor({ checkHsr, checkHhr, resetHsr, resetHhr, links, paint, cacheMs = 5000, now = () => Date.now() }) {
   let last = { at: 0, result: null };

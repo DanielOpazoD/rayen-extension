@@ -1,7 +1,7 @@
 import { CONFIG, SIC_RECHAZADA_IDS } from './config.js';
 import { diasEntre, date8FromDMY } from './dates.js';
 import { isMine } from './sic-rules.js';
-import { dateToInt, localDateStr } from './parser.js';
+import { localDateStr } from './parser.js';
 
 /**
  * Rules over data the extension already has on disk. Each one must be able to
@@ -148,4 +148,3 @@ const TIPO_LABEL = {
   'control-vencido': 'Controles vencidos',
 };
 
-export { dateToInt };

@@ -48,6 +48,7 @@ export function normalizeAnalysisName(value, section) {
   // En orina, «Leucocitos» es sedimento urinario y no el recuento hematológico.
   if (isUrineSection(section) && /^leucocitos$/i.test(name)) return 'Leucocitos';
 
+  /** @type {Array<[RegExp, string]>} */
   const replacements = [
     [/^leucocitos(?:\s+totales)?$/i, 'Recuento Leucocitos'],
     [/^(?:recuento\s+de?\s*|rcto\.?\s*)leucocitos$/i, 'Recuento Leucocitos'],
@@ -241,6 +242,7 @@ export function extractRutBodyFromReportText(text) {
 }
 
 // Referencias escritas con palabras: «Hasta 5», «Menor a 200», «Mayor de 40».
+/** @type {Array<[RegExp, string]>} */
 const WORDED_BOUNDS = [
   [new RegExp(`\\bHasta\\s+(${LOCALIZED_NUMBER_SOURCE})`, 'gi'), '≤ $1'],
   [new RegExp(`\\bMenor(?:es)?\\s+(?:a|de|que)\\s+(${LOCALIZED_NUMBER_SOURCE})`, 'gi'), '< $1'],

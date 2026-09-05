@@ -13,14 +13,14 @@ const SYSLAB_ORIGIN = 'http://10.4.69.90';
 const SYSLAB_BASE = 'http://10.4.69.90/syslab/';
 const NAV_TIMEOUT_MS = 20_000;
 
-export class SyslabAuthError extends Error {
+class SyslabAuthError extends Error {
   constructor(message) {
     super(message || 'Sin sesión de SysLab');
     this.name = 'SyslabAuthError';
   }
 }
 
-export const syslabSession = { expired: false };
+const syslabSession = { expired: false };
 export function resetSyslabSession() { syslabSession.expired = false; }
 
 export function resolveSyslabLink(link) {
@@ -110,9 +110,9 @@ function stepPrepareSearch() {
   const pattern = /b[úu]squeda\s+por\s+rut|\brut\b/i;
   const target = Array.from(
     document.querySelectorAll('input[type="submit"], input[type="button"], button, a')
-  ).find(el => pattern.test(clean(el.value || el.textContent)));
+  ).find(el => pattern.test(clean(/** @type {HTMLInputElement} */ (el).value || el.textContent)));
   if (!target) return { error: 'No se encontró la opción «Búsqueda por RUT» en SysLab.' };
-  setTimeout(() => target.click(), 0);
+  setTimeout(() => /** @type {HTMLElement} */ (target).click(), 0);
   return { navigated: true };
 }
 
@@ -121,9 +121,9 @@ function stepSubmitSearch(rutBody) {
   if (document.querySelector('input[name="password"], input[type="password"]')) {
     return { loginRequired: true };
   }
-  const input = document.querySelector('input[name="rut"]') ||
-    Array.from(document.querySelectorAll('input[type="text"]'))
-      .find(field => !/usuario/i.test(field.name || ''));
+  const input = /** @type {HTMLInputElement|undefined} */ (document.querySelector('input[name="rut"]') ||
+    Array.from(/** @type {NodeListOf<HTMLInputElement>} */ (document.querySelectorAll('input[type="text"]')))
+      .find(field => !/usuario/i.test(field.name || '')));
   if (!input || !/^\d{5,9}$/.test(rutBody)) {
     return { error: 'El formulario de búsqueda por RUT no está disponible.' };
   }
@@ -135,7 +135,7 @@ function stepSubmitSearch(rutBody) {
   const form = input.closest('form');
   const pattern = /aceptar|buscar|consultar/i;
   const controls = Array.from(
-    (form || document).querySelectorAll('input[type="submit"], input[type="button"], button, a')
+    /** @type {NodeListOf<HTMLInputElement>} */ ((form || document).querySelectorAll('input[type="submit"], input[type="button"], button, a'))
   );
   const submit = controls.find(el => pattern.test(clean(el.value || el.textContent))) ||
     controls.find(el => /submit/i.test(el.type || ''));
@@ -266,7 +266,12 @@ export async function syslabStatus() {
   return (await findAuthenticatedTab()).status;
 }
 
-/** Conduce la pestaña SysLab a través de la búsqueda por RUT y lee el resultado. */
+/**
+ * Conduce la pestaña SysLab a través de la búsqueda por RUT y lee el resultado.
+ * @param {string} rutBody
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ */
 export async function syslabSearchByRut(rutBody, { signal } = {}) {
   // Cancelar corta la cadena de pasos: no se sigue conduciendo la pestaña del
   // usuario para una búsqueda que ya nadie espera.
@@ -292,4 +297,4 @@ export async function syslabReportBytes(link) {
   return bytes;
 }
 
-export { SYSLAB_ORIGIN, SYSLAB_BASE };
+export { SYSLAB_BASE };

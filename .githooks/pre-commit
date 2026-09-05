@@ -1,0 +1,8 @@
+#!/bin/sh
+# Lo rápido antes de cada commit: lint, tipos y unitarios (~30 s). El resto (ciclos,
+# knip, docs, Playwright) lo corre `npm run check` y la CI. Saltar a conciencia: git commit -n
+set -e
+echo "pre-commit: lint + tipos + unitarios"
+npm run -s lint
+npm run -s types
+npm run -s test > /dev/null || { echo "unitarios en rojo: corre npm test"; exit 1; }

@@ -23,7 +23,7 @@ const SIC_FILTER_IDS = ['sicSearch', 'sicGrupo', 'sicEsp', 'sicQuien', 'sicGes',
 let loading = false, loadedFor = 0;
 let chips, updateCount;
 
-export function render() {
+function render() {
   renderSICTab(state.sics, sortSICs(filterSICs(state.sics)));
   updateCount();
   remeasure();

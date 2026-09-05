@@ -26,10 +26,17 @@ export const state = {
 };
 
 const bus = new EventTarget();
-export function on(evt, fn)      { bus.addEventListener(evt, e => fn(e.detail)); }
+export function on(evt, fn)      { bus.addEventListener(evt, e => fn(/** @type {CustomEvent} */ (e).detail)); }
 export function emit(evt, detail) { bus.dispatchEvent(new CustomEvent(evt, { detail })); }
 
-/** Replaces data wholesale and tells every tab. Pass only what changed. */
+/**
+ * Replaces data wholesale and tells every tab. Pass only what changed.
+ * @param {object} [cambios]
+ * @param {object[]} [cambios.allData]
+ * @param {Record<string, object>} [cambios.team]
+ * @param {object[]} [cambios.sics]
+ * @param {object} [cambios.novedades]
+ */
 export function setData({ allData, team, sics, novedades } = {}) {
   if (allData)   state.allData = allData;
   if (team)      state.team = team;

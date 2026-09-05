@@ -14,7 +14,7 @@ export const PERIODS = Object.freeze({
 function shift(d, days) { const x = new Date(d); x.setDate(x.getDate() + days); return x; }
 
 /**
- * @param {keyof PERIODS} key
+ * @param {string} key  una clave de PERIODS; una desconocida equivale a 'todo'
  * @param {Date} [hoy]
  * @returns {{ from8: string, to8: string }}  '' means open-ended
  */

@@ -88,7 +88,8 @@ export function computeCambios(sics, especialidades, snapshot = {}) {
 
 /**
  * Compares the watched SICs against the stored snapshot and advances it.
- * @param {{ commit?: boolean }} opts  commit:false previews without advancing
+ * @param {object} [opts]
+ * @param {boolean} [opts.commit]  commit:false previews without advancing
  * @returns {Promise<{cambios: object[], firstRun: boolean, desde: number, vigiladas: number}>}
  */
 export async function diffWatched(sics, especialidades, { commit = true } = {}) {

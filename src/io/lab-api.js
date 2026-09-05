@@ -1,8 +1,8 @@
-import { labGet, labBlob, labSession, resetLabSession, LAB_ORIGIN, LabAuthError } from './lab-http.js';
+import { labGet, labBlob, resetLabSession, LAB_ORIGIN } from './lab-http.js';
 import { fmtIso } from '../core/dates.js';
 import { normalizePatientRutBody } from '../core/lab-analytics.js';
 
-export { labSession, resetLabSession, LabAuthError, LAB_ORIGIN };
+export { resetLabSession, LAB_ORIGIN };
 
 /**
  * Ventana por omisión de la búsqueda por RUT.
@@ -40,10 +40,11 @@ export async function checkLabSession() {
 
 /**
  * Search lab orders by RUT.
- * @param {string} rut — formatted RUT (e.g. "16.940.645-6")
+ * @param {string} rut  formatted RUT (e.g. "16.940.645-6")
  * @param {object} [opts]
- * @param {string} [opts.desde] — yyyy-MM-dd (defaults to 1 year ago)
- * @param {string} [opts.hasta] — yyyy-MM-dd (defaults to today)
+ * @param {string} [opts.desde]  yyyy-MM-dd (defaults to 1 year ago)
+ * @param {string} [opts.hasta]  yyyy-MM-dd (defaults to today)
+ * @param {AbortSignal} [opts.signal]
  * @returns {Promise<Array>} array of order view-models
  */
 export async function buscarOrdenesPorRut(rut, { desde, hasta, signal } = {}) {

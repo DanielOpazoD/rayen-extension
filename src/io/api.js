@@ -50,7 +50,7 @@ async function fetchDay(token, dateStr) {
  * @property {boolean} retryOnly        sólo lo pendiente de una carga anterior
  * @property {string|null} operationId
  * @property {(pct:number, phase:string) => void} onProgress
- * @property {import('./sync-plan.js').SyncPlan} plan
+ * @property {import('../core/sync-plan.js').SyncPlan} plan
  * @property {object} store             caché de agenda (loadStore)
  * @property {object} previousSync      salud de sincronización previa
  * @property {{ records: object[], succeededDates: string[], failedDays: number, attemptedAt: number }|null} agenda  resultado del paso de agenda
@@ -66,10 +66,10 @@ async function fetchDay(token, dateStr) {
  * @returns {Promise<null | {
  *   records: object[], fromCache: number, fromNetwork: number,
  *   failedDays: number, historialFailed: number, team: Record<string, object>,
- *   sessionExpired: boolean
+ *   sessionExpired: boolean, cancelled: boolean, sync: object
  * }>} null = no active session token
  */
-export async function loadData(months, onProgress = () => {}, {
+export async function loadData(months, onProgress = (/** @type {number} */ _pct) => {}, {
   historial = true, retryOnly = false, operationId = null,
 } = {}) {
   resetSession(); // antes del token: una carga nueva vuelve a dar una oportunidad al token de la pestaña

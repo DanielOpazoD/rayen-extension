@@ -79,12 +79,17 @@ async function resolverCitas(token, parsed, citaKeys, { signal = run.controller.
  * (matchKey of the citas already loaded). Everything else is reduced to a
  * per-day team aggregate.
  *
- * @param {{ refreshDates?: Set<string>, onlyDates?: Set<string>|null }} opts dates whose appointment state was
- *   still mutable, or a restricted set requested by the synchronization retry
+ * @param {string} token
+ * @param {string[]} dates8
+ * @param {Set<string>} citaKeys
+ * @param {(pct: number) => void} [onProgress]
+ * @param {object} [opts]
+ * @param {Set<string>} [opts.refreshDates]  dates whose appointment state was still mutable
+ * @param {Set<string>|null} [opts.onlyDates]  a restricted set requested by the synchronization retry
  * @returns {Promise<{ atenciones: object[], team: Record<string, object>, failed: number,
  *   failedDates: string[], pendingDates: string[], attemptedCount: number, fromCache: boolean }>}
  */
-export async function loadHistorial(token, dates8, citaKeys, onProgress = () => {}, {
+export async function loadHistorial(token, dates8, citaKeys, onProgress = (/** @type {number} */ _pct) => {}, {
   refreshDates = new Set(), onlyDates = null,
 } = {}) {
   const store = await loadStore(CONFIG.historialKey);

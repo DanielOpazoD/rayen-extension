@@ -25,11 +25,11 @@ let hiddenCols = new Set();
 let perChips, typeSelect, updateFilterCount;
 
 /** The rows as the user sees them: filtered and sorted. Also what exports get. */
-export function currentRows() {
+function currentRows() {
   return sortRecords(filterRecords(state.allData, tableCtx()), sortCol, sortDir);
 }
 
-export function render() {
+function render() {
   const data = currentRows();
   setRendered(data);
   renderTable(data, state.allData.length, tableCtx());

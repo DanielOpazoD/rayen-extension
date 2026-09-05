@@ -35,6 +35,22 @@ flowchart LR
   IO --> Eloisa[Eloisa] & HSR[ProactiveLIS] & HHR[SysLab]
 ```
 
+## Herramientas de control del código
+
+Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
+
+| Herramienta | Qué vigila | Orden |
+|---|---|---|
+| `eslint` (`npm run lint`) | capas (`core` sin DOM/red/io/ui; `io` y `ai` sin `ui`), tamaño (100 líneas por función, 500 por módulo), complejidad ≤ 40, ≤ 5 parámetros | `check` |
+| `tsc --noEmit` con `checkJs` (`npm run types`) | tipos a partir de JSDoc en `src/core`, `src/io` y `src/ai`: campos mal escritos, argumentos que faltan, imports rotos. Sin build: los `.js` se quedan `.js`. `src/ui` queda fuera hasta anotar el DOM (272 avisos, casi todos `Element` sin refinar) | `check` |
+| `node --test` (`npm test`) | pruebas unitarias; `tests/contract.test.js` además exige que cada id del DOM exista, que cada export se importe y que cada import con nombre exista | `check` |
+| `scripts/check-cycles.mjs` | sin ciclos de importación | `check` |
+| `knip` (`npm run knip`) | archivos, exports y dependencias sin uso (entradas en `knip.json`) | `check` |
+| `scripts/check-architecture.mjs` (`npm run docs:check`) | mapa de módulos completo y por capa; rutas citadas existen | `check` |
+| `scripts/coverage.mjs` (`npm run coverage`) | cobertura de `core`, `io` y `ai` con umbral (líneas ≥ 90 %, ramas ≥ 75 %); la interfaz la cubren los recorridos | manual |
+| Playwright (`npm run test:e2e`) | 16 recorridos × 2 anchos sobre el arnés `/dev/` | CI |
+| `.githooks/pre-commit` | lint + tipos + unitarios antes de cada commit (`npm install` lo activa vía `prepare`; `git commit -n` lo salta) | local |
+
 ## Convenciones de código
 
 1. **Un módulo, una responsabilidad.** Los controladores (`ui/tabs/*`, `ui/patient-panel.js`, `ui/tabs/laboratorio.js`) cablean eventos y reparten el pintado; no calculan. Las funciones de pintado reciben los datos por parámetro (`renderAt(cur, filtro)`), no leen variables de módulo.

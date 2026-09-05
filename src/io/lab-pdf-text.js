@@ -25,7 +25,10 @@ let modulePromise = null;
 
 function loadPdfJs() {
   if (!modulePromise) {
-    modulePromise = import('../../vendor/pdf.min.mjs').then(module => {
+    // La ruta va como URL calculada: así tsc no sigue el import hacia vendor/ (código de terceros, sin tipos)
+    // y el navegador carga exactamente el mismo archivo.
+    const pdfjsUrl = new URL('../../vendor/pdf.min.mjs', import.meta.url).href;
+    modulePromise = import(pdfjsUrl).then(module => {
       module.GlobalWorkerOptions.workerSrc = new URL('../../vendor/pdf.worker.min.mjs', import.meta.url).href;
       return module;
     }).catch(error => {

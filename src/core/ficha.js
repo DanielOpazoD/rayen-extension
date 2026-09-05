@@ -90,6 +90,7 @@ function mapDerivacion(d) {
   return { label: cleanText(d.Descripcion), details: [], raw: d };
 }
 
+/** @type {Array<[string, string, string[], (item: any) => any]>} */
 const SECTIONS = [
   ['prescripciones', 'Prescripciones',                 ['Prescripciones'],                       mapPrescripcion],
   ['recetas',        'Recetas',                        ['Recetas'],                              mapReceta],

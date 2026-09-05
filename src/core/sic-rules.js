@@ -4,12 +4,20 @@
  */
 import { CONFIG } from './config.js';
 
-/** La SIC es mía si la registré o la ejecuto yo. */
+/**
+ * La SIC es mía si la registré o la ejecuto yo.
+ * @param {{ registrador?: {id?: number}, ejecutor?: {id?: number} }} sic
+ * @param {number} [officerId]
+ */
 export function isMine(sic, officerId = CONFIG.officerId) {
   return sic.registrador?.id === officerId || sic.ejecutor?.id === officerId;
 }
 
-/** Una atención (o visita de la ficha) es mía si estoy entre sus prestadores. Única definición: antes había cuatro copias. */
+/**
+ * Una atención (o visita de la ficha) es mía si estoy entre sus prestadores. Única definición: antes había cuatro copias.
+ * @param {{ prestadores?: Array<{id?: number}> }} a
+ * @param {number} [officerId]
+ */
 export function esMiaAtencion(a, officerId = CONFIG.officerId) {
   return (a?.prestadores ?? []).some(p => p.id === officerId);
 }

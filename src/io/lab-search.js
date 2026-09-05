@@ -27,8 +27,8 @@ export function withinRange(fechaDdMmAaaa, desde, hasta) {
 
 /**
  * @param {object} [deps]
- * @param {(rut: string, range: {desde?: string, hasta?: string}) => Promise<object[]>} [deps.fetchHsr]
- * @param {(rutBody: string) => Promise<object[]>} [deps.fetchHhr]
+ * @param {(rut: string, range: {desde?: string, hasta?: string, signal?: AbortSignal}) => Promise<object[]>} [deps.fetchHsr]
+ * @param {(rutBody: string, opts?: {signal?: AbortSignal}) => Promise<object[]>} [deps.fetchHhr]
  * @param {(patch: {searching?: boolean, rutBody?: string, rutDisplay?: string}) => void} [deps.onState]
  * @param {(r: object) => void} [deps.onHsr]  {status:'ok'|'empty'|'mismatch'|'auth'|'error', results, message?, error?}
  * @param {(r: object) => void} [deps.onHhr]  {status:'ok'|'empty'|'auth'|'error', results, ocultas?, error?}
