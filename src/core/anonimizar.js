@@ -11,17 +11,41 @@
  *    correlativo, el mismo en todo el documento (las relaciones se conservan).
  *  - Fechas: todas se desplazan el mismo número de días (no se informa cuál),
  *    salvo el centinela «00010101» de Rayen.
- *  - Al final se comprueba que ningún nombre, RUT ni correo sobrevivió; si
- *    algo queda, `verificado` es false y la interfaz no descarga.
+ *  - Segunda pasada, independiente de los nombres ya conocidos: RUN pegado al
+ *    estilo Rayen (dígito verificador válido), teléfonos en cualquier formato,
+ *    fechas dentro del texto (desplazadas), personas tras «Dr.», «Sra.», «hija»
+ *    o en claves por subcadena (MedicoTratante, NombreCompletoPaciente).
+ *  - Al final, los mismos detectores recorren el resultado: si algo queda,
+ *    `verificado` es false, `restos` dice qué, y la interfaz no descarga ni copia.
+ *
+ * Lo que NO puede detectar: un nombre de tercero escrito en texto libre sin
+ * tratamiento ni parentesco delante («coordinar con Carolina»). La interfaz lo dice.
  */
+import { computeDv } from './parser.js';
 
 const STRONG_NAME_KEY = /^(nombres?|nombrecompleto|nombreformateado|nombresocial|nombrealqueresponde|apellidos?|apellidopaterno|apellidomaterno|nombre(usuario|funcionario|paciente|profesional|solicitante|registrador|medico|prestador|madre|padre|tutor|acompanante|representante|responsable|contacto|cuidador)|usuario(creacion|modificacion|ingreso|registro)|funcionario|prestador|solicitante|registrador|medico|profesional|responsable|acompanante|tutor|representante|madre|padre|paciente|cuidador)$/i;
 const PERSON_SIBLING = /apellido|^rut$|^run$|fechadenacimiento|fechanacimiento|^sexo$|instrumento|profesion|esprestador|idfuncionario|idusuario|nombrecompleto/i;
-const RUT_KEY = /rut|^run$|^dv$|documentoidentidad|numerodocumento|pasaporte/i;
+const RUT_KEY = /rut|^run$|^dv$|documento|pasaporte/i; // «numDocumentoCompleto» (ProactiveLIS) también
 const ADDRESS_KEY = /direccion|domicilio|^calle|villa|poblacion|numerocasa|^depto|georef|latitud|longitud/i;
 const CONTACT_KEY = /telefono|fono|celular|movil|email|correo|mail$/i;
 const SECRET_KEY = /token|authorization|password|clave$/i;
 const ID_KEY = /^(id|guid)|(id|guid)$|^codigo(de)?familia|numero(de)?ficha|^ficha$|^numeroreceta$|^numeroorden$|^folio/i;
+// Claves con «nombre/apellido» que no son catálogo, y claves de rol con valor que parece una persona.
+const CATALOG_NAME_KEY = /nombre(examen|prestacion|especialidad|instrumento|programa|articulo|establecimiento|nodo|tipo|prevision|sector|comuna|categoria|clasificacion|estado|diagnostico|motivo|actividad|farmaco|medicamento|receta|unidad|servicio|area|centro|sistema|social|alqueresponde)/i;
+const NAME_SUBSTRING_KEY = /nombre|apellido/i;
+const ROLE_KEY = /medico|tratante|funcionario|prestador|profesional|solicitante|registrador|responsable|paciente|usuario|titular|tutor|acompanante|cuidador|madre|padre|hijo|hija|conyuge|pareja|contacto|emisor|receptor|derivador/i;
+// Persona en texto: tratamiento o parentesco seguido de una a cuatro palabras con mayúscula inicial.
+const CUES = ['dr', 'dra', 'sr', 'sra', 'srta', 'don', 'doña', 'paciente', 'hija', 'hijo', 'madre', 'padre', 'esposa', 'esposo', 'marido', 'mujer', 'hermana', 'hermano', 'nieta', 'nieto', 'abuela', 'abuelo', 'cuidadora', 'cuidador', 'familiar', 'acompañante', 'enfermera', 'enfermero', 'matrona', 'kinesióloga', 'kinesiólogo', 'psicóloga', 'psicólogo', 'nutricionista', 'tens', 'técnico', 'tecnico', 'colega'];
+// Sin el indicador «i»: con él, \p{Lu} también casaría minúsculas y la expresión se tragaba la frase entera.
+const cueAlt = CUES.map(w => `[${w[0].toUpperCase()}${w[0]}]${w.slice(1)}`).join('|');
+const CUE_RE = new RegExp(`\\b(?:${cueAlt})\\.?\\s+((?:(?:de|del|la|las|los|y)\\s+)?\\p{Lu}\\p{Ll}{2,}(?:[\\s-]+(?:(?:de|del|la|las|los|y)\\s+)?\\p{Lu}\\p{Ll}{2,}){0,3})`, 'gu');
+// RUN pegado como lo escribe Rayen: 7–8 dígitos y verificador válido (módulo 11); así una fecha o un id no pasan por RUN.
+const RUT_LOOSE_RE = /(?<![\d.-])(\d{7,8})[-\s]?([\dkK])(?![\d-])/g;
+// El fijo exige separador tras el prefijo: sin él, «20260901» (una fecha) parecía un fijo de Santiago.
+const PHONE_RE2 = /(?:\(?\+?56\)?[\s.-]?)?(?:9[\s.-]?\d{4}[\s.-]?\d{4}|(?:32|2)[\s.-]\d{3}[\s.-]?\d{4})\b|\b56\d{9}\b/g;
+const TEXT_DATE_RE = /\b(\d{1,2})([/-])(\d{1,2})\2(\d{4})\b|\b((?:19|20)\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\b/g;
+const looksLikePerson = s => { const w = String(s).replace(/^(dr|dra|sr|sra|srta|don|doña)\.?\s+/i, '').trim().split(/\s+/); return w.length >= 2 && w.length <= 5 && w.every(x => /^\p{Lu}\p{L}+$/u.test(x) || STOP.has(x.toLowerCase())); };
+const rutValido = (body, dv) => computeDv(body) === dv.toUpperCase();
 const STOP = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'van', 'von', 'da', 'do', 'dos', 'san', 'sra', 'sr', 'dr', 'dra']);
 
 // Con puntos o guion: ocho dígitos seguidos son también una fecha «20260904» o un identificador.
@@ -73,10 +97,13 @@ function collectNameTokens(node, tokens, key = '', parent = null) {
   if (typeof node !== 'string' || !node.trim()) return;
   const strong = STRONG_NAME_KEY.test(key);
   const weak = /^nombres?$/i.test(key) && parent && isPersonObject(parent);
-  if (!strong && !weak) return;
+  const sub = !/^nombres?$/i.test(key) && NAME_SUBSTRING_KEY.test(key) && !CATALOG_NAME_KEY.test(key);
+  const rol = ROLE_KEY.test(key) && looksLikePerson(node);
+  if (!strong && !weak && !sub && !rol) return;
   // «Nombre» de un catálogo ({Id, Nombre:'Mujer'}) no es una persona; por eso la regla débil exige un hermano de persona.
   if (/^nombres?$/i.test(key) && !weak && !/^nombres$/i.test(key)) return;
-  for (const w of node.split(/[\s,.;:()"'/-]+/)) {
+  for (const m of node.matchAll(CUE_RE)) for (const w of m[1].split(/[\s-]+/)) if (w.length >= 3 && !STOP.has(w.toLowerCase())) tokens.add(w);
+  for (const w of node.replace(/^(dr|dra|sr|sra|don|doña)\.?\s+/i, '').split(/[\s,.;:()"'/-]+/)) {
     const t = w.trim();
     if (t.length >= 3 && /^\p{L}+$/u.test(t) && !STOP.has(t.toLowerCase())) tokens.add(t);
   }
@@ -96,14 +123,22 @@ export function anonimizar(data, opts = {}) {
   let nextId = 100001;
   const informe = { nombres: 0, ruts: 0, contactos: 0, direcciones: 0, identificadores: 0, fechas: 0, textos: 0, secretos: 0 };
 
+  const shiftTextDate = (m, d, sep, mo, y, y8, mo8, d8) => {
+    if (y8) { const t = shiftDate(`${y8}${mo8}${d8}`, days); return t ?? m; }
+    const t = shiftDate(`${d.padStart(2, '0')}-${mo.padStart(2, '0')}-${y}`, days);
+    return t ? t.replace(/-/g, sep) : m;
+  };
   const scrubText = s => {
     let out = s, hit = false;
     for (const re of tokenRes) { const r = out.replace(re, '<nombre>'); if (r !== out) { hit = true; out = r; } }
+    const r0 = out.replace(CUE_RE, (m, nombre) => { hit = true; return m.slice(0, m.length - nombre.length) + '<nombre>'; }); out = r0;
     const r1 = out.replace(RUT_RE, '<rut>'); if (r1 !== out) { informe.ruts++; out = r1; }
+    const r1b = out.replace(RUT_LOOSE_RE, (m, body, dv) => rutValido(body, dv) ? '<rut>' : m); if (r1b !== out) { informe.ruts++; out = r1b; }
     const r2 = out.replace(EMAIL_RE, '<email>'); if (r2 !== out) { informe.contactos++; out = r2; }
-    const r3 = out.replace(PHONE_RE, '<fono>'); if (r3 !== out) { informe.contactos++; out = r3; }
+    const r4 = out.replace(TEXT_DATE_RE, shiftTextDate); if (r4 !== out) { informe.fechas++; out = r4; }
+    const r3 = out.replace(PHONE_RE, '<fono>').replace(PHONE_RE2, '<fono>'); if (r3 !== out) { informe.contactos++; out = r3; }
     if (hit) informe.textos++;
-    return out;
+    return out.replace(/<nombre>(?:\s+<nombre>)+/g, '<nombre>'); // «Rosa Tuki» es una persona, no dos marcadores
   };
 
   const walk = (node, key = '', parent = null) => {
@@ -125,7 +160,9 @@ export function anonimizar(data, opts = {}) {
     const s = String(node);
     const strong = STRONG_NAME_KEY.test(key);
     const weak = /^nombres?$/i.test(key) && parent && isPersonObject(parent);
-    if ((strong && !(/^nombre$/i.test(key) && !weak)) || weak) {
+    const sub = !/^nombres?$/i.test(key) && NAME_SUBSTRING_KEY.test(key) && !CATALOG_NAME_KEY.test(key);
+    const rol = ROLE_KEY.test(key) && looksLikePerson(s);
+    if ((strong && !(/^nombre$/i.test(key) && !weak)) || weak || sub || rol) {
       if (!s.trim()) return s;
       informe.nombres++;
       return /apellido/i.test(key) ? '<apellido>' : '<nombre>';
@@ -136,12 +173,27 @@ export function anonimizar(data, opts = {}) {
   };
 
   const out = walk(data);
+  const restos = detectarRestos(out, tokens, tokenRes);
+  return { data: out, informe, verificado: restos.length === 0, restos };
+}
+
+/**
+ * Comprobación final con los mismos detectores, sobre el resultado entero
+ * (claves incluidas): nombres conocidos, personas tras tratamiento, RUT en
+ * cualquier formato, correos y teléfonos. Lo que devuelve es lo que la
+ * interfaz muestra como motivo para no descargar.
+ */
+export function detectarRestos(out, tokens = new Set(), tokenRes = [...tokens].map(tokenRegex)) {
   const json = JSON.stringify(out);
   const restos = [];
-  for (const [i, re] of tokenRes.entries()) if (re.test(json)) restos.push([...tokens][i]);
-  if (RUT_RE.test(json)) restos.push('<patrón RUT>');
-  if (EMAIL_RE.test(json)) restos.push('<patrón correo>');
-  return { data: out, informe, verificado: restos.length === 0, restos };
+  const hay = re => { re.lastIndex = 0; const r = re.test(json); re.lastIndex = 0; return r; }; // regex globales: sin reponer lastIndex, test() miente
+  for (const [i, re] of tokenRes.entries()) if (hay(re)) restos.push([...tokens][i]);
+  if ([...json.matchAll(CUE_RE)].length) restos.push('persona tras tratamiento o parentesco');
+  if (hay(RUT_RE)) restos.push('RUT con formato');
+  if ([...json.matchAll(RUT_LOOSE_RE)].some(m => rutValido(m[1], m[2]))) restos.push('RUT pegado');
+  if (hay(EMAIL_RE)) restos.push('correo');
+  if (hay(PHONE_RE) || hay(PHONE_RE2)) restos.push('teléfono');
+  return [...new Set(restos)];
 }
 
 /** Resumen legible del informe, para la interfaz. */

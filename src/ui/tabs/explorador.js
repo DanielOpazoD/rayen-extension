@@ -57,7 +57,7 @@ function descargarAnonimizada() {
   const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  meta.textContent = `Descargado ${nombre} · ${resumenInforme(r.informe)} · comprobación final sin restos.`;
+  meta.textContent = `Descargado ${nombre} · ${resumenInforme(r.informe)} · comprobación final sin restos (paciente, profesionales, RUT, correos, teléfonos); revisa los textos libres antes de compartir.`;
   meta.className = 'explorer-meta ok';
 }
 

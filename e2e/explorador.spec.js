@@ -18,6 +18,6 @@ test('la copia anonimizada del Explorador no contiene nombres, RUT ni correos', 
   for (const prohibido of ['Rosa', 'Ejemplo', 'Tuki', '14407675', '6.543.210', 'rosa@example.cl', '8765 4321', '20260904']) expect(texto).not.toContain(prohibido);
   const cuerpo = JSON.parse(texto);
   expect(cuerpo.datos.Sexo.Nombre).toBe('Mujer');
-  expect(cuerpo.datos.Anamnesis[0].Evolucion).toBe('Sra. <nombre> <nombre>, RUT <rut>, evoluciona bien; hija al <fono>.');
+  expect(cuerpo.datos.Anamnesis[0].Evolucion).toBe('Sra. <nombre>, RUT <rut>, evoluciona bien; hija al <fono>.');
   await expect(page.locator('#explorerAnonMeta')).toHaveText(/comprobación final sin restos/);
 });

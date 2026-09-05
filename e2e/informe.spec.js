@@ -12,7 +12,7 @@ test('el informe con IA se prepara sin nombre ni RUN, y se arma con la identidad
   const apellido = nombre.split(/\s+/).pop();
   await page.locator('#ppIaBtn').click();
   await expect(page.locator('#iaSheet')).toBeVisible();
-  await expect(page.locator('#iaCtxMeta')).toHaveText(/sin nombre ni RUN \(comprobado\)/);
+  await expect(page.locator('#iaCtxMeta')).toHaveText(/comprobado: sin paciente, profesionales, RUT/);
   const contexto = await page.locator('#iaContexto').inputValue();
   expect(contexto).not.toContain(apellido);
   expect(contexto).not.toMatch(/\d{1,2}\.\d{3}\.\d{3}-[\dkK]/);

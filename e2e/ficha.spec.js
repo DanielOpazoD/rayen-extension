@@ -25,7 +25,7 @@ test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo,
   await expect(page.locator('#ppPaneRx')).toContainText(/Recetas por atención|Sin recetas/);
   await page.locator('#ppIaBtn').click();
   await expect(page.locator('#iaFuentes')).toContainText('eloisa-ficha · completa');
-  await expect(page.locator('#iaCtxMeta')).toHaveText(/sin nombre ni RUN \(comprobado\)/);
+  await expect(page.locator('#iaCtxMeta')).toHaveText(/comprobado: sin paciente, profesionales, RUT/);
   const contexto = await page.locator('#iaContexto').inputValue();
   expect(contexto).not.toContain('Ejemplo');
   expect(contexto).toMatch(/Prescripciones:|Motivo:/);
