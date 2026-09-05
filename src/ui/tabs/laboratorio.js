@@ -13,6 +13,7 @@ import { renderHsrResults, renderHhrResults, analysable, fmtFecha } from '../lab
 import { renderComparison, renderReports, renderFilteredTrends, renderMicrobiology } from '../lab/analysis-views.js';
 import { initRequest } from '../lab/request.js';
 import { downloadAllPdfs } from '../lab/pdf-all.js';
+import { labItemsFromAnalysis } from '../../ai/lab-items.js';
 
 /**
  * Pestaña Exámenes complementarios: el controlador. Sesiones, búsqueda,
@@ -66,6 +67,11 @@ export function init() {
     const view = e.target.closest('[data-view]')?.dataset.view;
     if (view) showView(view);
   });
+}
+
+/** Resultados del análisis vigente para el registro clínico, sólo si son de este RUN. */
+export function labItemsForRun(run) {
+  return labItemsFromAnalysis(analysis, search.rut.body, run);
 }
 
 export async function onShow() {

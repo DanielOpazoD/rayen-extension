@@ -20,10 +20,11 @@ export function fechaRelativa(ddmmyyyy, hoy = new Date()) {
   if (!m) return ddmmyyyy || 'sin fecha';
   const d = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
   const dias = Math.round((Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()) - d.getTime()) / 864e5);
-  if (dias < 0) return dias > -31 ? `en ${-dias} días` : `en ${Math.round(-dias / MESES)} meses`;
+  const n = (k, s, p) => `${k} ${k === 1 ? s : p}`;
+  if (dias < 0) return dias > -31 ? `en ${n(-dias, 'día', 'días')}` : `en ${n(Math.round(-dias / MESES), 'mes', 'meses')}`;
   if (dias === 0) return 'hoy';
   if (dias < 31) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-  if (dias < 365) return `hace ${Math.round(dias / MESES)} meses`;
+  if (dias < 365) return `hace ${n(Math.round(dias / MESES), 'mes', 'meses')}`;
   const a = Math.floor(dias / 365.25);
   return `hace ${a} ${a === 1 ? 'año' : 'años'}`;
 }
@@ -77,7 +78,10 @@ export function buildContext(rec, o = {}) {
 
   if (quiere('antecedentes')) {
     const a = rec.antecedentes;
-    partes.push(`## Antecedentes\nMórbidos: ${a.morbidos.join('; ') || 'sin datos'}\nAlergias: ${a.alergias.join('; ') || 'sin datos'}\nReacciones adversas a medicamentos: ${a.ram.join('; ') || 'sin datos'}\nFármacos en uso (según recetas): ${a.farmacos.map(f => `${f.texto}${f.estado ? ` [${f.estado}]` : ''}`).join('; ') || 'sin datos'}\nProgramas: ${a.programas.map(p => `${p.nombre}${p.estado ? ` (${p.estado})` : ''}`).join('; ') || 'sin datos'}\nRiesgo: ${a.riesgo.join('; ') || 'sin datos'}\nVigencias: ${a.vigencia.map(v => `${v.mensaje}${v.ok ? '' : ' [no vigente]'}`).join('; ') || 'sin datos'}`);
+    const fichaEstado = rec.fuentes.find(f => f.id === 'eloisa-ficha')?.estado;
+    // Con la ficha caída, «Alergias: sin datos» invitaría a escribir «sin alergias conocidas».
+    if (fichaEstado === 'fallida' || fichaEstado === 'ausente') partes.push('## Antecedentes\nFicha clínica no disponible: antecedentes, alergias, fármacos y programas no se pudieron consultar. No asumas que no existen.');
+    else partes.push(`## Antecedentes\nMórbidos: ${a.morbidos.join('; ') || 'sin datos'}\nAlergias: ${a.alergias.join('; ') || 'sin datos'}\nReacciones adversas a medicamentos: ${a.ram.join('; ') || 'sin datos'}\nFármacos en uso (según recetas): ${a.farmacos.map(f => `${f.texto}${f.estado ? ` [${f.estado}]` : ''}`).join('; ') || 'sin datos'}\nProgramas: ${a.programas.map(p => `${p.nombre}${p.estado ? ` (${p.estado})` : ''}`).join('; ') || 'sin datos'}\nRiesgo: ${a.riesgo.join('; ') || 'sin datos'}\nVigencias: ${a.vigencia.map(v => `${v.mensaje}${v.ok ? '' : ' [no vigente]'}`).join('; ') || 'sin datos'}`);
   }
 
   if (quiere('atenciones')) {
@@ -94,7 +98,9 @@ export function buildContext(rec, o = {}) {
   }
   if (quiere('imagenologia')) partes.push(`## Imagenología\n${lista(rec.imagenologia, x => `${fecha(x.fecha)} · ${x.estudio}: ${x.conclusion || x.informe || 'sin informe'}`)}`);
   if (quiere('biopsias')) partes.push(`## Biopsias\n${lista(rec.biopsias, x => `${fecha(x.fecha)} · ${x.muestra}: ${x.diagnostico || x.informe || 'sin informe'}`)}`);
-  if (quiere('notas')) partes.push(`## Notas del médico tratante\n${lista(rec.notas, n => `${n.fecha ? fecha(n.fecha.slice(0, 10).split('-').reverse().join('-')) : 'sin fecha'}: ${n.texto}`)}`);
+  // La fecha de la nota es un instante ISO en UTC: se lleva a la fecha local antes de relativizarla.
+  const fechaNotaLocal = iso => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`; };
+  if (quiere('notas')) partes.push(`## Notas del médico tratante\n${lista(rec.notas, n => `${n.fecha ? fecha(fechaNotaLocal(n.fecha)) : 'sin fecha'}: ${n.texto}`)}`);
 
   // Presupuesto: recortar atenciones antiguas antes que nada más.
   let texto = partes.join('\n\n');
@@ -119,6 +125,6 @@ export function buildContext(rec, o = {}) {
     chars: contexto.length,
     tokensAprox: Math.ceil(contexto.length / 4),
     omitido,
-    incluido: { atenciones: (texto.match(/^### /gm) ?? []).length, problemas: rec.problemas.length, interconsultas: rec.interconsultas.length, laboratorio: rec.laboratorio.length },
+    incluido: { atenciones: (texto.match(/^### /gm) ?? []).length, problemas: rec.problemas.length, interconsultas: rec.interconsultas.length, laboratorio: rec.laboratorio.length, imagenologia: rec.imagenologia.length, biopsias: rec.biopsias.length },
   };
 }

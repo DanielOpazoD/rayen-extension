@@ -70,7 +70,7 @@ function close() {
  */
 let labSearch = null;
 
-export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch } = {}) {
+export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch, labItems } = {}) {
   const panel = $('patientPanel');
   panel.inert = true;
   // Tab y Shift+Tab dan la vuelta dentro del diálogo.
@@ -128,7 +128,7 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     if (seg.dataset.scope === 'rx') { rxFilter = seg.dataset.seg; renderRx(cur, rxFilter); }
   });
 
-  initIaPanel();
+  initIaPanel({ labItems });
   $('ppIaBtn').addEventListener('click', () => {
     if (!cur) return;
     openIa({ record: cur.record, ficha: cur.ficha, visits: cur.visits, sics: cur.sics });

@@ -220,6 +220,7 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 - `src/ai/templates.js` — plantillas de informe declarativas (predeterminadas y personalizadas), validación y prompt con estructura obligatoria.
 - `src/ai/provider.js` — proveedores: manual (copiar prompt, pegar respuesta; sin red) y API de Anthropic (Messages API por HTTP, apagado sin clave); reconocimiento de la respuesta por secciones.
 - `src/ai/report.js` — informe final con la identidad repuesta en local, secciones faltantes marcadas, pie de revisión y Markdown → HTML mínimo.
+- `src/ai/lab-items.js` — del modelo analítico de laboratorio a los ítems del registro clínico, sólo si son del mismo RUN.
 - `src/ai/index.js` — ciclo completo: `prepararInforme` (registro → contexto → prompt) y `cerrarInforme` (respuesta → informe).
 
 <!-- module-map:end -->

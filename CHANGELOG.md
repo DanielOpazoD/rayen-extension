@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.37.0 — 2026-09-04
+
+Flujo de informe con IA, ajustes tras el balance 6.
+
+- **El laboratorio entra al informe**: los resultados del análisis vigente en Exámenes complementarios pasan al registro clínico si son del mismo RUN (`ai/lab-items.js`), con fecha, valor, referencia y marca de alerta. La hoja indica cuántos resultados incluye.
+- **Antecedentes honestos con la ficha caída**: el contexto dice «Ficha clínica no disponible: … no se pudieron consultar. No asumas que no existen» en vez de «Alergias: sin datos».
+- Fechas de las notas en hora local (antes salían en UTC: «en 1 días» para una nota de la tarde); singulares correctos («hace 1 mes», «en 1 día»).
+- El reconocimiento de la respuesta del modelo acepta títulos en negrita, con numeración «1)», con coletillas entre paréntesis o con dos puntos, y avisa de secciones repetidas.
+
 ## 2.36.0 — 2026-09-04
 
 Flujos, tercera tanda del saneamiento: lo que los revisores encontraron roto o confuso, con un recorrido de Playwright por cada arreglo.

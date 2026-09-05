@@ -7,6 +7,7 @@ import { PLANTILLAS, getPlantilla, validarPlantilla, crearPlantilla, buildPrompt
 import { createManualProvider, createApiProvider, parsearRespuesta } from '../src/ai/provider.js';
 import { armarInforme, markdownAHtml } from '../src/ai/report.js';
 import { registerSource, listSources, fetchAll, resetSources } from '../src/ai/sources.js';
+import { labItemsFromAnalysis } from '../src/ai/lab-items.js';
 import { prepararInforme, cerrarInforme } from '../src/ai/index.js';
 
 const HOY = new Date(2026, 8, 4); // 04-09-2026
@@ -58,6 +59,7 @@ test('fechaRelativa habla en días, meses y años respecto de hoy', () => {
   assert.equal(fechaRelativa('04-09-2026', HOY), 'hoy'); assert.equal(fechaRelativa('03-09-2026', HOY), 'hace 1 día');
   assert.equal(fechaRelativa('20-08-2026', HOY), 'hace 15 días'); assert.equal(fechaRelativa('11-02-2026', HOY), 'hace 7 meses');
   assert.equal(fechaRelativa('02-01-2025', HOY), 'hace 1 año'); assert.equal(fechaRelativa('04-12-2026', HOY), 'en 3 meses'); assert.equal(fechaRelativa('', HOY), 'sin fecha');
+  assert.equal(fechaRelativa('05-09-2026', HOY), 'en 1 día'); assert.equal(fechaRelativa('04-08-2026', HOY), 'hace 1 mes'); assert.equal(fechaRelativa('10-10-2026', HOY), 'en 1 mes');
 });
 
 test('buildContext no lleva nombre, RUN ni nombres de profesionales, ni dentro del texto libre, y usa fechas relativas', () => {
@@ -160,4 +162,39 @@ test('prepararInforme y cerrarInforme cierran el ciclo sin que la identidad salg
   assert.deepEqual(fin.respuesta.faltantes, []);
   assert.match(fin.markdown, /\*\*Paciente:\*\* Rosa Ejemplo Tuki/); assert.match(fin.markdown, /Borrador generado con un modelo de lenguaje \(manual\)/);
   assert.throws(() => prepararInforme({ plantilla: 'no-existe', datos: datos() }), /Plantilla desconocida/);
+});
+
+test('parsearRespuesta acepta negritas, numeración con paréntesis y coletillas, y avisa de secciones repetidas', () => {
+  const p = getPlantilla('resumen-clinico');
+  const txt = '**Problemas activos:**\n- DM2\n## 1) Antecedentes Relevantes (resumen)\nHTA.\nEvolución reciente:\nEstable.\n2. **Tratamiento actual**\nMetformina.\n## Pendientes\nA\n## Pendientes\nB';
+  const r = parsearRespuesta(txt, p);
+  assert.equal(r.secciones.problemas, '- DM2'); assert.equal(r.secciones.antecedentes, 'HTA.'); assert.equal(r.secciones.evolucion, 'Estable.');
+  assert.equal(r.secciones.tratamiento, 'Metformina.'); assert.equal(r.secciones.pendientes, 'A\n\nB');
+  assert.deepEqual(r.faltantes, []); assert.deepEqual(r.repetidas, ['pendientes']);
+});
+
+test('con la ficha caída el contexto no dice «sin datos» de antecedentes: dice que no se pudieron consultar', () => {
+  const d = datos(); d.ficha = { visits: [], antecedentes: {}, errors: ['Historial: 503'], programas: [], vigencia: [], riesgo: [], ram: [] };
+  const c = buildContext(buildClinicalRecord(d), { hoy: HOY });
+  assert.match(c.texto, /Ficha clínica no disponible: antecedentes.*no se pudieron consultar/);
+  assert.ok(!/Alergias: sin datos/.test(c.texto));
+});
+
+test('las notas se fechan en hora local, no en UTC', () => {
+  const d = datos(); d.record.notas = [{ at: '2026-09-04T23:30:00.000Z', text: 'Nota tarde' }];
+  // En Pacific/Easter (UTC-6/-5) las 23:30Z del 4 siguen siendo el 4; en Chile continental también.
+  const c = buildContext(buildClinicalRecord(d), { hoy: HOY, fechasReales: true });
+  const local = new Date('2026-09-04T23:30:00.000Z'); const dd = String(local.getDate()).padStart(2, '0');
+  assert.match(c.texto, new RegExp(`${dd}-09-2026: Nota tarde`));
+});
+
+test('labItemsFromAnalysis sólo entrega resultados del mismo RUN y marca las alertas', () => {
+  const analysis = { reports: [{ examId: '1', date: '20/08/2026', label: '20/08/2026 08:00', findings: [
+    { section: 'BIOQUÍMICA', analysis: 'Glicemia', result: '142', unit: 'mg/dL', refValue: '70-100', alert: true, flag: 'H' },
+    { section: 'BIOQUÍMICA', analysis: 'Creatinina', result: '0.9', unit: 'mg/dL', refValue: '0.6-1.2', alert: false } ] }], sourceByExamId: { 1: 'HSR' } };
+  const items = labItemsFromAnalysis(analysis, '6543210', '6.543.210-2');
+  assert.equal(items.length, 2); assert.equal(items[0].fecha, '20-08-2026'); assert.equal(items[0].fecha8, '20260820');
+  assert.equal(items[0].flag, 'H'); assert.equal(items[1].flag, ''); assert.equal(items[0].fuente, 'laboratorio-hsr');
+  assert.deepEqual(labItemsFromAnalysis(analysis, '6543210', '11.111.111-1'), [], 'otro paciente: nada');
+  assert.deepEqual(labItemsFromAnalysis(null, '6543210', '6.543.210-2'), []);
 });

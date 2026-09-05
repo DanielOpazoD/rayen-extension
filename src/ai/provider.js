@@ -54,16 +54,28 @@ export function createApiProvider({ apiKey = '', endpoint = API_DEFAULTS.endpoin
  * numeración y diferencias de mayúsculas y acentos.
  */
 const norm = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// Un título puede venir como «## 1) Problemas Activos (por relevancia)», «**Pendientes:**» o «Pendientes:».
+const cabecera = linea => {
+  const md = /^\s{0,3}#{1,4}\s*(?:\d+[.)]\s*)?(.+?)\s*#*\s*$/.exec(linea);
+  const negrita = /^\s*(?:\d+[.)]\s*)?\*\*(.+?)\*\*\s*:?\s*$/.exec(linea);
+  const dosPuntos = /^\s*(?:\d+[.)]\s*)?([A-ZÁÉÍÓÚÑ][^:]{2,60}):\s*$/.exec(linea);
+  const t = (md ?? negrita ?? dosPuntos)?.[1];
+  return t ? t.replace(/\*\*/g, '').replace(/\s*\([^)]*\)\s*$/, '').replace(/:\s*$/, '').trim() : null;
+};
 export function parsearRespuesta(texto, plantilla) {
   const lineas = (texto ?? '').split(/\r?\n/);
   const titulos = plantilla.secciones.map(s => ({ s, n: norm(s.titulo) }));
-  const secciones = {}; const extra = [];
+  const secciones = {}; const extra = []; const repetidas = [];
   let actual = null;
   for (const linea of lineas) {
-    const h = /^\s{0,3}#{1,4}\s*(?:\d+[.)]\s*)?(.+?)\s*#*\s*$/.exec(linea);
-    if (h) {
-      const t = titulos.find(x => x.n === norm(h[1]));
-      if (t) { actual = t.s.id; secciones[actual] = secciones[actual] ?? ''; continue; }
+    const h = cabecera(linea);
+    if (h !== null) {
+      const hn = norm(h);
+      const t = titulos.find(x => x.n === hn) ?? titulos.find(x => hn.startsWith(x.n) || x.n.startsWith(hn));
+      if (t) {
+        if (secciones[t.s.id]) { repetidas.push(t.s.id); secciones[t.s.id] += '\n'; }
+        actual = t.s.id; secciones[actual] = secciones[actual] ?? ''; continue;
+      }
       actual = null; extra.push(linea); continue;
     }
     if (actual) secciones[actual] += (secciones[actual] ? '\n' : '') + linea;
@@ -72,5 +84,5 @@ export function parsearRespuesta(texto, plantilla) {
   for (const k of Object.keys(secciones)) secciones[k] = secciones[k].trim();
   const faltantes = plantilla.secciones.filter(s => !s.opcional && !secciones[s.id]).map(s => s.id);
   const sinDatos = Object.entries(secciones).filter(([, v]) => /^sin datos en el registro\.?$/i.test(v)).map(([k]) => k);
-  return { secciones, faltantes, sinDatos, extra: extra.join('\n').trim() };
+  return { secciones, faltantes, sinDatos, repetidas: [...new Set(repetidas)], extra: extra.join('\n').trim() };
 }
