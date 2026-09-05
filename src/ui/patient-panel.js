@@ -10,9 +10,7 @@ import { initIaPanel, openIa, closeIa } from './ia-panel.js';
 import { showExpired } from './loader.js';
 import { session } from '../io/http.js';
 import { copyToClipboard } from './toast.js';
-import { isMine as isMineSic } from '../core/sic-rules.js';
 import { renderHeader, renderDatos } from './panel/datos.js';
-import { renderResumen, OPEN_SIC } from './panel/resumen.js';
 import { renderDx } from './panel/problemas.js';
 import { renderAt } from './panel/atenciones.js';
 import { renderIc } from './panel/interconsultas.js';
@@ -29,7 +27,7 @@ import { setFichaStatus, fichaStatusHtml } from './panel/ficha-status.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cur = null;          // { record, key, visits, sics, contact, ficha }
-let activeTab = 'res';   // remembered across patients; la portada primero
+let activeTab = 'dx';    // remembered across patients
 let atFilter = 'medicina'; // Medicina | Otros, también recordado
 let icFilter = 'mias';     // Mías | De otros
 let rxFilter = 'activas';  // Activas | Vencidas
@@ -107,21 +105,8 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     box.hidden = !box.hidden;
     $('ppFichaToggle').setAttribute('aria-expanded', String(!box.hidden));
   });
-  // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas; y los «Ver todo» de la portada.
+  // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas.
   $('patientPanel').addEventListener('click', e => {
-    const goto = e.target.closest('button[data-goto]');
-    if (goto) {
-      const id = goto.dataset.goto;
-      // «2 abiertas» en la portada y una pestaña que dijera «Sin interconsultas tuyas» sería una contradicción.
-      if (id === 'ic') {
-        const abiertas = cur.sics.filter(s => OPEN_SIC.has(s.grupo));
-        if (abiertas.length && !abiertas.some(isMineSic)) { icFilter = 'otros'; renderIc(cur, icFilter); }
-      }
-      showTab(id);
-      // El botón pulsado queda en un panel oculto: el foco sigue a la pestaña, no cae al body.
-      $('patientPanel').querySelector(`.pp-tab[data-pt="${id}"]`)?.focus();
-      return;
-    }
     const seg = e.target.closest('[data-seg][data-scope]');
     if (!seg) return;
     if (seg.dataset.scope === 'at') { atFilter = seg.dataset.seg; renderAt(cur, atFilter); }
@@ -205,7 +190,6 @@ let showTab = () => {}; // assigned in initPanel (WAI-ARIA tablist with roving t
 function renderAll() {
   renderHeader(cur);
   renderDatos(cur);
-  renderResumen(cur);
   renderDx(cur);
   renderAt(cur, atFilter);
   renderIc(cur, icFilter);
@@ -236,7 +220,7 @@ async function loadAndRenderFicha(force = false) {
     setFichaStatus(html, tone);
   } catch (err) {
     if (err?.name === 'AuthError') showExpired(); // la sesión murió: que la barra lo diga y ofrezca recargar
-    if (cur === me) { me.fichaFailed = true; renderRx(cur, rxFilter); renderResumen(cur); setFichaStatus(`<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`, 'bad'); }
+    if (cur === me) { me.fichaFailed = true; renderRx(cur, rxFilter); setFichaStatus(`<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`, 'bad'); }
   }
 }
 

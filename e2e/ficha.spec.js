@@ -13,13 +13,14 @@ async function abrirPrimerPaciente(page, query = '') {
 test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo, recetas y el informe la declara completa', async ({ page }) => {
   await abrirPrimerPaciente(page);
   await expect(page.locator('#ppFichaToggle')).toHaveAttribute('title', /Ficha completa/, { timeout: 10000 });
-  await expect(page.locator('#ppPaneRes .pp-row').first()).toBeVisible();
+  await expect(page.locator('#ppPaneDx .pp-row').first()).toBeVisible();
   await page.locator('.pp-tab[data-pt="at"]').click();
   const conCuerpo = page.locator('#ppPaneAt .pp-visit.has-body');
   await expect(conCuerpo.first()).toBeVisible();
   await conCuerpo.first().locator('.pp-vhead').click();
   await expect(conCuerpo.first()).toHaveClass(/expanded/);
   await expect(conCuerpo.first().locator('.pp-sec-l').first()).toHaveText(/Motivo de consulta|Evolución/);
+  await expect(page.locator('#ppPaneAt .pp-print').first()).toBeVisible(); // la impresora de la receta, dentro de la atención
   await page.locator('.pp-tab[data-pt="rx"]').click();
   await expect(page.locator('#ppPaneRx')).toContainText(/Recetas por atención|Sin recetas/);
   await page.locator('#ppIaBtn').click();

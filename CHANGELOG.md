@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.40.0 — 2026-09-04
+
+Panel del paciente, ajustes pedidos por Daniel.
+
+- **Sin pestaña Resumen**: Problemas, con los diagnósticos por peso, vuelve a ser la primera pestaña. Cuatro pestañas en vez de cinco.
+- **Impresora en cada receta**: dentro de cada atención y en la pestaña Recetas, un botón con icono de impresora abre el PDF de la receta de Eloisa (antes sólo «PDF» en Recetas).
+- **Cabecera rediseñada**: nombre en una sola línea con RUN y edad debajo, navegación ‹ › y cierre a la derecha, y una fila propia de acciones en píldoras con icono: **Historia ▾**, **Informe IA** y **Laboratorio**. El nombre ya no se parte en dos líneas.
+
 ## 2.39.0 — 2026-09-04
 
 Arnés con ficha clínica: el panel, las recetas, la portada y el informe con IA se ejercitan por fin en los recorridos.

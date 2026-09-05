@@ -164,14 +164,9 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
   await expect(page.locator('#ppFichaToggle')).toHaveAttribute('aria-label', /Estado de la ficha clínica: /);
   await page.locator('#ppFichaToggle').click();
   await expect(page.locator('#ppFichaStatus')).toBeHidden();
-  // Portada clínica primero, con sus secciones y «Ver todo».
-  await expect(page.locator('.pp-tab[data-pt="res"]')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('#ppPaneRes h4').first()).toHaveText(/Problemas activos/);
-  expect(await page.locator('#ppPaneRes h4').count()).toBeGreaterThanOrEqual(3); // el próximo control sólo aparece si hay uno
-  await page.locator('#ppPaneRes button[data-goto="at"]').click();
-  await expect(page.locator('.pp-tab[data-pt="at"]')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('.pp-tab[data-pt="at"]')).toBeFocused(); // el botón pulsado quedó oculto: el foco no cae al body
-  await page.locator('.pp-tab[data-pt="res"]').click();
+  // Problemas primero: la lista con peso es la portada.
+  await expect(page.locator('.pp-tab[data-pt="dx"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#ppPaneDx h4').first()).toHaveText(/Problemas/);
   // Cabecera mínima: RUN y edad; Datos se abre desde las iniciales.
   await expect(page.locator('#ppMeta')).toHaveText(/^RUN [\d.]+-[\dK] · \d+ años$/);
   await expect(page.locator('#ppDatosBtn')).toHaveCount(0);

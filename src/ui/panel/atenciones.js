@@ -3,13 +3,19 @@ import { isMedicalVisit } from '../patient-report.js';
 import { SECTION_LABELS } from '../../core/ficha.js';
 import { CONFIG } from '../../core/config.js';
 import { esc, stateDot, $ } from '../dom.js';
-import { certificadoPath } from '../../io/pdf.js';
+import { certificadoPath, recetaPdfPath } from '../../io/pdf.js';
+
+const PRINTER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>';
 import { whenLabel } from '../table.js';
 import { isMineVisit, segGroup, empty, setTabCount } from './helpers.js';
 
-function sectionHTML(id, items) {
+function sectionHTML(id, items, v) {
+  // Cada receta lleva su impresora: el PDF de Eloisa, para imprimirlo desde la atención.
+  const prest = v.prestadores?.[0]?.id ?? CONFIG.officerId;
+  const printer = it => id === 'recetas' && it.raw?.Id
+    ? `<button class="btn-mini pp-print" data-pdf="${esc(recetaPdfPath(v.id, it.raw.Id, prest))}" data-tip="Imprimir la receta (PDF de Eloisa)" aria-label="Imprimir receta">${PRINTER}</button>` : '';
   return `<div class="pp-sec"><span class="pp-sec-l">${esc(SECTION_LABELS[id] ?? id)}</span>` +
-    items.map(it => `<div class="pp-item ${it.suspendido ? 'susp' : ''}"><span>${esc(it.label)}</span>${it.details.length ? `<small>${esc(it.details.join(' · '))}</small>` : ''}</div>`).join('') +
+    items.map(it => `<div class="pp-item ${it.suspendido ? 'susp' : ''}"><span>${esc(it.label)}</span>${it.details.length ? `<small>${esc(it.details.join(' · '))}</small>` : ''}${printer(it)}</div>`).join('') +
     `</div>`;
 }
 
@@ -39,7 +45,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
         ${v.anamnesis.motivo   ? `<div class="pp-sec"><span class="pp-sec-l">Motivo de consulta</span><p>${esc(v.anamnesis.motivo)}</p></div>` : ''}
         ${v.anamnesis.historia ? `<div class="pp-sec"><span class="pp-sec-l">Historia / evolución</span><p>${esc(v.anamnesis.historia)}</p></div>` : ''}
         ${(v.extras ?? []).map(x => `<div class="pp-sec"><span class="pp-sec-l">${esc(x.label)}</span><p>${esc(x.text)}</p></div>`).join('')}
-        ${secs.map(([id, items]) => sectionHTML(id, items)).join('')}
+        ${secs.map(([id, items]) => sectionHTML(id, items, v)).join('')}
         ${v.actividades.length ? `<div class="pp-sec"><span class="pp-sec-l">Actividades</span><p>${v.actividades.map(a => esc(a.descripcion || a.codigo)).join(' · ')}</p></div>` : ''}
         ${v.adjuntos.length ? `<div class="pp-sec"><span class="pp-sec-l">Adjuntos</span><p>📎 ${v.adjuntos.map(a => esc(a.nombre)).join(', ')}</p></div>` : ''}
       </div>
