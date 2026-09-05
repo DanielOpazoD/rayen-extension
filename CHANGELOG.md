@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.43.0 — 2026-09-04
+
+Cifrado en reposo (ADR 0001, opción B, elegida por Daniel).
+
+- **PIN de seis dígitos**: la primera vez la aplicación pide crearlo y cifra lo que ya había; después lo pide al abrir. Todo lo que se guarda en el perfil de Chrome (agenda, ficha, interconsultas, notas, preferencias) queda cifrado con AES-GCM 256 y una clave derivada por PBKDF2 (300 000 iteraciones, sal por instalación). La clave sólo vive en memoria de la pestaña.
+- **El bloqueo por inactividad descarta la clave** y «Continuar» pide el PIN. Cambiar el PIN (Preferencias → PIN de cifrado) vuelve a cifrar todo. «Eliminar todo» borra también el PIN.
+- **Si el PIN se olvida, se pierden la caché y las notas**: la pantalla lo dice al crearlo y el README lo repite. Retención por defecto de tres meses (antes trece).
+- El informe imprimible viaja por `chrome.storage.session` (memoria) en vez de escribirse en disco.
+- Un valor cifrado sin clave nunca se devuelve a medias: `LockedError`. Sin PIN creado (pruebas y arnés) el almacenamiento sigue en claro; `/dev/?pin=1` ejercita la pantalla y el cifrado en el recorrido.
+- Cinco pruebas unitarias (cifrado en disco, bloqueo, migración, cambio de PIN, borrado) y un recorrido de Playwright.
+
 ## 2.42.0 — 2026-09-04
 
 Anonimizador con segunda pasada, lo que dos revisores señalaron como la puerta más débil del informe con IA y de la captura del Explorador.

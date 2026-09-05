@@ -1,3 +1,5 @@
+import { changePin, readMeta } from '../io/crypto-store.js';
+import { toast } from './toast.js';
 import { applyNetPrefs } from '../io/http.js';
 import { CONFIG } from '../core/config.js';
 import { humanError } from '../core/errors.js';
@@ -32,6 +34,14 @@ function fillSettings() {
 
 export function init({ lock }) {
   lockCtl = lock;
+  $('pinChangeForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!(await readMeta())) { toast('Sin cifrado en este modo (arnés): no hay PIN que cambiar.', { tone: 'info' }); return; }
+    const [viejo, nuevo, nuevo2] = ['pinOld', 'pinNew', 'pinNew2'].map(id => $(id).value.trim());
+    if (nuevo !== nuevo2) { toast('Los dos PIN nuevos no coinciden.', { tone: 'bad' }); return; }
+    try { await changePin(viejo, nuevo); ['pinOld', 'pinNew', 'pinNew2'].forEach(id => { $(id).value = ''; }); toast('PIN cambiado: todo volvió a cifrarse.'); }
+    catch (err) { toast(err?.name === 'PinError' ? 'El PIN actual no es correcto.' : `No se pudo cambiar el PIN: ${err?.message ?? err}`, { tone: 'bad' }); }
+  });
   initMenu('btnSettings', 'settingsMenu', 'settingsWrap', () => { fillSettings(); buildWatchList(); });
   // Bajo 1100 px la cabecera pliega período, ficha, exportar y preferencias tras «⋯».
   initMenu('btnMore', 'hdrMore', 'hdrWrap');

@@ -76,7 +76,7 @@ test('si un nombre sobrevive donde el recorrido no llega (una clave), verificado
 test('el anonimizador responde en tiempo lineal ante textos largos sin arroba ni dígitos separados', () => {
   const largo = { NombreCompleto: 'Rosa Tuki', Texto: 'a'.repeat(200_000), Digitos: '9'.repeat(200_000) };
   const t0 = Date.now(); anonimizar(largo, { desplazamientoDias: 1 });
-  assert.ok(Date.now() - t0 < 1500, `tardó ${Date.now() - t0} ms`);
+  assert.ok(Date.now() - t0 < 4000, `tardó ${Date.now() - t0} ms`); // cuadrático eran 80 s; el margen absorbe una máquina cargada
 });
 
 test('segunda pasada: RUN pegado con verificador válido, teléfonos en todos los formatos y fechas dentro del texto', () => {

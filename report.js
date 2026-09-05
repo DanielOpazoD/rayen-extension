@@ -6,7 +6,7 @@
   let data = null;
   try {
     data = await new Promise((res, rej) =>
-      chrome.storage.local.get('rayen_report', d => chrome.runtime.lastError ? rej(chrome.runtime.lastError) : res(d.rayen_report)));
+      chrome.storage.session.get('rayen_report', d => chrome.runtime.lastError ? rej(chrome.runtime.lastError) : res(d.rayen_report)));
   } catch (e) {
     out.textContent = `No se pudo leer el reporte: ${e.message}`;
     return;
@@ -17,7 +17,7 @@
   }
   document.getElementById('reportCss').textContent = data.css ?? '';
   out.innerHTML = data.fragment; // built by the extension itself from escaped values
-  chrome.storage.local.remove('rayen_report', () => void chrome.runtime.lastError); // PHI: do not leave it on disk
+  chrome.storage.session.remove('rayen_report', () => void chrome.runtime.lastError); // PHI: en memoria y borrado al abrir
   document.getElementById('btnPrint').addEventListener('click', () => window.print());
   if (new URLSearchParams(location.search).get('print') === '1') {
     setTimeout(() => window.print(), 300);
