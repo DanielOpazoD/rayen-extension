@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planSync, retentionMin8, isMutableAppointmentStatus } from '../src/io/sync-plan.js';
+import { planSync, retentionMin8, isMutableAppointmentStatus } from '../src/core/sync-plan.js';
 import { localDateStr } from '../src/core/parser.js';
 
 const HOY = new Date(2026, 8, 4);

@@ -18,8 +18,8 @@
  * @property {Set<string>} historyRefreshDates fechas de historial que se vuelven a pedir
  * @property {(date: string) => boolean} inWindow  fecha YYYYMMDD válida, dentro de la retención y no futura
  */
-import { dateRange, localDateStr } from '../core/parser.js';
-import { pendingSyncItems } from './sync-health.js';
+import { dateRange, localDateStr } from './parser.js';
+import { pendingSyncItems } from './sync-rules.js';
 
 /**
  * Una cita histórica no es inmutable mientras Eloisa la muestre en un estado

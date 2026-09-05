@@ -28,6 +28,19 @@ assert.deepEqual([...documented].sort(), actual, 'ARCHITECTURE.md must document 
 const LAYERS = ['src/core/', 'src/io/', 'src/ui/', 'src/ai/'];
 for (const file of actual) assert.ok(LAYERS.some(layer => file.startsWith(layer)), `${file} debe vivir en una capa: ${LAYERS.join(', ')}`);
 
+// Cada módulo debe figurar bajo el encabezado de SU capa: un módulo de io listado
+// como núcleo promete una pureza que el lint no vigila.
+const HEADINGS = [['src/core/', '**Núcleo'], ['src/io/', '**Entrada/salida'], ['src/ui/', '**Interfaz'], ['src/ai/', '**Inteligencia artificial']];
+let currentLayer = null;
+const misplaced = [];
+for (const line of map[1].split('\n')) {
+  const heading = HEADINGS.find(([, h]) => line.startsWith(h));
+  if (heading) { currentLayer = heading[0]; continue; }
+  const m = line.match(/^- `(src\/[^`]+\.js)`/);
+  if (m && !m[1].startsWith(currentLayer ?? '')) misplaced.push(`${m[1]} está bajo ${currentLayer ?? 'ningún encabezado'}`);
+}
+assert.deepEqual(misplaced, [], 'ARCHITECTURE.md lista módulos bajo la capa equivocada');
+
 for (const file of ['README.md', 'ARCHITECTURE.md', 'DOCUMENTATION_MAP.md', 'MAPA_API.html', 'CHANGELOG.md']) {
   await access(file);
 }

@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.48.0 — 2026-09-05
+
+Saneamiento, tanda 1 de 4 (auditoría independiente de estructura, modularidad, pruebas y documentación).
+
+- **Lo puro vive en `core`.** Se mueven a `src/core/` cinco piezas que no tocaban red ni DOM pero vivían en `io`, fuera de la valla de lint que garantiza su pureza: el cruce agenda–historial (`historial-merge.js`), el análisis de interconsultas (`sic-parse.js`), el plan de sincronización (`sync-plan.js`), las reglas de salud de sincronización (`sync-rules.js`) y el monitor de sesión de laboratorios (`lab-session.js`). Sus pruebas ya no necesitan el Chrome falso.
+- **Documentación corregida y vigilada.** Cinco afirmaciones que ya no eran ciertas (dos módulos de `io` listados como núcleo, «agregación pura» y «cálculos puros» en módulos que pintan, «único origen» con tres `host_permissions`, cancelación de interconsultas). `docs:check` ahora exige que cada módulo figure bajo el encabezado de su capa.
+- **Anonimizador: una fecha-hora de Rayen ya no pasa por RUN pegado.** Con el desplazamiento aleatorio de fechas, una fecha como «20260815 080000» tenía verificador válido en su octavo dígito y la comprobación final rechazaba la descarga («quedarían restos: RUT pegado»); era el fallo que parecía intermitente en el recorrido del Explorador. Regresión añadida.
+- Pruebas nuevas para `core/sic-rules.js` e `io/explorer.js` (token sólo a Eloisa, errores como resultado, resumen de campos).
+
 ## 2.47.0 — 2026-09-04
 
 - **Cruce exacto con la cita.** Pregunta de Daniel: ¿y si el paciente tuvo dos citas en diez días? Ahora, para cada atención mía sin cita ese día, la sincronización pide ese único día del paciente a Rayen (la consulta por paciente sí trae `IdCita` y `FechaCita`) y enlaza la cita exacta, aunque no sea la más cercana. La heurística por cercanía queda sólo para cuando esa consulta falla, y entonces el tooltip de la fecha dice «cruce estimado por cercanía». Una cita declarada que no está en la agenda cargada no se adivina.

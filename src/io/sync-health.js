@@ -1,7 +1,7 @@
 import { CONFIG } from '../core/config.js';
 import { storageGet, storageSet } from './cache.js';
 
-export const SYNC_SOURCES = Object.freeze(['agenda', 'historial', 'sics']);
+import { SYNC_SOURCES } from '../core/sync-rules.js';
 
 function assertSource(source) {
   if (!SYNC_SOURCES.includes(source)) throw new Error(`Fuente de sincronización desconocida: ${source}`);
@@ -97,12 +97,4 @@ export async function finishSyncSource(source, {
   };
   await storageSet(CONFIG.syncKeys[source], next);
   return next;
-}
-
-export function pendingSyncItems(health, source) {
-  return new Set(health?.[source]?.failedItems ?? []);
-}
-
-export function hasRetryableSync(health) {
-  return SYNC_SOURCES.some(source => (health?.[source]?.failedItems?.length ?? 0) > 0);
 }

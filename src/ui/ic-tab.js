@@ -1,6 +1,6 @@
 import { esc, sicTone, stateDot, fillSelect, $ } from './dom.js';
 import { CONFIG, SIC_GRUPO, prioridadInfo } from '../core/config.js';
-import { isMine } from '../io/sic.js';
+import { isMine } from '../core/sic-rules.js';
 import { resolveRange, inRange } from '../core/period.js';
 
 let expanded = new Set();

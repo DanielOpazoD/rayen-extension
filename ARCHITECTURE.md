@@ -80,7 +80,7 @@ flowchart LR
 
 ### Exámenes complementarios
 
-1. `io/lab-session.js` comprueba las sesiones de ProactiveLIS y SysLab sin ráfagas; `io/lab-search.js` busca en ambos con token de ejecución y cancelación.
+1. `core/lab-session.js` decide qué mostrar por sesión y `ui/tabs/laboratorio.js` comprueba las sesiones de ProactiveLIS y SysLab sin ráfagas; `io/lab-search.js` busca en ambos con token de ejecución y cancelación.
 2. `ui/tabs/laboratorio.js` orquesta; `ui/lab/results.js` pinta las órdenes; el análisis (`io/lab-report.js` → `core/lab-parser.js` → `core/lab-analytics.js`) verifica el RUN de cada PDF y arma matriz, tendencias y microbiología (`ui/lab/analysis-views.js`).
 3. Los resultados del análisis vigente entran al informe con IA sólo si son del mismo RUN (`ai/lab-items.js`).
 
@@ -103,7 +103,7 @@ Todo lo que se guarda pasa por `storageGet`/`storageSet` de `src/io/cache.js`; c
 
 ## Red: tiempo límite y cancelación
 
-Cada petición a Eloisa (`src/io/http.js`) lleva un tiempo límite: `net.timeoutMs` (20 s, Preferencias → «Espera máxima por petición») para la agenda y la ficha diaria, y `net.longTimeoutMs` (60 s o el triple del anterior) para la ficha completa de un paciente, que va en una sola llamada de diez años. Sólo la carga de la agenda es cancelable: sus peticiones llevan `run.controller.signal` y `cancelRun()` las aborta en vuelo; las llamadas del panel, de interconsultas y de PDF no llevan señal y no se ven afectadas. Un día cancelado queda pendiente, no fallido. Un 401/403 marca la sesión como vencida, invalida la copia del token y recuerda el token rechazado para no volver a entregarlo aunque la pestaña de Eloisa siga mostrándolo. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`. El plan de cada carga (fechas, refrescos, reintentos) lo calcula `src/io/sync-plan.js`, puro y con pruebas; `src/io/api.js` sólo ejecuta el plan en dos pasos, agenda y ficha, sobre un único objeto `SyncRun` documentado.
+Cada petición a Eloisa (`src/io/http.js`) lleva un tiempo límite: `net.timeoutMs` (20 s, Preferencias → «Espera máxima por petición») para la agenda y la ficha diaria, y `net.longTimeoutMs` (60 s o el triple del anterior) para la ficha completa de un paciente, que va en una sola llamada de diez años. Sólo la carga de la agenda es cancelable: sus peticiones llevan `run.controller.signal` y `cancelRun()` las aborta en vuelo; las llamadas del panel y de PDF no llevan señal y no se ven afectadas; la carga de interconsultas mira `run.cancelled` entre lotes y se detiene, contando lo que faltó como pendiente. Un día cancelado queda pendiente, no fallido. Un 401/403 marca la sesión como vencida, invalida la copia del token y recuerda el token rechazado para no volver a entregarlo aunque la pestaña de Eloisa siga mostrándolo. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`. El plan de cada carga (fechas, refrescos, reintentos) lo calcula `src/core/sync-plan.js`, puro y con pruebas; `src/io/api.js` sólo ejecuta el plan en dos pasos, agenda y ficha, sobre un único objeto `SyncRun` documentado.
 
 ## Flujo con IA
 
@@ -177,12 +177,15 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/ficha-rank.js` — orden clínico sin DOM: problemas con peso (GES, crónicos, recurrentes) y vigencia de prescripciones.
 - `src/core/ficha.js` — análisis de la ficha clínica (atenciones, secciones, textos libres, antecedentes, programas, maestro), sin red.
 - `src/core/receta.js` — recetas sin red ni DOM: autoridad de Rayen (fármacos en uso) sobre la duración escrita, y detalle de vigencia, despacho y suspensiones.
+- `src/core/historial-merge.js` — cruce puro de la agenda con el historial diario: cita del mismo día, cita exacta declarada por Rayen o la más cercana (estimada); resumen del equipo por día.
+- `src/core/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
+- `src/core/sic-parse.js` — análisis de una solicitud de interconsulta a los campos que muestra la aplicación.
+- `src/core/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
+- `src/core/sync-rules.js` — fuentes de sincronización y qué quedó pendiente, sin almacenamiento.
 - `src/core/lab-analytics.js` — identidad del paciente, lote íntegro, matriz comparativa y tendencias.
 - `src/core/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
 - `src/core/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
 - `src/core/lab-parser.js` — interpretación clínica del texto de un informe y detección de fuera de rango.
-- `src/io/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
-- `src/io/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
 - `src/core/lab-specimen.js` — clasifica la muestra biológica y decide qué entra en cada vista y en qué orden.
 - `src/core/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
 - `src/core/load-summary.js` — resumen honesto y compacto del resultado de carga.
@@ -200,18 +203,18 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/crypto-store.js` — cifrado en reposo (ADR 0001): AES-GCM con clave derivada del PIN por PBKDF2, creación y cambio de PIN, migración de lo que estaba en claro; la clave sólo en memoria.
 - `src/io/explorer.js` — consultas controladas del Explorador API.
 - `src/io/ficha-load.js` — carga de la ficha desde Eloisa: seis fuentes en paralelo, memoización y respuestas crudas para el Explorador.
-- `src/io/historial.js` — historial diario y cruce con la agenda.
+- `src/io/historial.js` — historial diario desde Eloisa: caché por día, resolución de la cita exacta por paciente; el cruce con la agenda vive en core/historial-merge.js.
 - `src/io/http.js` — transporte autenticado, cancelación y guardia de origen.
 - `src/io/lab-api.js` — servicio ProactiveLIS: búsqueda de órdenes, PDF e informes.
 - `src/io/lab-http.js` — transporte cookie-based para el origen examenesusuarios.hsalvador.cl.
+- `src/io/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
+- `src/io/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
 - `src/io/lab-search.js` — búsqueda en los dos laboratorios sin DOM: RUT buscado, token de ejecución, cancelación, filtro de período y resultados por callbacks.
-- `src/io/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
 - `src/io/notes.js` — identidad estable y notas locales por paciente.
 - `src/io/pdf.js` — obtención y presentación segura de documentos PDF.
 - `src/io/receta.js` — detalle de una receta desde Eloisa, bajo demanda y una vez por receta; recargar la ficha vacía la memoria.
-- `src/io/sic.js` — carga y normalización de interconsultas.
+- `src/io/sic.js` — carga de interconsultas (ids por origen/destino, detalle por lotes, caché); el análisis vive en core/sic-parse.js.
 - `src/io/state.js` — fuente única de verdad y eventos de la aplicación.
-- `src/io/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
 - `src/io/sync-health.js` — persistencia técnica de intentos, éxitos y pendientes por fuente.
 - `src/io/syslab-api.js` — servicio SysLab HHR: búsqueda por RUT y verificación de identidad del lote.
 - `src/io/syslab-http.js` — conducción de la pestaña SysLab (navegación por estado) y lectura de su DOM.
@@ -222,7 +225,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/actions.js` — acciones compartidas: pestañas, notas y apertura de pacientes.
 - `src/ui/ajustes.js` — preferencias, umbrales y gestión de datos locales.
 - `src/ui/charts.js` — gráficos SVG accesibles y accionables.
-- `src/ui/dom.js` — utilidades DOM, escape, teclado, tooltips y esqueletos.
+- `src/ui/dom.js` — utilidades DOM, teclado, tooltips y esqueletos; reexporta `esc` de `core/text.js`.
 - `src/ui/exam-request-view.js` — dibujo del formulario de solicitud, en pantalla y para imprimir.
 - `src/ui/export.js` — exportación filtrada a CSV, XLS, HTML, JSON y PDF.
 - `src/ui/ia-panel.js` — hoja «Informe con IA» del panel: plantilla, ventana, fuentes, contexto visible, copiar prompt, pegar respuesta, informe e impresión (proveedor manual).
@@ -245,9 +248,9 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/panel/pdf-menu.js` — menú «PDF ▾» de la historia del paciente.
 - `src/ui/panel/ficha-status.js` — estado de la ficha dentro de Datos (avatar), con su tono en el avatar.
 - `src/ui/patient-report.js` — modelo de historia clínica imprimible.
-- `src/ui/patients.js` — agregación pura de atenciones por paciente.
+- `src/ui/patients.js` — agregación de atenciones por paciente y su pintado en la pestaña Pacientes.
 - `src/ui/pdf-merge.js` — fusión de informes en un PDF único, con pdf-lib cargado bajo demanda.
-- `src/ui/stats.js` — cálculos puros para estadísticas.
+- `src/ui/stats.js` — estadísticas: cálculos y su pintado (barra, gráficos, filtros).
 - `src/ui/sync-status.js` — presentación de la salud de sincronización.
 - `src/ui/table.js` — columnas y renderizado de la tabla de atenciones.
 - `src/ui/tabs/atenciones.js` — controlador de filtros y tabla de Atenciones.

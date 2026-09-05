@@ -10,7 +10,8 @@ import { CONFIG } from '../core/config.js';
 import { state, setData, emit, setLoadedMonths } from '../io/state.js';
 import { setStatus } from './ui.js';
 import { initSyncStatus, renderSyncStatus } from './sync-status.js';
-import { failRunningSyncSources, loadSyncHealth, pendingSyncItems } from '../io/sync-health.js';
+import { failRunningSyncSources, loadSyncHealth } from '../io/sync-health.js';
+import { pendingSyncItems } from '../core/sync-rules.js';
 import { summarizeLoad } from '../core/load-summary.js';
 
 /** Fetching, refreshing and the expired-session path. Emits 'fetched' after a manual load. */

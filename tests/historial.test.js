@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeHistorial, aggregateTeam, loadHistorial } from '../src/io/historial.js';
+import { loadHistorial } from '../src/io/historial.js';
+import { mergeHistorial, aggregateTeam } from '../src/core/historial-merge.js';
 import { installFakeChrome } from './helpers/fake-chrome.js';
 import { parseAtencion } from '../src/core/parser.js';
 

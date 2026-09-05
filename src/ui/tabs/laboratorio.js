@@ -4,7 +4,7 @@ import { humanError } from '../../core/errors.js';
 import { esc, $ } from '../dom.js';
 import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN, fmtDate as isoDate } from '../../io/lab-api.js';
 import { checkSyslabSession, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
-import { createSessionMonitor } from '../../io/lab-session.js';
+import { createSessionMonitor } from '../../core/lab-session.js';
 import { createLabSearch } from '../../io/lab-search.js';
 import { buildDetails } from '../../io/lab-report.js';
 import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../../core/lab-analytics.js';

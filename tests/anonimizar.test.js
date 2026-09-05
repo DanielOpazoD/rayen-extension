@@ -115,3 +115,18 @@ test('límite documentado: un tercero sin tratamiento ni parentesco en texto lib
   const r = anonimizar({ Nota: 'coordinar con Carolina la próxima semana' }, { desplazamientoDias: 1 });
   assert.equal(r.data.Nota, 'coordinar con Carolina la próxima semana'); assert.equal(r.verificado, true);
 });
+
+test('regresión: una fecha-hora de Rayen cuyo octavo dígito valida como verificador no es un RUN pegado', () => {
+  // 2026081-5 y 2027010-1 tienen verificador válido; como fecha con hora deben quedar como fecha (desplazada), no como <rut>.
+  for (const fecha of ['20260815 080000', '20270101 235959']) {
+    const r = anonimizar({ FechaAtencion: fecha, Anamnesis: [{ Evolucion: `Control el ${fecha}, sin novedades.` }] }, { desplazamientoDias: 0 });
+    assert.equal(r.verificado, true, `${fecha}: la comprobación final no debe hablar de RUT pegado`);
+    assert.deepEqual(r.restos, []);
+    assert.equal(r.data.FechaAtencion, fecha, 'con desplazamiento 0 la fecha se conserva, no se convierte en <rut>');
+    assert.ok(!JSON.stringify(r.data).includes('<rut>'));
+  }
+  // El RUN pegado real sigue detectándose, incluso si lo sigue un espacio y otra cosa.
+  const real = anonimizar({ Texto: 'RUN 17752753K acude solo' }, { desplazamientoDias: 0 });
+  assert.match(real.data.Texto, /<rut>/);
+  assert.deepEqual(detectarRestos({ x: '20260815 080000' }), [], 'la comprobación final tampoco lo confunde');
+});

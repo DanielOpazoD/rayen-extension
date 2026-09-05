@@ -1,6 +1,8 @@
 import { beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSIC, isMine, contactsFromSICs, loadSICs } from '../src/io/sic.js';
+import { loadSICs } from '../src/io/sic.js';
+import { parseSIC } from '../src/core/sic-parse.js';
+import { isMine, contactsFromSICs } from '../src/core/sic-rules.js';
 import { CONFIG, sicGrupo } from '../src/core/config.js';
 import { installFakeChrome } from './helpers/fake-chrome.js';
 import { resetRun, resetSession } from '../src/io/http.js';
