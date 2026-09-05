@@ -2,7 +2,20 @@
 import { esc } from '../core/text.js';
 export { esc };
 
-export const $ = id => document.getElementById(id);
+/**
+ * Elemento con las propiedades de formulario más usadas (value, checked, disabled,
+ * options…) como opcionales: lo que devuelve la función de búsqueda por id cuando apunta a un input, un
+ * select o un botón. Sin esto, cada lectura de `.value` sobre el resultado era un aviso de tipos.
+ * @typedef {HTMLElement & Partial<HTMLInputElement> & Partial<HTMLSelectElement> & Partial<HTMLTextAreaElement>} FormEl
+ */
+/** @returns {FormEl} */
+export const $ = id => /** @type {FormEl} */ (document.getElementById(id));
+/** El objetivo de un evento como elemento (el DOM lo declara EventTarget, que no tiene ni `closest` ni `value`). */
+export const targetOf = e => /** @type {FormEl} */ (e.target);
+/** `closest` sobre el objetivo del evento, tipado como elemento. */
+export const closestOf = (e, sel) => /** @type {FormEl|null} */ (targetOf(e).closest(sel));
+/** querySelectorAll como lista de elementos (no de `Element` a secas). */
+export const qsa = (root, sel) => /** @type {FormEl[]} */ ([...root.querySelectorAll(sel)]);
 
 /** Semantic tone for an appointment/atención state. */
 export function stateTone(estado = '') {
@@ -25,6 +38,10 @@ export function sicTone(grupo = '') {
 // Etiquetas largas de Rayen que se acortan en la celda; el texto completo va en el título.
 const SHORT_STATE = Object.freeze({ 'No se presentó a la cita': 'No se presentó' });
 
+/**
+ * @param {string} estado
+ * @param {{ tone?: string, small?: boolean }} [opts]  tone fuerza el color; si no, sale del estado
+ */
 export function stateDot(estado, { tone, small = false } = {}) {
   const label = SHORT_STATE[estado] ?? estado;
   const title = label !== estado ? ` title="${esc(estado)}"` : '';
@@ -74,18 +91,18 @@ export function initTooltips() {
     if (el.scrollWidth > el.clientWidth + 1) el.title = el.textContent.trim();
   };
   document.addEventListener('mouseover', e => {
-    autoTitle(e.target);
-    const el = e.target.closest('[data-tip]');
+    autoTitle(targetOf(e));
+    const el = closestOf(e, '[data-tip]');
     if (el && el !== cur) show(el);
   });
-  document.addEventListener('focusin', e => autoTitle(e.target));
+  document.addEventListener('focusin', e => autoTitle(targetOf(e)));
   document.addEventListener('mouseout', e => {
-    const el = e.target.closest('[data-tip]');
-    if (el && el === cur && !el.contains(e.relatedTarget)) hide();
+    const el = closestOf(e, '[data-tip]');
+    if (el && el === cur && !el.contains(/** @type {Node} */ (e.relatedTarget))) hide();
   });
   // Keyboard: the same tooltip on focus (elements with tabindex or native focus)
   document.addEventListener('focusin', e => {
-    const el = e.target.closest('[data-tip]');
+    const el = closestOf(e, '[data-tip]');
     if (el) show(el);
   });
   document.addEventListener('focusout', hide);
@@ -101,7 +118,7 @@ export function initTooltips() {
  * @returns {(id: string) => void} function to select a tab programmatically
  */
 export function initTablist(nav, onSelect, key) {
-  const tabs = () => [...nav.querySelectorAll('[role="tab"]')];
+  const tabs = () => qsa(nav, '[role="tab"]');
   const select = (id, focus = false) => {
     for (const t of tabs()) {
       const on = t.dataset[key] === id;
@@ -114,7 +131,7 @@ export function initTablist(nav, onSelect, key) {
     onSelect(id);
   };
   nav.addEventListener('click', e => {
-    const t = e.target.closest('[role="tab"]');
+    const t = closestOf(e, '[role="tab"]');
     if (t) select(t.dataset[key]);
   });
   nav.addEventListener('keydown', e => {
@@ -135,7 +152,7 @@ export function initTablist(nav, onSelect, key) {
 export function activateOnKey(container) {
   container.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    const el = e.target.closest('[role="button"],[data-col],tr[tabindex]');
+    const el = closestOf(e, '[role="button"],[data-col],tr[tabindex]');
     if (!el || el.tagName === 'BUTTON' || el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') return;
     e.preventDefault();
     el.click();

@@ -2,7 +2,7 @@ import { normalizeSexo } from '../../core/lab-parser.js';
 import { periodoDesde } from '../../core/period.js';
 import { formatRun } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
-import { esc, $ } from '../dom.js';
+import { esc, $, targetOf, closestOf, qsa } from '../dom.js';
 import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN } from '../../io/lab-api.js';
 import { checkSyslabSession, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
 import { createSessionMonitor } from '../../core/lab-session.js';
@@ -58,15 +58,15 @@ export function init() {
     nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
     run: search.rut.display, fecha: fmtDMY(new Date()), procedencia: '',
   }) });
-  $('labPickAllHsr').addEventListener('change', e => pickAll('hsr', e.target.checked));
-  $('labPickAllHhr').addEventListener('change', e => pickAll('hhr', e.target.checked));
+  $('labPickAllHsr').addEventListener('change', e => pickAll('hsr', targetOf(e).checked));
+  $('labPickAllHhr').addEventListener('change', e => pickAll('hhr', targetOf(e).checked));
   $('labPeriodo').addEventListener('change', applyPeriodo);
   for (const id of ['labTrendRange', 'labTrendSearch', 'labTrendAltered']) {
     $(id).addEventListener('input', () => { if (analysisView === 'tendencias') showView('tendencias'); });
   }
   applyPeriodo();
   $('labViews').addEventListener('click', e => {
-    const view = e.target.closest('[data-view]')?.dataset.view;
+    const view = closestOf(e, '[data-view]')?.dataset.view;
     if (view) showView(view);
   });
 }
@@ -209,7 +209,7 @@ function pickAll(source, checked) {
     const key = `${source}:${id}`;
     if (checked) selected.add(key); else selected.delete(key);
   }
-  document.querySelectorAll(`.lab-check[data-source="${source}"]`).forEach(box => {
+  qsa(document, `.lab-check[data-source="${source}"]`).forEach(box => {
     if (ids.includes(box.dataset.id)) box.checked = checked;
   });
   updateSelectionUI();
@@ -295,7 +295,7 @@ async function analyzeSelected() {
     analysis.sourceByExamId = Object.fromEntries(exams.map((e, i) => [e.id, items[i].source]));
 
     reportHonestly(details, errors, items.length);
-    $('labViews').querySelector('[data-view="microbiologia"]').hidden = !analysis.microbiology.length;
+    /** @type {HTMLElement} */ ($('labViews').querySelector('[data-view="microbiologia"]')).hidden = !analysis.microbiology.length;
     if (analysisView === 'microbiologia' && !analysis.microbiology.length) analysisView = 'comparacion';
     $('labAnalysis').hidden = false;
     showView(analysisView);
@@ -329,7 +329,7 @@ function reportHonestly(details, errors, requested) {
 
 function showView(view) {
   analysisView = view;
-  $('labViews').querySelectorAll('[data-view]').forEach(b => {
+  qsa($('labViews'), '[data-view]').forEach(b => {
     b.setAttribute('aria-selected', String(b.dataset.view === view));
   });
   const body = $('labAnalysisBody');

@@ -1,4 +1,4 @@
-import { $, esc } from './dom.js';
+import { $, esc, closestOf } from './dom.js';
 import { loadSyncHealth, recoverStaleSyncSources } from '../io/sync-health.js';
 import { hasRetryableSync, SYNC_SOURCES } from '../core/sync-rules.js';
 
@@ -100,7 +100,7 @@ function setDetails(open) {
 export function initSyncStatus(onRetry) {
   $('btnSyncDetails').addEventListener('click', () => setDetails($('syncDetails').hidden));
   // Es un desplegable que tapa contenido: se va con un clic fuera, con Escape o al cambiar de pestaña.
-  document.addEventListener('click', e => { if (!e.target.closest('#syncHealth')) setDetails(false); });
+  document.addEventListener('click', e => { if (!closestOf(e, '#syncHealth')) setDetails(false); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !$('syncDetails').hidden) { setDetails(false); $('btnSyncDetails').focus(); }
   });

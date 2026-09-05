@@ -85,7 +85,7 @@ const EMPTY_CTX = { sicsByRun: new Map(), officerId: 0 };
  * Pure filter — no DOM — so it can be unit-tested.
  * @param {object[]} allData
  * @param {ReturnType<typeof readFilters>} f   empty string = no filter
- * @param {{ sicsByRun: Map<string, object[]>, officerId: number }} ctx
+ * @param {{ sicsByRun: Map<string, object[]>, officerId: number, hoy?: any }} ctx
  */
 export function applyFilters(allData, f, ctx = EMPTY_CTX) {
   const { from8, to8 } = resolveRange(f, ctx.hoy);

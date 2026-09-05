@@ -24,6 +24,7 @@ function download(blob, filename) {
 const stamp = () => new Date().toISOString().slice(0, 10);
 
 /** Column definitions shared by every atenciones export: [header, getter, type] */
+/** @type {Array<[string, (p: any) => any, string?]>} */
 const ATENCION_COLS = [
   ['F. Atención',            p => p.fechaAtencion],
   ['Hora',                   p => p.hora],

@@ -1,4 +1,4 @@
-import { esc } from './dom.js';
+import { esc, targetOf, closestOf } from './dom.js';
 
 /**
  * Command palette (⌘K / Ctrl+K): one door into every patient.
@@ -6,7 +6,9 @@ import { esc } from './dom.js';
  * returns the record so the host can open the panel.
  */
 let el = null, input = null, list = null;
-let items = [], active = 0, onPick = () => {};
+let items = [], active = 0;
+/** @type {(record: object) => void} */
+let onPick = () => {};
 
 const norm = s => String(s ?? '').toLowerCase()
   .normalize('NFD').replace(/[̀-ͯ]/g, '');   // ignore accents
@@ -62,7 +64,7 @@ export function initPalette(getPatients, pick) {
       <div class="pal-foot">↑↓ moverse · ↵ abrir · Esc cerrar</div>
     </div>`;
   document.body.appendChild(el);
-  input = el.querySelector('#palInput');
+  input = /** @type {HTMLInputElement} */ (el.querySelector('#palInput'));
   list  = el.querySelector('#palList');
 
   const refresh = () => { items = searchPatients(getPatients(), input.value); active = 0; render(); };
@@ -75,13 +77,13 @@ export function initPalette(getPatients, pick) {
     else if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
   list.addEventListener('click', e => {
-    const it = e.target.closest('.pal-item');
+    const it = closestOf(e, '.pal-item');
     if (it) { close(); onPick(items[+it.dataset.i]); }
   });
-  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.addEventListener('click', e => { if (targetOf(e) === el) close(); });
 
   document.addEventListener('keydown', e => {
-    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(targetOf(e).tagName);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open(); }
     else if (e.key === '/' && !typing && el.hidden) { e.preventDefault(); open(); }
   });

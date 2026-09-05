@@ -1,5 +1,5 @@
 import { renderToday } from '../today.js';
-import { $ } from '../dom.js';
+import { $, closestOf } from '../dom.js';
 import { date8ToIso, isoToDate8 } from '../../core/period.js';
 import { localDateStr } from '../../core/parser.js';
 import { monthGrid, monthLabel, countsByDay, shiftMonth, DIAS_CORTOS } from '../../core/calendar.js';
@@ -58,7 +58,7 @@ export function init() {
   $('calPrev').addEventListener('click', () => { ({ year: calYear, month: calMonth } = shiftMonth(calYear, calMonth, -1)); renderCalendar(state.allData, todayDate || isoToDate8($('dayPick').value)); });
   $('calNext').addEventListener('click', () => { ({ year: calYear, month: calMonth } = shiftMonth(calYear, calMonth, 1)); renderCalendar(state.allData, todayDate || isoToDate8($('dayPick').value)); });
   $('calGrid').addEventListener('click', e => {
-    const cell = e.target.closest('button[data-date8]');
+    const cell = closestOf(e, 'button[data-date8]');
     if (!cell) return;
     todayDate = cell.dataset.date8;
     calYear = +todayDate.slice(0, 4); calMonth = +todayDate.slice(4, 6) - 1;
@@ -69,11 +69,11 @@ export function init() {
 
   // Patient cards open the same panel as the table
   $('todayContent').addEventListener('click', e => {
-    const sic = e.target.closest('[data-sic]');
+    const sic = closestOf(e, '[data-sic]');
     if (sic) { jumpToSIC({ id: sic.dataset.sic }); return; }
-    const byRun = e.target.closest('.pat-run[data-run]');
+    const byRun = closestOf(e, '.pat-run[data-run]');
     if (byRun) { openPatientByRun(byRun.dataset.run); return; }
-    const card = e.target.closest('.pat-link[data-id]');
+    const card = closestOf(e, '.pat-link[data-id]');
     if (card) openPatientById(card.dataset.id);
   });
 

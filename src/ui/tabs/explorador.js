@@ -3,7 +3,7 @@ import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from '../../io/explo
 import { getFichaCaptures } from '../../io/ficha-load.js';
 import { anonimizar, resumenInforme } from '../../core/anonimizar.js';
 import { localDateStr } from '../../core/parser.js';
-import { esc, $ } from '../dom.js';
+import { esc, $, targetOf } from '../dom.js';
 
 /** Raw API explorer, for discovering fields the UI does not show yet. */
 
@@ -65,7 +65,7 @@ export function init() {
   let capturas = listarCapturas();
   document.querySelector('.tabs')?.addEventListener('click', () => { capturas = listarCapturas(); });
   $('explorerCaptures').addEventListener('change', e => {
-    const it = capturas[Number(e.target.value)];
+    const it = capturas[Number(targetOf(e).value)];
     if (!it) return;
     fuente = it.key;
     mostrar(it.data, `${it.label} · respuesta guardada en memoria, sin volver a consultar`);

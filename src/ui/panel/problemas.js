@@ -18,13 +18,14 @@ export function renderDx(cur) {
   // antecedentes mórbidos de la ficha, unidos por nombre. Antes iban en dos
   // listas y el mismo problema aparecía dos veces.
   const norm = t => String(t ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  /** @type {any[]} */
   const filas = probs.map(d => ({ ...d, key: norm(d.nombre) }));
   const vistos = new Set(filas.map(f => f.key));
   for (const m of a?.morbidos ?? []) {
     const k = norm(m.label);
     if (!k || vistos.has(k)) continue;
     vistos.add(k);
-    filas.push({ nombre: m.label, clasificacion: '', codigo: '', esAuge: false, ultima: m.fecha, key: k, antecedente: true });
+    filas.push(/** @type {any} */ ({ nombre: m.label, clasificacion: '', codigo: '', esAuge: false, ultima: m.fecha, key: k, antecedente: true }));
   }
   html += h4(ficha?.visits?.length ? 'Antecedentes y diagnósticos (todos los profesionales)' : 'Antecedentes y diagnósticos (mis atenciones)');
   html += filas.length ? filas.map(d => {

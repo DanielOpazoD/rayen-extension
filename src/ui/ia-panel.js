@@ -14,6 +14,7 @@ let datos = null;      // { record, ficha, visits, sics } del panel
 let prep = null;       // resultado de prepararInforme
 let informe = null;    // { respuesta, markdown }
 let opener = null;
+/** @type {(run: string) => object[]} */
 let getLabItems = () => [];
 
 const VENTANAS = [[6, 'Últimos 6 meses'], [12, 'Últimos 12 meses'], [24, 'Últimos 24 meses'], [0, 'Todo el registro']];
@@ -44,7 +45,7 @@ function preparar() {
 
 async function copiar(texto, aviso) {
   try { await navigator.clipboard.writeText(texto); toast(aviso); }
-  catch { toast('No se pudo copiar: selecciona el texto y cópialo a mano.', 'warn'); }
+  catch { toast('No se pudo copiar: selecciona el texto y cópialo a mano.', { tone: 'warn' }); }
 }
 
 function armar() {
@@ -75,6 +76,10 @@ export function closeIa() {
   opener?.focus?.();
 }
 
+/**
+ * @param {object} [deps]
+ * @param {(run: string) => object[]} [deps.labItems]
+ */
 export function initIaPanel({ labItems } = {}) {
   if (typeof labItems === 'function') getLabItems = labItems;
   $('iaPlantilla').innerHTML = PLANTILLAS.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');

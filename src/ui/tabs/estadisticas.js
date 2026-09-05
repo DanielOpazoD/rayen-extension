@@ -1,7 +1,7 @@
 import { buildStats } from '../stats.js';
 import { renderCharts } from '../charts.js';
 import { toast } from '../toast.js';
-import { $ } from '../dom.js';
+import { $, closestOf } from '../dom.js';
 import { state, on } from '../../io/state.js';
 import { showTab } from '../actions.js';
 import * as atenciones from './atenciones.js';
@@ -11,7 +11,7 @@ import * as interconsultas from './interconsultas.js';
 
 export function init() {
   $('chartsSection').addEventListener('click', e => {
-    const g = e.target.closest('[data-f]');
+    const g = closestOf(e, '[data-f]');
     if (!g) return;
     const raw = g.dataset.f;
     const i = raw.indexOf(':');

@@ -1,7 +1,7 @@
 import { buildPatients, filterPatients, sortPatients, setPatientSort, renderPatients, PACIENTE_COLS } from '../patients.js';
 import { exportRows } from '../export.js';
 import { toast } from '../toast.js';
-import { $ } from '../dom.js';
+import { $, closestOf, qsa } from '../dom.js';
 import { state, on, pendientes } from '../../io/state.js';
 import { markSorted, remeasure } from '../ui.js';
 import { openPatientById, copyRun, jumpToSIC } from '../actions.js';
@@ -38,7 +38,7 @@ export function init() {
   $('pacSearch').addEventListener('input', render);
   $('pacFilt').addEventListener('change', render);
 
-  const headers = [...document.querySelectorAll('.pac-table th[data-psort]')];
+  const headers = qsa(document, '.pac-table th[data-psort]');
   headers.forEach(th => th.addEventListener('click', () => {
     const { dir } = setPatientSort(th.dataset.psort);
     markSorted(headers, th, dir);
@@ -46,11 +46,11 @@ export function init() {
   }));
 
   $('pacBody').addEventListener('click', e => {
-    const copy = e.target.closest('.copy-run');
+    const copy = closestOf(e, '.copy-run');
     if (copy) { e.stopPropagation(); copyRun(copy); return; }
-    const sic = e.target.closest('[data-sic]');
+    const sic = closestOf(e, '[data-sic]');
     if (sic) { e.stopPropagation(); jumpToSIC({ id: sic.dataset.sic }); return; }
-    const tr = e.target.closest('.pac-row');
+    const tr = closestOf(e, '.pac-row');
     if (tr) openPatientById(tr.dataset.id);
   });
   $('btnPacExport').addEventListener('click', () => {

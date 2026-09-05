@@ -1,7 +1,7 @@
 import { humanError } from '../core/errors.js';
 import { patientKey } from '../io/notes.js';
 import { dateToInt } from '../core/parser.js';
-import { esc, $, initTablist, activateOnKey, skeletonCards } from './dom.js';
+import { esc, $, initTablist, activateOnKey, skeletonCards, targetOf, closestOf, qsa } from './dom.js';
 import { openPDF } from '../io/pdf.js';
 import { getToken } from '../io/auth.js';
 import { loadFicha } from '../io/ficha-load.js';
@@ -62,14 +62,18 @@ function close() {
   document.dispatchEvent(new CustomEvent('rayen:panel-closed', { detail: { id } }));
 }
 
-/**
- * Call once at app startup to wire up static panel controls.
- * @param {{ saveNote: (record: object, text: string) => Promise<boolean>, onNavigate?: (dir: number, record: object) => void }} hooks
- *   saveNote is the host's single note-writing path (it updates every row,
- *   shows the toast and offers undo); the panel never writes on its own.
- */
 let labSearch = null;
 
+/**
+ * Call once at app startup to wire up static panel controls.
+ * @param {object} [deps]
+ * @param {(record: object, text: string) => Promise<boolean>} [deps.saveNote]  the host's single note-writing path (it updates every row, shows the toast and offers undo); the panel never writes on its own
+ * @param {Function} [deps.addNote]
+ * @param {Function} [deps.editNote]
+ * @param {(dir: number, record: object) => void} [deps.onNavigate]
+ * @param {(run: string, sexo: string) => void} [deps.onLabSearch]
+ * @param {(run: string) => object[]} [deps.labItems]
+ */
 export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch, labItems } = {}) {
   const panel = $('patientPanel');
   panel.inert = true;
@@ -78,7 +82,7 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     if (e.key !== 'Tab') return;
     // Con la hoja de informe abierta, el ciclo de Tab se queda dentro de ella.
     const root = $('iaSheet').hidden ? panel : $('iaSheet');
-    const focusables = [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    const focusables = qsa(root, 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')
       .filter(el => !el.disabled && el.offsetParent !== null);
     if (!focusables.length) return;
     const first = focusables[0], last = focusables[focusables.length - 1];
@@ -103,7 +107,7 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   });
   // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas.
   $('patientPanel').addEventListener('click', e => {
-    const seg = e.target.closest('[data-seg][data-scope]');
+    const seg = closestOf(e, '[data-seg][data-scope]');
     if (!seg) return;
     if (seg.dataset.scope === 'at') { atFilter = seg.dataset.seg; renderAt(cur, atFilter); }
     if (seg.dataset.scope === 'ic') { icFilter = seg.dataset.seg; renderIc(cur, icFilter); }
@@ -127,7 +131,7 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   // Tabs: click or ←/→; remembered across patients
   showTab = initTablist(document.querySelector('.pp-tabs'), id => {
     activeTab = id;
-    document.querySelectorAll('.pp-pane').forEach(p => p.classList.toggle('active', p.dataset.pt === id));
+    qsa(document, '.pp-pane').forEach(p => p.classList.toggle('active', p.dataset.pt === id));
   }, 'pt');
 
   // Sticky tab strip sits right under the header, whatever its height
@@ -143,21 +147,21 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   // ←/→ walk the patient list while the panel is open, unless you are typing
   document.addEventListener('keydown', e => {
     if (!cur || $('patientPanel').classList.contains('open') === false) return;
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(targetOf(e).tagName)) return;
     if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate?.(-1, cur?.record); }
     if (e.key === 'ArrowRight') { e.preventDefault(); navigate?.(1, cur?.record); }
   });
 
   // The RUN is the thing most often retyped elsewhere: one click copies it
   $('ppHeader').addEventListener('click', e => {
-    const r = e.target.closest('.copy-run');
+    const r = closestOf(e, '.copy-run');
     if (r) { e.stopPropagation(); copyToClipboard(r.dataset.run, 'RUN copiado'); }
   });
 
   $('patientPanel').addEventListener('click', async e => {
-    const det = e.target.closest('button[data-receta]');
+    const det = closestOf(e, 'button[data-receta]');
     if (det) { toggleRecetaDetalle(det); return; }
-    const pdf = e.target.closest('button[data-pdf]');
+    const pdf = closestOf(e, 'button[data-pdf]');
     if (pdf) {
       pdf.disabled = true;
       const err = await openPDF(pdf.dataset.pdf);
@@ -165,13 +169,13 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
       if (err) { pdf.textContent = '✗'; pdf.title = err; }
       return;
     }
-    const tog = e.target.closest('.pp-vhead');
-    if (tog && tog.closest('.pp-visit.has-body') && !e.target.closest('button')) {
+    const tog = closestOf(e, '.pp-vhead');
+    if (tog && tog.closest('.pp-visit.has-body') && !closestOf(e, 'button')) {
       const open = tog.closest('.pp-visit').classList.toggle('expanded');
       tog.setAttribute('aria-expanded', String(open));
       return;
     }
-    if (e.target.closest('#ppReload') && cur) loadAndRenderFicha(true);
+    if (closestOf(e, '#ppReload') && cur) loadAndRenderFicha(true);
   });
 
   // Escape cierra lo más interno: un menú abierto o la hoja de informe antes que el panel.
@@ -183,6 +187,8 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   });
 }
 
+/** @type {(id: string) => void} */
+/** @type {(id: string) => void} */
 let showTab = () => {}; // assigned in initPanel (WAI-ARIA tablist with roving tabindex)
 
 function renderAll() {
@@ -254,7 +260,7 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
   $('ppAvatar').classList.remove('on');
   $('ppAvatar').setAttribute('aria-expanded', 'false');
   $('ppPdfMenu').classList.remove('open');
-  $('ppPdfMenu').querySelectorAll('button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
+  qsa($('ppPdfMenu'), 'button[data-scope]').forEach(b => { b.textContent = SCOPE_LABEL[b.dataset.scope]; });
   $('ppNoteText').value = '';
   renderNotes(cur);
   $('ppPos').textContent = pos ? `${pos.i + 1}/${pos.n}` : '';

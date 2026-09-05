@@ -42,7 +42,7 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 | Herramienta | Qué vigila | Orden |
 |---|---|---|
 | `eslint` (`npm run lint`) | capas (`core` sin DOM/red/io/ui; `io` y `ai` sin `ui`), tamaño (100 líneas por función, 500 por módulo), complejidad ≤ 40, ≤ 5 parámetros | `check` |
-| `tsc --noEmit` con `checkJs` (`npm run types`) | tipos a partir de JSDoc en `src/core`, `src/io` y `src/ai`: campos mal escritos, argumentos que faltan, imports rotos. Sin build: los `.js` se quedan `.js`. `src/ui` queda fuera hasta anotar el DOM (272 avisos, casi todos `Element` sin refinar) | `check` |
+| `tsc --noEmit` con `checkJs` (`npm run types`) | tipos a partir de JSDoc en todo `src/` y `app.js`: campos mal escritos, argumentos que faltan, imports rotos. Sin build: los `.js` se quedan `.js`. En `ui`, `$`, `targetOf`, `closestOf` y `qsa` (`dom.js`) devuelven elementos con las propiedades de formulario, así que el DOM no exige un cast por línea | `check` |
 | `node --test` (`npm test`) | pruebas unitarias; `tests/contract.test.js` además exige que cada id del DOM exista, que cada export se importe y que cada import con nombre exista | `check` |
 | `scripts/check-cycles.mjs` | sin ciclos de importación | `check` |
 | `knip` (`npm run knip`) | archivos, exports y dependencias sin uso (entradas en `knip.json`) | `check` |

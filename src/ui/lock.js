@@ -7,6 +7,7 @@
  * «Continuar» pide el PIN: sin él no se vuelve a leer nada del disco. Lo que
  * ya está pintado sigue bajo el velo inerte; no es un cierre de sesión.
  */
+import { targetOf } from './dom.js';
 import { clearKey, readMeta } from '../io/crypto-store.js';
 import { askPin } from './pin-screen.js';
 
@@ -38,7 +39,7 @@ export function initLock({ minutes = 15 } = {}) {
     if (locked()) return;
     el.hidden = false;
     for (const node of shielded()) node.inert = true;
-    el.querySelector('#lockBtn').focus();
+    /** @type {HTMLElement} */ (el.querySelector('#lockBtn')).focus();
     readMeta().then(meta => { if (meta) clearKey(); }); // con PIN creado, el disco queda ilegible hasta escribirlo
   };
 
@@ -68,7 +69,7 @@ export function initLock({ minutes = 15 } = {}) {
   // el botón necesita para operarse.
   document.addEventListener('keydown', e => {
     if (!locked()) return;
-    const allowed = el.contains(e.target) && ['Enter', ' ', 'Tab'].includes(e.key) && !e.metaKey && !e.ctrlKey;
+    const allowed = el.contains(targetOf(e)) && ['Enter', ' ', 'Tab'].includes(e.key) && !e.metaKey && !e.ctrlKey;
     if (!allowed) { e.stopImmediatePropagation(); e.preventDefault(); }
   }, { capture: true });
   // Locking on hide would fire on every tab switch; only re-arm when coming back

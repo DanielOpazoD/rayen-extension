@@ -7,7 +7,7 @@ import { renderSICTab, filterSICs, sortSICs, setSICSort, buildSICFilters, toggle
 import { exportSICsCSV, exportSICsXLS } from '../export.js';
 import { sicPdfPath, openPDF } from '../../io/pdf.js';
 import { toast } from '../toast.js';
-import { $ } from '../dom.js';
+import { $, closestOf, qsa } from '../dom.js';
 import { state, setData, on } from '../../io/state.js';
 import { initChips, initFilterFold, markSorted, remeasure } from '../ui.js';
 import { openPatientByRun } from '../actions.js';
@@ -115,7 +115,7 @@ export async function ensureSICs(force = false) {
 }
 
 export function init() {
-  const headers = [...document.querySelectorAll('.sic-table th[data-sort]')];
+  const headers = qsa(document, '.sic-table th[data-sort]');
   headers.forEach(th => th.addEventListener('click', () => {
     const { dir } = setSICSort(th.dataset.sort);
     markSorted(headers, th, dir);
@@ -145,7 +145,7 @@ export function init() {
   $('btnSicExportXls').addEventListener('click', () => exportSics('Excel', exportSICsXLS));
 
   $('sicBody').addEventListener('click', async e => {
-    const pdf = e.target.closest('.pdf-sic');
+    const pdf = closestOf(e, '.pdf-sic');
     if (pdf) {
       pdf.disabled = true;
       const err = await openPDF(sicPdfPath(pdf.dataset.id));
@@ -153,15 +153,15 @@ export function init() {
       if (err) $('sicStatus').textContent = err;
       return;
     }
-    const open = e.target.closest('.pat-open');
+    const open = closestOf(e, '.pat-open');
     if (open) { openPatientByRun(open.dataset.run); return; }
-    const row = e.target.closest('tr.sic-row');
-    if (row && !e.target.closest('button')) { toggleSIC(Number(row.dataset.id)); render(); }
+    const row = closestOf(e, 'tr.sic-row');
+    if (row && !closestOf(e, 'button')) { toggleSIC(Number(row.dataset.id)); render(); }
   });
 
   // Summary tiles double as filters
   $('sicSummary').addEventListener('click', e => {
-    const tile = e.target.closest('[data-filter]');
+    const tile = closestOf(e, '[data-filter]');
     if (!tile) return;
     const [campo, valor] = tile.dataset.filter.split(':');
     const id = { grupo: 'sicGrupo', quien: 'sicQuien' }[campo];
@@ -171,9 +171,10 @@ export function init() {
 
   // From the agenda, Hoy or Pacientes: one SIC by id, or every SIC of a patient
   document.addEventListener('rayen:goto-sic', e => {
+    const d = /** @type {CustomEvent} */ (e).detail;
     clearFilters();
-    $('sicSearch').value = e.detail.q;
-    if (e.detail.id) expandOnly(e.detail.id);
+    $('sicSearch').value = d.q;
+    if (d.id) expandOnly(d.id);
     render();
     $('sicSummary').scrollIntoView({ block: 'start' });
   });

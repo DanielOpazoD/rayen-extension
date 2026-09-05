@@ -23,7 +23,7 @@ const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').ma
 
 /**
  * @param {string} msg
- * @param {{ tone?:'ok'|'bad'|'info', ms?:number, action?:{label:string, onClick:()=>void} }} opts
+ * @param {{ tone?:'ok'|'bad'|'info'|'warn', ms?:number, action?:{label:string, onClick:()=>void} }} [opts]
  * @returns {{ dismiss: () => void }}
  */
 export function toast(msg, { tone = 'ok', ms = 2600, action = null } = {}) {

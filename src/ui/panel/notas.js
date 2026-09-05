@@ -1,5 +1,5 @@
 /** Diario de notas del paciente: la más nueva primero, cada una editable en su sitio. */
-import { esc, $ } from '../dom.js';
+import { esc, $, closestOf } from '../dom.js';
 
 const fechaNota = at => {
   if (!at) return 'Sin fecha';
@@ -36,9 +36,9 @@ export function initNotas({ getCur, saveNote, addNote, editNote }) {
   });
   $('ppNotes').addEventListener('click', async e => {
     const cur = getCur();
-    const btn = e.target.closest('button[data-note-act]');
+    const btn = closestOf(e, 'button[data-note-act]');
     if (!btn || !cur) return;
-    const item = btn.closest('.pp-nota');
+    const item = /** @type {HTMLElement} */ (btn.closest('.pp-nota'));
     const at = item.dataset.at || null;
     if (btn.dataset.noteAct === 'edit') {
       item.classList.add('editing');

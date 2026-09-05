@@ -24,6 +24,7 @@ const toEntries = value => {
  * Stable key for a patient: the RUN (with DV) when known, otherwise
  * surname + DOB. Exported so the panel and the notes agree.
  */
+/** @param {{ run?: string|null, ap?: string, am?: string, nombre?: string, dob?: string }} record */
 export function patientKey(record) {
   if (record.run) return `run_${record.run}`;
   return `${record.ap || record.nombre}|${record.am}|${record.dob}`.toLowerCase();

@@ -25,7 +25,7 @@ export function sessionState(source, outcome) {
 /**
  * @param {object} deps
  * @param {() => Promise<boolean>} deps.checkHsr   true = sesión válida; false = sin sesión; lanza si no responde
- * @param {() => Promise<void>}    deps.checkHhr   resuelve con sesión; lanza SyslabAuthError o error de red
+ * @param {() => Promise<unknown>} deps.checkHhr   resuelve con sesión; lanza SyslabAuthError o error de red
  * @param {() => void} [deps.resetHsr]  limpia la marca de «sesión vencida» del transporte
  * @param {() => void} [deps.resetHhr]
  * @param {{ hsr: string, hhr: string }} deps.links  a dónde abrir para iniciar sesión
