@@ -117,3 +117,28 @@ test('una cita «Atendido» sin atención propia no hereda la de otro prestador'
   assert.equal(out[0].prestador, '');
   assert.equal(out[0].otrosEseDia, 'Matrona X', 'la pista de quién atendió ese día se conserva');
 });
+
+test('mergeHistorial: una ficha cerrada días después se cruza con la cita atendida más cercana y toma su fecha', () => {
+  // Cita del 02-09 «Completado» sin atención ese día; la ficha se guardó el 04-09.
+  const out = mergeHistorial([cita()], [atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(out.length, 1, 'no se añade una fila extra el 04-09');
+  assert.equal(out[0].atencionId, 9);
+  assert.equal(out[0].fecha8, '20260902', 'manda la fecha de la cita');
+  assert.equal(out[0].fechaRegistro, '04-09-2026');
+  assert.equal(out[0].diagnosticos[0].nombre, 'Bronquitis');
+});
+
+test('mergeHistorial: el cruce tardío exige cita atendida, ≤ 14 días y sin atención; elige la más cercana', () => {
+  const noAtendida = mergeHistorial([cita({ estado: 'No Atendido' })], [atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(noAtendida.length, 2, 'una cita no atendida no se rellena');
+  const lejana = mergeHistorial([cita({ fecha8: '20260801', fechaAtencion: '01-08-2026' })], [atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(lejana.length, 2);
+  const ocupada = mergeHistorial([cita()], [atencion({ Id: 1 }), atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(ocupada.length, 2, 'la cita ya tiene su atención del día; la tardía queda como fila extra');
+  assert.equal(ocupada[0].atencionId, 1);
+  const dos = mergeHistorial([cita({ id: 1, fecha8: '20260825', fechaAtencion: '25-08-2026' }), cita({ id: 2 })], [atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(dos.find(c => c.id === 2).atencionId, 9, 'la más cercana');
+  assert.equal(dos.find(c => c.id === 1).atencionId, null);
+  const urg = mergeHistorial([cita()], [atencion({ Id: 9, Fecha: '20260904 174500', EsUrgencia: true })]);
+  assert.equal(urg.length, 2, 'una urgencia no se cuelga de una cita anterior');
+});

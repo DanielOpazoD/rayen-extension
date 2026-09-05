@@ -89,8 +89,12 @@ export function buildFixture(today = new Date()) {
       const urg = r() < 0.08;
       const control = r() < 0.25;
       const sug = new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8) + 30);
+      // Cada séptima ficha se cierra dos días después de la cita, como pasa en la práctica;
+      // la consulta por nodo no trae FechaCita, así que llega como atención de otro día.
+      const tardia = !urg && id % 7 === 0;
+      const guardado = tardia ? localDateStr(new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8) + 2)) : d8;
       dayAt.push({
-        Id: 900000 + id, IdCita: 0, IdUsp: p.idUsp, Fecha: `${d8} ${hh}1500`, RutPaciente: p.rut, NombreCompleto: p.nombre,
+        Id: 900000 + id, IdCita: 0, IdUsp: p.idUsp, Fecha: `${guardado} ${hh}1500`, RutPaciente: p.rut, NombreCompleto: p.nombre,
         FechaNacimiento: `${p.dob} 000000`, EdadExacta: edadExacta(p.dob, d8), IdSexo: p.sexo === 'Mujer' ? 2 : 3,
         TipoDeAtencion: urg ? 'Atención de Urgencia' : 'Consulta Médica', EsUrgencia: urg, EsEspontanea: false,
         Diagnosticos: [{ DescripcionDiagnostico: dx[1], DescripcionClasificacion: dx[0], CodigoCIE10: dx[2], EsAuge: dx[3] },

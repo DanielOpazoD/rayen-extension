@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 2.46.1 — 2026-09-04
+
+- El registro tardío de la ficha va detrás de un icono «i» discreto junto a la fecha; el texto completo está en el tooltip y en la historia imprimible.
+- **Agenda, Hoy y calendario por fecha de la cita**: una ficha mía cerrada otro día (hasta 14 después) se cruza con la cita atendida más cercana del mismo paciente y cuenta en el día de la cita, en vez de aparecer como espontánea el día del guardado. El tooltip de la fecha en la tabla dice cuándo se registró.
+
 ## 2.46.0 — 2026-09-04
 
 - **La fecha de una atención es la de su cita.** Si la ficha se guardó o cerró otro día (al día siguiente o semanas después), el panel, la historia imprimible y el informe IA la ordenan y fechan por la cita, y muestran «registrada el dd-mm-aaaa» al lado. Antes la fecha de guardado competía con la de la cita. Aplica a la ficha por paciente, que trae `FechaCita`; el historial diario por nodo no la trae y sigue por fecha de guardado.

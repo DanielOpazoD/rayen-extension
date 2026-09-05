@@ -146,6 +146,11 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
  * HistorialAtencion) and appends the officer's atenciones that have no cita
  * (espontáneas) as extra rows.
  */
+/** Estado de agenda que dice que la cita se atendió (no «No Atendido» ni «No se presentó»). */
+const citaAtendida = estado => /completad|atendid/i.test(String(estado)) && !/\bno\s+(atendid|se\s+present)/i.test(String(estado));
+const aDate = d8 => new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8));
+const diasEntre = (d8a, d8b) => Math.round((aDate(d8b) - aDate(d8a)) / 86_400_000);
+
 export function mergeHistorial(citas, atenciones) {
   const idx = new Map();
   for (const a of atenciones) {
@@ -187,6 +192,27 @@ export function mergeHistorial(citas, atenciones) {
       proximoControl: a.proximoControl ?? [],
     };
   });
+
+  // Ficha cerrada otro día: la consulta por nodo no trae FechaCita, así que una
+  // atención mía sin cita ese día se cruza con la cita atendida más cercana del
+  // mismo paciente en los 14 días anteriores. La fecha que manda es la de la
+  // cita (decisión de Daniel, 04-09-2026); el guardado queda en `fechaRegistro`.
+  const porRun = new Map();
+  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId && citaAtendida(c.estado)) { const k = matchKey({ ...c, fecha8: '' }); (porRun.get(k) ?? porRun.set(k, []).get(k)).push(i); } });
+  for (const a of atenciones) {
+    if (used.has(a.id) || !isOfficer(a) || a.esUrgencia) continue;
+    const cands = (porRun.get(matchKey({ ...a, fecha8: '' })) ?? []).filter(i => !out[i].atencionId && out[i].fecha8 < a.fecha8 && diasEntre(out[i].fecha8, a.fecha8) <= 14);
+    if (!cands.length) continue;
+    const i = cands.sort((x, y) => out[y].fecha8.localeCompare(out[x].fecha8))[0];
+    used.add(a.id);
+    out[i] = {
+      ...out[i],
+      atencionId: a.id, diagnosticos: a.diagnosticos, actividades: a.actividades, prestadores: a.prestadores, adjuntos: a.adjuntos,
+      prestador: a.prestadores.map(p => p.nombre).join(', '), esUrgencia: a.esUrgencia, esEspontanea: a.esEspontanea,
+      tipoAtencion: out[i].tipoAtencion || a.tipoAtencion, edadLabel: a.edadLabel, sexo: out[i].sexo || a.sexo,
+      proximoControl: a.proximoControl ?? [], fechaRegistro: a.fechaAtencion,
+    };
+  }
 
   for (const a of atenciones) {
     if (used.has(a.id) || !isOfficer(a)) continue;
