@@ -6,9 +6,9 @@ No usa librerías ni servicios externos. Todo el código corre en el navegador y
 
 Para continuar el desarrollo, comienza por el [`mapa de documentación`](DOCUMENTATION_MAP.md) y la [`arquitectura canónica`](ARCHITECTURE.md). Ahí están los flujos, invariantes, responsables y puertas de calidad vigentes.
 
-## Preparación para IA
+## Informe con IA
 
-Desde 2.32.0 el código tiene una capa `src/ai/` que arma un registro clínico canónico, produce un contexto desidentificado con fechas relativas, aplica plantillas de informe (predeterminadas o personalizadas) y reconoce la respuesta del modelo para devolver un informe con la identidad repuesta en local. El único proveedor activo es el manual (copiar el prompt, pegar la respuesta); el proveedor por API queda preparado y apagado. Detalle en [ARCHITECTURE.md](ARCHITECTURE.md), sección «Flujo con IA».
+El botón **Informe** del panel del paciente arma un registro clínico canónico (agenda, ficha, interconsultas y el laboratorio analizado en Exámenes complementarios), produce un contexto sin nombre, RUN ni nombres de profesionales y con fechas relativas, y aplica una plantilla (resumen clínico, epicrisis ambulatoria, informe para interconsulta, informe de exámenes). La persona ve el contexto exacto, copia el prompt, lo pega en el modelo que el hospital autorice y pega la respuesta; el informe se arma en el equipo con la identidad repuesta y un pie de revisión. El proveedor por API existe y viene apagado. Límite conocido: los nombres que sólo aparecen dentro de una nota o texto libre no se reconocen; revisa el contexto antes de copiarlo. Detalle en [ARCHITECTURE.md](ARCHITECTURE.md), sección «Flujo con IA».
 
 ## Instalación
 
@@ -27,7 +27,7 @@ Tras editar el código: botón ↻ de la extensión en `chrome://extensions`.
 | **Atenciones** | Agenda propia (`Citas/ListaPacientesCitados`) cruzada con la ficha clínica del nodo (`FichaClinica/HistorialAtencion`): diagnósticos, actividades, prestador real, atenciones espontáneas sin cita. Filtros, columnas configurables, notas propias por paciente. |
 | **Estadísticas** | Tiles con porcentajes (pacientes únicos, atenciones/día, inasistencia, GES, diagnóstico…) y gráficos SVG donde cada barra lleva valor y porcentaje: día, mes, hora, sexo, grupo etario, visitas por paciente, estado, razón, GES, tipo, diagnósticos y certeza; interconsultas por especialidad, estado y prioridad; equipo del hospital por profesión/profesional/tipo. |
 | **Interconsultas** | Todas las SIC del hospital (`ReferenciaYContrarreferencia/*`) con estado, prioridad, CIE-10, fundamentos y PDF. Rol explícito: **Emití / Recibí / Otra**. La extensión no presenta como información clínica el metadato administrativo que Rayen denomina contrarreferencia. |
-| **Panel del paciente** | Al hacer clic en un nombre: ficha completa (10 años, todos los profesionales) en 5 pestañas — Resumen (portada: problemas con peso, tus últimas atenciones, interconsultas abiertas, próximo control), Problemas, Atenciones (anamnesis, prescripciones, exámenes, próximo control), Interconsultas, Recetas (cada receta con su PDF). Datos administrativos y alertas tras **Datos**. Botón **PDF ▾** con la historia imprimible: atenciones de todos los profesionales / solo médicos / solo mías, interconsultas del paciente, o historia completa (atenciones + IC + fármacos y recetas). |
+| **Panel del paciente** | Al hacer clic en un nombre: ficha completa (10 años, todos los profesionales) en 5 pestañas — Resumen (portada: problemas con peso, tus últimas atenciones, interconsultas abiertas, próximo control), Problemas, Atenciones (anamnesis, prescripciones, exámenes, próximo control), Interconsultas, Recetas (cada receta con su PDF). Datos administrativos y alertas desde las iniciales del paciente. Botón **Informe** (informe con IA), **Lab** (abre Exámenes complementarios con el RUN) y **PDF ▾** con la historia imprimible: atenciones de todos los profesionales / solo médicos / solo mías, interconsultas del paciente, o historia completa (atenciones + IC + fármacos y recetas). |
 | **Explorador API** | Consultas manuales a la API con la sesión activa (solo al origen de Eloisa). |
 | **Exportar** | Excel (.xls), CSV, HTML, PDF (vía diálogo de impresión), JSON — siempre lo filtrado en la tabla. |
 
@@ -49,7 +49,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Clic en el RUN** lo copia al portapapeles — en la tabla y en el panel.
 - **‹ ›** en el panel recorre los pacientes en el orden en que los muestra la tabla; también con ←/→.
 - **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
-- **Cancelar** detiene una carga larga sin perder lo ya descargado (cancelación cooperativa: termina el lote en vuelo y no encola más).
+- **Cancelar** detiene una carga larga sin perder lo ya descargado: aborta las peticiones en vuelo y no encola más. Cada petición a Eloisa tiene un tiempo límite de 20 s, así que una red muda nunca deja la carga colgada.
 - **Actualizar estados históricos**: los días que todavía contienen citas iniciadas, confirmadas, agendadas o en espera se vuelven a consultar. Si una atención se completa posteriormente en Eloisa, la extensión actualiza tanto su estado como su ficha clínica sin borrar todo el caché.
 - **Sincronización verificable y compacta**: junto al total aparece únicamente el estado global (`Al día`, `Pendiente` o `Error`). Al abrirlo se muestran Agenda, Ficha clínica e Interconsultas, con último intento, último éxito completo y fechas pendientes; «Reintentar» vuelve a pedir solo esas fechas y nunca presenta una carga parcial como completa.
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
@@ -71,6 +71,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 | Regla | Dato | Umbral |
 |---|---|---|
 | Interconsulta sin cursar | SIC en estado «Nueva» (13) | 21 días |
+| Interconsulta rechazada | SIC rechazada por destino, paciente o sistema (7, 27, 30) | siempre: hay que decidir si re-emitir |
 | Cita pasada sin resolver | `fechaCita` anterior a hoy y estado agendada/confirmada | 7 días |
 | Control vencido sin agendar | `OrdenAtencionInterna.FechaSugerida` pasada, sin atención posterior del paciente | 1 día |
 
@@ -102,8 +103,9 @@ npx playwright install chromium # una vez por equipo, instala el navegador del s
 npm run lint       # eslint .
 npm test           # node --test, sin dependencias
 npm run test:e2e   # smoke Playwright en escritorio y ventana estrecha, con datos sintéticos
-npm run docs:check # verifica que el mapa cubra todos los módulos
-npm run check      # lint + test + documentación + release
+npm run cycles:check # sin ciclos de importación en src/
+npm run docs:check # mapa de módulos completo, capa de cada módulo y rutas citadas existentes
+npm run check      # lint + test + ciclos + documentación + release
 npm run pack       # genera rayen-extension-<versión>.zip
 ```
 
@@ -111,7 +113,7 @@ La estructura completa y la responsabilidad de cada archivo viven en [`ARCHITECT
 
 El smoke de navegador levanta `dev/`, que usa la aplicación real con almacenamiento Chrome simulado y datos inventados. También comprueba que ninguna solicitud abandone `localhost`; no sustituye una prueba de la extensión cargada ni una sesión autenticada de Eloisa.
 
-Convenciones: módulos ES nativos, sin build; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); la interfaz vive en `app.html` y su sistema visual en `styles/app.css`. Los colores salen de tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan.
+Convenciones: módulos ES nativos, sin build, en cuatro capas (`core` → `io` → `ai` → `ui`) que el lint hace cumplir, con funciones de hasta 150 líneas útiles y módulos de hasta 500; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); la interfaz vive en `app.html` y su sistema visual en `styles/app.css`. Los colores salen de tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan. Las diez convenciones completas están en [`ARCHITECTURE.md`](ARCHITECTURE.md), sección «Convenciones de código».
 
 ## Sistema de diseño
 

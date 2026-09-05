@@ -7,26 +7,46 @@ Antes de cambiar código, lee también [`DOCUMENTATION_MAP.md`](DOCUMENTATION_MA
 ## Límites del sistema
 
 - Extensión Chrome Manifest V3, formada por módulos ES nativos y sin paso de compilación.
-- No tiene backend propio. Las únicas dependencias de ejecución son dos librerías empaquetadas en `vendor/` (pdf.js para leer informes, pdf-lib para unirlos), cargadas bajo demanda. Utiliza las sesiones que el usuario ya tiene abiertas en Eloisa, en el portal del Hospital Salvador y en SysLab.
+- No tiene backend propio. Las únicas dependencias de ejecución son dos librerías empaquetadas en `vendor/` (pdf.js para leer informes, pdf-lib para unirlos), cargadas bajo demanda desde `io/`. Utiliza las sesiones que el usuario ya tiene abiertas en Eloisa, en el portal del Hospital Salvador y en SysLab.
 - Tres transportes, cada uno con guardia de origen: `src/io/http.js` sólo habla con `https://clinicohangaroa.eloisa.cl`; `src/io/lab-http.js` sólo con `https://examenesusuarios.hsalvador.cl`; `src/io/syslab-http.js` sólo conduce pestañas de `http://10.4.69.90` (red interna del HHR). Son exactamente los tres `host_permissions` del manifest.
 - Agenda, ficha, SIC, preferencias y notas se conservan localmente en el perfil de Chrome. El token solo vive en `chrome.storage.session`.
 - La aplicación completa se compone en `app.js`; `popup-init.js` solo abre la experiencia completa y `report.js` prepara el reporte imprimible.
 
-## Vista general
+## Capas
+
+`src/` está en cuatro capas con dependencia en un solo sentido. El lint (`eslint.config.js`) lo hace cumplir y `npm run cycles:check` garantiza que no hay ciclos de importación.
+
+| Capa | Qué contiene | Puede importar | No puede |
+|---|---|---|---|
+| `src/core/` | Dominio puro: análisis de Eloisa y del laboratorio, reglas clínicas, calendario, anonimizador, errores humanos | `core` | `document`, `window`, `chrome`, `fetch`, `import()` en tiempo de ejecución, `io`, `ui`, `ai` |
+| `src/io/` | Eloisa, ProactiveLIS, SysLab, almacenamiento de Chrome, estado de la aplicación, pdf.js | `core`, `io` | `ui` |
+| `src/ai/` | Registro clínico canónico, contexto desidentificado, plantillas, proveedores, informe | `core`, `io`, `ai` | `ui` |
+| `src/ui/` | DOM: pestañas, panel del paciente, tablas, gráficos, hojas y menús | todas | — |
 
 ```mermaid
 flowchart LR
   Chrome[Chrome MV3] --> Entry[app.html + app.js]
-  Entry --> Tabs[Controladores src/tabs]
-  Entry --> State[state.js + actions.js]
-  Tabs <--> State
-  State --> Render[Tabla, Hoy, Pacientes, SIC, Estadisticas]
-  Tabs --> Services[api.js + historial.js + ficha.js + sic.js]
-  Services --> Transport[http.js + auth.js]
-  Transport --> Eloisa[API Eloisa]
-  Services <--> Storage[cache.js + notes.js + watch.js + sync-health.js]
-  Render --> Export[export.js + pdf.js + patient-report.js]
+  Entry --> UI[src/ui: tabs, panel, lab, ia-panel]
+  UI --> IO[src/io: api, ficha-load, sic, lab-*, state, cache]
+  UI --> AI[src/ai: record, context, templates, provider, report]
+  AI --> IO
+  AI --> CORE[src/core: parser, ficha, lab-parser, pendientes, anonimizar]
+  IO --> CORE
+  IO --> Eloisa[Eloisa] & HSR[ProactiveLIS] & HHR[SysLab]
 ```
+
+## Convenciones de código
+
+1. **Un módulo, una responsabilidad.** Los controladores (`ui/tabs/*`, `ui/patient-panel.js`, `ui/tabs/laboratorio.js`) cablean eventos y reparten el pintado; no calculan. Las funciones de pintado reciben los datos por parámetro (`renderAt(cur, filtro)`), no leen variables de módulo.
+2. **Tamaño.** Ninguna función supera 150 líneas útiles ni ningún módulo 500 (lint). Catálogos, arnés, pruebas y scripts están exentos.
+3. **Estado.** Sólo `src/io/state.js` muta el estado global; las vistas lo cambian con sus funciones (`setData`, `setPrefs`, `setNote`, `setLoadedMonths`, `setRendered`) y se enteran por los eventos `data` y `notes`.
+4. **Errores.** Los transportes lanzan clases con nombre (`AuthError`, `TimeoutError`, `CancelledError`, `LabAuthError`, `SyslabAuthError`). Lo que ve la persona pasa por `core/errors.js → humanError`. Un `catch` vacío lleva siempre un comentario con el porqué.
+5. **HTML.** Todo texto de la API que entra en `innerHTML` pasa por `esc()`. Nunca `display:flex` sobre un `td`. Un solo nivel de énfasis, el contrato de tres niveles al inicio de `styles/app.css`.
+6. **Idioma.** El dominio se nombra en español (ficha, atención, interconsulta, receta, pendiente, plantilla); los verbos técnicos genéricos pueden ir en inglés (`render`, `build`, `parse`, `load`). Comentarios, mensajes, pruebas y documentación en español. Un identificador nuevo no mezcla los dos idiomas.
+7. **Pruebas.** Prueban comportamiento observable, no implementación. Cada garantía de seguridad u honestidad que la interfaz afirme tiene su prueba negativa (el token no sale del origen; el anonimizador devuelve `verificado=false` con un resto; la marca del laboratorio fuerza la alerta). Los recorridos de Playwright pulsan el elemento real que pulsa la persona, en dos anchos, sin red. Los datos sintéticos tienen la forma real: nombres de varias palabras, estados negados, fechas de Rayen.
+8. **Honestidad.** Un estado vacío distingue «no hay» de «no se pudo consultar». Una carga parcial nunca se presenta como completa. Lo que la interfaz llama «comprobado» tiene detrás un ataque adversarial propio antes de escribirlo.
+9. **Documentación.** Cada módulo nuevo entra en el mapa de abajo (`docs:check` lo exige y verifica que toda ruta citada exista). Cada cambio visible entra en `CHANGELOG.md` con el porqué. Los comentarios explican por qué, no qué.
+10. **Entrega.** Un PR por cambio, con `npm run check` y `npx playwright test` en verde; versión en `manifest.json`, `package.json` y `package-lock.json` sincronizada (`release:check`).
 
 ## Flujos que no deben romperse
 
@@ -38,63 +58,43 @@ flowchart LR
 
 ### Agenda y ficha clínica
 
-1. `loader.js` inicia, cancela o reintenta una ejecución y comunica el progreso.
-2. `api.js` obtiene la agenda por fecha, usa caché incremental y vuelve a pedir fechas cuyos estados aún pueden cambiar.
-3. `historial.js` consulta la ficha por día y la cruza con la agenda por RUN y fecha porque Eloisa entrega `IdCita = 0` en ese historial.
-4. Una fecha solo queda completa en caché si la lectura correspondiente terminó bien. Los fallos permanecen pendientes en `sync-health.js`.
+1. `ui/loader.js` inicia, cancela o reintenta una ejecución y comunica el progreso.
+2. `io/api.js` obtiene la agenda por fecha en lotes (`fetchAgendaBatches`), usa caché incremental y vuelve a pedir fechas cuyos estados aún pueden cambiar; después concilia la ficha del período (`syncHistorial`).
+3. `io/historial.js` consulta la ficha por día y la cruza con la agenda por RUN y fecha porque Eloisa entrega `IdCita = 0` en ese historial.
+4. Una fecha solo queda completa en caché si la lectura correspondiente terminó bien. Los fallos permanecen pendientes en `io/sync-health.js`.
 5. La interfaz distingue último intento de último éxito completo y no presenta una carga parcial como sincronizada.
 
-### Interconsultas
+### Panel del paciente
 
-1. La pestaña carga las SIC bajo demanda mediante `sic.js`.
-2. `watch.js` compara una huella local para producir novedades; la primera lectura establece la referencia y no inventa cambios.
-3. Si una actualización falla o es parcial, se conserva la última instantánea completa y `sync-health.js` registra el reintento necesario.
+1. `ui/patient-panel.js → openPanel` arma `cur` (agenda del paciente, sus SIC, contacto) y pinta al instante con `ui/panel/*`.
+2. `io/ficha-load.js → loadFicha` pide seis fuentes en paralelo con memoización por paciente; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran.
+3. El panel es un diálogo modal real: fondo inerte, trampa de Tab, foco devuelto a la fila. Escape cierra lo más interno: menú, hoja de informe, panel.
+4. La portada (`panel/resumen.js`) ordena problemas por peso (`core/ficha-rank.js`) y muestra interconsultas abiertas o rechazadas y el próximo control no descartado.
+
+### Interconsultas y pendientes
+
+1. La pestaña carga las SIC bajo demanda mediante `io/sic.js`; las reglas puras (`isMine`, contactos) están en `core/sic-rules.js`.
+2. `io/watch.js` compara una huella local para producir novedades; la primera lectura establece la referencia y no inventa cambios.
+3. `core/pendientes.js` explica cada pendiente (qué disparó, sobre qué dato, desde cuándo): SIC sin cursar, SIC rechazada, cita pasada sin resolver, control vencido.
+
+### Exámenes complementarios
+
+1. `io/lab-session.js` comprueba las sesiones de ProactiveLIS y SysLab sin ráfagas; `io/lab-search.js` busca en ambos con token de ejecución y cancelación.
+2. `ui/tabs/laboratorio.js` orquesta; `ui/lab/results.js` pinta las órdenes; el análisis (`io/lab-report.js` → `core/lab-parser.js` → `core/lab-analytics.js`) verifica el RUN de cada PDF y arma matriz, tendencias y microbiología (`ui/lab/analysis-views.js`).
+3. Los resultados del análisis vigente entran al informe con IA sólo si son del mismo RUN (`ai/lab-items.js`).
+
+### Informe con IA y captura anonimizada
+
+1. `ai/index.js → prepararInforme`: registro canónico (`ai/record.js`) → contexto sin identidad ni nombres de profesionales, fechas relativas, presupuesto (`ai/context.js`) → prompt con plantilla (`ai/templates.js`). Si el anonimizador detecta un resto, no hay prompt.
+2. Proveedor manual: la persona copia el prompt y pega la respuesta; `parsearRespuesta` reconoce las secciones; `armarInforme` repone la identidad en local. El proveedor por API existe y viene apagado (clave y decisión institucional).
+3. El Explorador API descarga una copia anonimizada de cualquier respuesta (`core/anonimizar.js`) con comprobación final; su límite conocido: los nombres que sólo aparecen en texto libre.
 
 ### Paciente, filtros y exportación
 
-- `patients.js` agrega atenciones por identidad estable; `patient-panel.js` solicita y presenta el detalle longitudinal.
-- Los filtros viven en los controladores de Atenciones e Interconsultas. `multi-select.js` aporta el selector accesible de selección múltiple.
+- `ui/patients.js` agrega atenciones por identidad estable; `ui/patient-panel.js` solicita y presenta el detalle longitudinal.
+- Los filtros viven en los controladores de Atenciones e Interconsultas. `ui/multi-select.js` aporta el selector accesible de selección múltiple.
 - `state.rendered` conserva el mismo orden visible que utilizan navegación y exportación.
-- `export.js`, `patient-report.js` y `pdf.js` generan salidas a partir de la selección actual; no escriben de vuelta en Eloisa.
-
-## Invariantes arquitectónicos
-
-1. `state.js` es la fuente única de datos en memoria; no se mantienen copias paralelas mutables por pestaña.
-2. El caché acelera la lectura, pero una fecha con estados mutables debe volver a consultarse.
-3. Agenda y ficha clínica de una fecha se consideran por separado: el éxito de una no oculta el fallo de la otra.
-4. Los metadatos de sincronización contienen fechas, estados y errores técnicos, nunca nombres, RUN ni contenido clínico.
-5. Ninguna petición autenticada puede salir del origen permitido por `config.js` y `http.js`.
-6. Todo texto procedente de la API que entra en `innerHTML` se escapa con `esc()`.
-7. La identidad y navegación de pacientes usa una clave estable; el nombre visible no es identificador.
-8. Las operaciones destructivas requieren confirmación y viven en Preferencias, separadas de las acciones cotidianas.
-9. Una prueba sintética no equivale a validar la extensión cargada en Chrome, y ninguna de ambas equivale a probar contra una sesión real de Eloisa.
-10. Los metadatos administrativos de Rayen no se presentan como conceptos clínicos sin una semántica validada.
-
-## Dónde hacer cada cambio
-
-| Necesidad | Punto de entrada | Validación mínima |
-|---|---|---|
-| Endpoint, autenticación o error HTTP | `src/io/http.js`, `src/io/auth.js`, servicio correspondiente | pruebas unitarias, guardia de origen y sesión vencida |
-| Agenda, caché o actualización histórica | `src/io/api.js`, `src/io/historial.js`, `src/io/cache.js` | pruebas de fechas mutables, fallo parcial y reintento |
-| Estado global o coordinación entre vistas | `src/io/state.js`, `src/ui/actions.js` | contrato de eventos y ausencia de copias divergentes |
-| Filtro o columna de Atenciones | `src/ui/tabs/atenciones.js`, `src/ui/table.js` | filtro, contador, limpiar/deshacer y exportación |
-| Interconsultas | `src/io/sic.js`, `src/ui/ic-tab.js`, `src/ui/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
-| Vista Hoy | `src/ui/today.js`, `src/ui/tabs/hoy.js` | jornada vacía, antecedentes y navegación de paciente |
-| Panel o reporte de paciente | `src/ui/patient-panel.js`, `src/ui/patient-report.js`, `src/core/ficha.js` | identidad, escape de texto y variantes del reporte |
-| Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js` | sesión cookie, parsing de órdenes, guardia de origen |
-| Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js`, `src/ui/tabs/laboratorio.js` | pestaña con sesión, espera de navegación, identidad del lote |
-| Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
-| Sistema visual y responsive | `styles/app.css`, `src/ui/ui.js`, `src/ui/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido |
-| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
-| Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
-
-## Mapa completo de módulos
-
-El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada módulo JavaScript de `src/` debe aparecer exactamente una vez.
-
-## Capas
-
-El código de `src/` está en tres capas con dependencia en un solo sentido: `ui` → `io` → `core`. El lint (`eslint.config.js`) lo hace cumplir: `core` no puede usar `document`, `window`, `chrome` ni `fetch`, ni importar de `io`/`ui`; `io` no importa de `ui`. La cuarta capa, `src/ai/`, contiene los flujos con modelos de lenguaje; depende de `core` e `io`, nunca de `ui`.
+- `ui/export.js`, `ui/patient-report.js` y `io/pdf.js` generan salidas a partir de la selección actual; no escriben de vuelta en Eloisa. Exportar una tabla avisa cuántos pacientes y qué campos salen.
 
 ## Red: tiempo límite y cancelación
 
@@ -113,7 +113,51 @@ datos (agenda, ficha, SIC, laboratorio, imagenología, biopsias)
   → armarInforme          identidad repuesta en local, pie de revisión (ai/report.js)
 ```
 
-Reglas que no dependen de la plantilla: la identidad del paciente y los nombres de los profesionales nunca entran al contexto; si el anonimizador detecta un resto, `prepararInforme` falla y no hay prompt. El proveedor por API exige clave y una decisión institucional; por eso viene apagado (el manifiesto no lo bloquea: la Messages API acepta llamadas desde el navegador con la cabecera correspondiente).
+Reglas que no dependen de la plantilla: la identidad del paciente y los nombres de los profesionales nunca entran al contexto; si el anonimizador detecta un resto, `prepararInforme` falla y no hay prompt. Con la ficha caída, el contexto dice que los antecedentes no se pudieron consultar en vez de «sin datos». El proveedor por API exige clave y una decisión institucional; por eso viene apagado (el manifiesto no lo bloquea: la Messages API acepta llamadas desde el navegador con la cabecera correspondiente). Fuentes de imagenología y biopsias: contrato en `ai/sources.js`, declaradas pendientes hasta tener acceso.
+
+## Invariantes arquitectónicos
+
+1. `state.js` es la fuente única de datos en memoria; no se mantienen copias paralelas mutables por pestaña.
+2. El caché acelera la lectura, pero una fecha con estados mutables debe volver a consultarse.
+3. Agenda y ficha clínica de una fecha se consideran por separado: el éxito de una no oculta el fallo de la otra.
+4. Los metadatos de sincronización contienen fechas, estados y errores técnicos, nunca nombres, RUN ni contenido clínico.
+5. Ninguna petición autenticada puede salir del origen permitido por `config.js` y `http.js` (`fetch` ni siquiera se llama; hay prueba).
+6. Todo texto procedente de la API que entra en `innerHTML` se escapa con `esc()`.
+7. La identidad y navegación de pacientes usa una clave estable; el nombre visible no es identificador.
+8. Las operaciones destructivas requieren confirmación y viven en Preferencias, separadas de las acciones cotidianas.
+9. Una prueba sintética no equivale a validar la extensión cargada en Chrome, y ninguna de ambas equivale a probar contra una sesión real de Eloisa.
+10. Los metadatos administrativos de Rayen no se presentan como conceptos clínicos sin una semántica validada.
+11. Toda petición tiene tiempo límite y la cancelación aborta lo que está en vuelo: una red muda nunca deja la carga colgada.
+12. `core` no toca el navegador; `io` y `ai` no conocen la interfaz; no hay ciclos de importación. Lo verifica cada `npm run check`.
+13. La identidad del paciente nunca entra al contexto para un modelo de lenguaje; el proveedor por API viene apagado.
+14. Cada garantía que la interfaz afirme («comprobado», «al día», «sin restos») tiene una prueba negativa que la defiende.
+
+## Dónde hacer cada cambio
+
+| Necesidad | Punto de entrada | Validación mínima |
+|---|---|---|
+| Endpoint, autenticación o error HTTP | `src/io/http.js`, `src/io/auth.js`, servicio correspondiente | pruebas unitarias, guardia de origen, tiempo límite, cancelación y sesión vencida |
+| Agenda, caché o actualización histórica | `src/io/api.js`, `src/io/historial.js`, `src/io/cache.js` | pruebas de fechas mutables, fallo parcial y reintento |
+| Estado global o coordinación entre vistas | `src/io/state.js`, `src/ui/actions.js` | contrato de eventos y ausencia de copias divergentes |
+| Filtro o columna de Atenciones | `src/ui/tabs/atenciones.js`, `src/ui/table.js` | filtro, contador, limpiar/deshacer y exportación |
+| Interconsultas | `src/io/sic.js`, `src/core/sic-rules.js`, `src/ui/ic-tab.js`, `src/ui/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
+| Reglas de pendientes | `src/core/pendientes.js`, `src/core/config.js` | prueba por regla con el caso positivo y el negativo («sólo las mías») |
+| Vista Hoy | `src/ui/today.js`, `src/ui/tabs/hoy.js`, `src/core/calendar.js` | jornada vacía, antecedentes, calendario y navegación de paciente |
+| Panel del paciente | `src/ui/patient-panel.js`, `src/ui/panel/*.js`, `src/core/ficha.js`, `src/io/ficha-load.js` | identidad, escape de texto, ficha caída honesta, foco y Escape |
+| Historia imprimible | `src/ui/patient-report.js`, `src/ui/export.js` | variantes del reporte y aviso de exportación |
+| Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js`, `src/ui/lab/*.js` | sesión cookie, parsing de órdenes, guardia de origen |
+| Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js` | pestaña con sesión, espera de navegación, identidad del lote |
+| Interpretación de informes | `src/core/lab-parser.js`, `src/core/lab-analytics.js`, `src/core/lab-catalog.js` | corpus de líneas reales anonimizadas; la marca del laboratorio fuerza la alerta |
+| Informe con IA | `src/ai/*.js`, `src/ui/ia-panel.js` | contexto sin nombre ni RUN (prueba y recorrido), plantilla válida, respuesta reconocida |
+| Anonimizador | `src/core/anonimizar.js`, `src/ui/tabs/explorador.js` | entradas adversariales; `verificado=false` ante un resto |
+| Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
+| Sistema visual y responsive | `styles/app.css`, `src/ui/ui.js`, `src/ui/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido; contraste ≥ 4,5:1 |
+| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
+| Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
+
+## Mapa completo de módulos
+
+El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada módulo JavaScript de `src/` aparece exactamente una vez, vive en una capa, y toda ruta `src/…` citada en la documentación existe.
 
 <!-- module-map:start -->
 
@@ -227,12 +271,13 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 
 ## Puertas de calidad
 
-- `npm run lint`: consistencia estática.
-- `npm test`: contratos y lógica pura, sin datos reales.
-- `npm run docs:check`: cobertura y enlaces del mapa arquitectónico.
+- `npm run lint`: consistencia estática, vallas entre capas, tamaño de funciones y módulos.
+- `npm test`: contratos y lógica pura, sin datos reales; incluye las pruebas negativas de las garantías.
+- `npm run cycles:check`: sin ciclos de importación en `src/`.
+- `npm run docs:check`: cobertura del mapa arquitectónico, capa de cada módulo y rutas citadas.
 - `npm run release:check`: coherencia de versiones, permisos y archivos MV3.
 - `npm run check`: ejecuta todas las anteriores.
-- `npm run test:e2e`: ejecuta el recorrido sintético en Chromium a 1440×900 y 582×900, sin solicitudes externas.
+- `npm run test:e2e`: recorridos sintéticos en Chromium a 1440×900 y 582×900, sin solicitudes externas: carga y filtros, teclado, panel, informe con IA, captura anonimizada, laboratorio, bloqueo y flujos (Lab, Escape, chip «+n», Detalle).
 - `npm run pack`: vuelve a validar y genera el ZIP instalable.
 
 El CI ejecuta `quality` y `browser-smoke` como trabajos independientes. Las pruebas reales deben registrarse por nivel: fuente local, arnés sintético, extensión cargada en Chrome y sesión autenticada de Eloisa. No se debe ascender evidencia de un nivel al siguiente.

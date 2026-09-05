@@ -12,9 +12,9 @@ Ruta corta para continuar el proyecto sin depender del contexto de una conversac
 ## Flujo de contribución
 
 1. Confirma rama, `origin/main` y estado del árbol de trabajo.
-2. Ubica el flujo y el módulo dueño en `ARCHITECTURE.md`; evita añadir lógica al orquestador si ya existe un dueño específico.
+2. Ubica el flujo y el módulo dueño en `ARCHITECTURE.md`; evita añadir lógica al orquestador si ya existe un dueño específico. Respeta las capas (`core` → `io` → `ai` → `ui`) y las convenciones de código de esa misma página; el lint y `npm run cycles:check` las verifican.
 3. Haz un cambio pequeño, con pruebas enfocadas y un commit comprensible.
-4. Si agregas, renombras o eliminas un módulo de `src/`, actualiza el bloque `module-map` de la arquitectura.
+4. Si agregas, renombras o eliminas un módulo de `src/`, actualiza el bloque `module-map` de la arquitectura y toda ruta que lo cite: `docs:check` falla con rutas inexistentes.
 5. Ejecuta `npm run check` y `npm run test:e2e` antes de publicar; usa `npm run pack` cuando cambie una versión entregable.
 6. Registra en el PR qué nivel de evidencia alcanzaste y qué quedó sin validar.
 
