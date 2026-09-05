@@ -27,6 +27,7 @@ const ORDENES = [
 ];
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { globalThis.__RAYEN_DEV_NET = 'mock'; }); // el stub deja pasar los laboratorios: los simulan las rutas de abajo
   // Hospital Salvador: sesión viva y búsqueda con cuatro órdenes.
   await page.route('https://examenesusuarios.hsalvador.cl/**', route => {
     const url = route.request().url();

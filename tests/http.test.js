@@ -68,10 +68,25 @@ test('la ficha completa espera más que la agenda y Preferencias sube ambos lím
   globalThis.fetch = (_url, { signal }) => new Promise((_, reject) => { usados.push(signal); signal.addEventListener('abort', () => reject(signal.reason)); });
   net.timeoutMs = 30;
   await assert.rejects(apiGet('tok', '/API/a'), err => err instanceof TimeoutError && /0 s/.test(err.message));
-  const larga = apiGet('tok', '/API/b', { timeoutMs: 100000 });
+  const larga = apiGet('tok', '/API/b', { timeoutMs: 250 });
   await new Promise(r => setTimeout(r, 80));
   assert.equal(usados[1].aborted, false, 'la llamada con su propio límite sigue viva pasado el límite corto');
   cancelRun(); await new Promise(r => setTimeout(r, 10));
   assert.equal(usados[1].aborted, false, 'sin señal, Cancelar no la toca');
-  net.timeoutMs = CONFIG.httpTimeoutMs; larga.catch(() => {});
+  net.timeoutMs = CONFIG.httpTimeoutMs;
+  await assert.rejects(larga, err => err instanceof TimeoutError); // y se apaga sola: ningún temporizador queda vivo
+});
+
+test('un token que la pestaña de Eloisa sigue mostrando tras un 401 no se entrega hasta la próxima carga', async () => {
+  const tabs = [{ id: 1 }];
+  globalThis.chrome.tabs.query = async () => tabs;
+  globalThis.chrome.scripting = { executeScript: async () => [{ result: 'tok' }] };
+  globalThis.fetch = async () => new Response('', { status: 401 });
+  await assert.rejects(apiGet('tok', '/API/x'), err => err instanceof AuthError);
+  assert.equal(await getToken(), null, 'la pestaña entrega el mismo token rechazado: no sirve');
+  globalThis.chrome.scripting.executeScript = async () => [{ result: 'tok-nuevo' }];
+  assert.equal(await getToken(), 'tok-nuevo');
+  resetSession();
+  globalThis.chrome.scripting.executeScript = async () => [{ result: 'tok' }];
+  assert.equal(await getToken(), 'tok', 'una carga nueva vuelve a darle una oportunidad');
 });

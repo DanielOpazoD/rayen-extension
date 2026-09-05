@@ -77,3 +77,9 @@ test('loadPrefs merges stored values over defaults; savePrefs patches', async ()
   assert.equal(p.dense, true);
   assert.equal(p.refreshMin, 15, 'defaults survive');
 });
+
+test('pruneStore conserva el día exacto del límite y borra el anterior', () => {
+  const store = { fetchedDates: new Set(['20260603', '20260604']), records: new Map([[1, { fecha8: '20260603' }], [2, { fecha8: '20260604' }]]), extra: { team: { 20260603: {}, 20260604: {} } } };
+  pruneStore(store, '20260604');
+  assert.deepEqual([...store.fetchedDates], ['20260604']); assert.deepEqual([...store.records.keys()], [2]); assert.deepEqual(Object.keys(store.extra.team), ['20260604']);
+});

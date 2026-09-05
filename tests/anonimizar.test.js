@@ -72,3 +72,9 @@ test('si un nombre sobrevive donde el recorrido no llega (una clave), verificado
   assert.equal(r.verificado, false);
   assert.deepEqual(r.restos, ['Rosa', 'Tuki']);
 });
+
+test('el anonimizador responde en tiempo lineal ante textos largos sin arroba ni dígitos separados', () => {
+  const largo = { NombreCompleto: 'Rosa Tuki', Texto: 'a'.repeat(200_000), Digitos: '9'.repeat(200_000) };
+  const t0 = Date.now(); anonimizar(largo, { desplazamientoDias: 1 });
+  assert.ok(Date.now() - t0 < 1500, `tardó ${Date.now() - t0} ms`);
+});

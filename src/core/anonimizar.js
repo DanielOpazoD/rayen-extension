@@ -26,8 +26,9 @@ const STOP = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'van', 'v
 
 // Con puntos o guion: ocho dígitos seguidos son también una fecha «20260904» o un identificador.
 const RUT_RE = /\b\d{1,2}\.\d{3}\.\d{3}-?[\dkK]\b|\b\d{7,8}-[\dkK]\b/g;
-const EMAIL_RE = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g; // sin tragarse el punto final de la frase
-const PHONE_RE = /\+56\s?\d[\d\s]{7,}\d|\b9\s?\d{4}\s?\d{4}\b/g;
+// Cuantificadores acotados: sin ellos, un texto largo sin «@» costaba tiempo cuadrático y congelaba la pestaña.
+const EMAIL_RE = /[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,4}/g;
+const PHONE_RE = /\+56\s?\d[\d\s]{7,14}\d|\b9\s?\d{4}\s?\d{4}\b/g;
 const RAYEN_DATE = /^(\d{4})(\d{2})(\d{2})( \d{4,6})?$/;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(T[\d:.]+(Z|[+-]\d{2}:\d{2})?)?$/;
 const DMY_DATE = /^(\d{2})-(\d{2})-(\d{4})( .*)?$/;
