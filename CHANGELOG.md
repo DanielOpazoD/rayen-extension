@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.42.0 — 2026-09-04
+
+Anonimizador con segunda pasada, lo que dos revisores señalaron como la puerta más débil del informe con IA y de la captura del Explorador.
+
+- **Segunda pasada independiente de los nombres conocidos**: RUN pegado al estilo Rayen sólo si el dígito verificador es válido (una fecha o un identificador de ocho dígitos no pasa por RUN), teléfonos en cualquier formato (con o sin +56, paréntesis, guiones, espacios, fijos con prefijo), fechas dentro del texto (desplazadas como las demás, para conservar los intervalos), personas tras un tratamiento o parentesco («Dra. Paula Tepano», «hija Vaitiare Pakarati», «Paciente Rosa Tuki») y claves por subcadena o de rol (`MedicoTratante`, `NombreCompletoPaciente`, `numDocumentoCompleto`, `Titular`). Los catálogos (`NombreExamen`, diagnósticos) se conservan; un nombre de varias palabras deja un solo marcador.
+- **Comprobación final con los mismos detectores** sobre el resultado entero, claves incluidas; `restos` nombra el tipo de lo que quedó (persona, RUT con formato, RUT pegado, correo, teléfono) y la interfaz no descarga ni copia.
+- **La hoja de informe y el Explorador dicen exactamente qué comprueban** y el límite que sigue: un tercero en texto libre sin tratamiento ni parentesco delante no se detecta.
+- Diez pruebas adversariales tomadas de los balances 6 y 7.
+
 ## 2.41.0 — 2026-09-04
 
 Robustez y pruebas, tras el balance 7 (5,4/7).

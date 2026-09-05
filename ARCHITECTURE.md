@@ -87,7 +87,7 @@ flowchart LR
 
 1. `ai/index.js → prepararInforme`: registro canónico (`ai/record.js`) → contexto sin identidad ni nombres de profesionales, fechas relativas, presupuesto (`ai/context.js`) → prompt con plantilla (`ai/templates.js`). Si el anonimizador detecta un resto, no hay prompt.
 2. Proveedor manual: la persona copia el prompt y pega la respuesta; `parsearRespuesta` reconoce las secciones; `armarInforme` repone la identidad en local. El proveedor por API existe y viene apagado (clave y decisión institucional).
-3. El Explorador API descarga una copia anonimizada de cualquier respuesta (`core/anonimizar.js`) con comprobación final; su límite conocido: los nombres que sólo aparecen en texto libre.
+3. El Explorador API descarga una copia anonimizada de cualquier respuesta (`core/anonimizar.js`) con dos pasadas (nombres conocidos; y RUN pegado con verificador, teléfonos, fechas en texto, personas tras tratamiento o parentesco, claves por subcadena) y una comprobación final independiente. Límite conocido y declarado en la interfaz: un tercero en texto libre sin tratamiento ni parentesco delante.
 
 ### Paciente, filtros y exportación
 
