@@ -240,7 +240,13 @@ export function parseDiagnostico(d) {
  * Only the fields the app uses are kept (the raw item is ~4 KB of mostly empty arrays).
  */
 export function parseAtencion(a) {
-  const fecha = a.Fecha ?? '';
+  // `Fecha` es cuando se guardó/cerró la atención; `FechaCita` (sólo en la
+  // consulta por paciente) es la cita a la que corresponde. La ficha se puede
+  // cerrar al día siguiente o mucho después: la referencia clínica es la cita
+  // (decisión de Daniel, 04-09-2026) y el registro se conserva aparte.
+  const registro = a.Fecha ?? '';
+  const cita = String(a.FechaCita ?? '');
+  const fecha = /^\d{8} \d{4,6}$/.test(cita) && !cita.startsWith('00010101') ? cita : registro;
   const { run, runStr } = formatRun(a.RutPaciente);
   const edadX = decodeEdadExacta(a.EdadExacta);
   const nac   = a.FechaNacimiento ?? '';
@@ -255,6 +261,8 @@ export function parseAtencion(a) {
     fechaAtencion: fmtDate(fecha),
     hora:          fmtHora(fecha),
     diaSemana:     dowFromRaw(fecha),
+    // Cuándo se guardó, si no fue el mismo día de la cita («registrada el …»).
+    fechaRegistro: registro.slice(0, 8) !== fecha.slice(0, 8) ? fmtDate(registro) : '',
 
     run,
     runStr,

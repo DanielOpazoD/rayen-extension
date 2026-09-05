@@ -27,7 +27,7 @@ function atencion(v, officerId) {
   }));
   return {
     id: v.id ?? null,
-    fecha: texto(v.fechaAtencion), hora: texto(v.hora), fecha8: v.fecha8 ?? null,
+    fecha: texto(v.fechaAtencion), hora: texto(v.hora), fecha8: v.fecha8 ?? null, fechaRegistro: texto(v.fechaRegistro),
     tipo: texto(v.tipoAtencion), razon: texto(v.razon), estado: texto(v.estado),
     esUrgencia: !!v.esUrgencia, esMia: prest.some(p => p.esMio) || (!prest.length && v.origen === 'cita'),
     prestadores: prest,
