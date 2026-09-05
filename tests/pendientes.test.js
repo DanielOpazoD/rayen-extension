@@ -13,7 +13,7 @@ function sic(over = {}) {
     estado: 'Atendido', estadoId: 5, grupo: 'atendida', especialidad: 'Reumatología',
     prioridad: 2,
     paciente: { nombre: 'Paciente Uno', run: '1K', runStr: '1-K' },
-    registrador: { id: ME, nombre: 'Opazo' }, ejecutor: { id: 9, nombre: 'Otro' },
+    registrador: { id: ME, nombre: 'Opazo Damiani Daniel' }, ejecutor: { id: 9, nombre: 'Pérez Tuki Ana María' },
     ...over,
   };
 }
@@ -121,7 +121,7 @@ test('sin cambios reales no reporta nada', () => {
 
 test('una interconsulta rechazada es un pendiente con decisión, no una «cerrada» silenciosa', () => {
   const sic = { id: 9, estadoId: 7, estado: 'Rechazada por est. destino', especialidad: 'Reumatología', fecha8: '20260801', antiguedadDias: 34,
-    paciente: { run: '1-9', nombre: 'X' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } };
+    paciente: { run: '1-9', nombre: 'Paciente Prueba Dos' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } };
   const out = computePendientes([], [sic], { hoy: new Date(2026, 8, 4) });
   assert.equal(out.length, 1); assert.equal(out[0].tipo, 'sic-rechazada'); assert.equal(out[0].severidad, 2);
   assert.match(out[0].titulo, /rechazada · Reumatología/); assert.match(out[0].detalle, /emitida por ti/);
@@ -130,7 +130,7 @@ test('una interconsulta rechazada es un pendiente con decisión, no una «cerrad
 });
 
 test('el umbral de días es inclusivo: justo en el umbral ya es pendiente, un día antes no', () => {
-  const sic = d => ({ id: 1, estadoId: 13, estado: 'Nueva', especialidad: 'X', fecha8: '20260801', antiguedadDias: d, paciente: { run: '1-9', nombre: 'X' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } });
+  const sic = d => ({ id: 1, estadoId: 13, estado: 'Nueva', especialidad: 'X', fecha8: '20260801', antiguedadDias: d, paciente: { run: '1-9', nombre: 'Paciente Prueba Dos' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } });
   assert.equal(computePendientes([], [sic(21)], { hoy: new Date(2026, 8, 4) }).length, 1);
   assert.equal(computePendientes([], [sic(20)], { hoy: new Date(2026, 8, 4) }).length, 0);
 });

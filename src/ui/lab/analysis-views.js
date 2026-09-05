@@ -1,6 +1,6 @@
 /** Vistas del análisis: comparación (matriz), informes, tendencias y microbiología. Sólo pintan. */
 import { esc, $ } from '../dom.js';
-import { renderTrendGroups } from '../lab-charts.js';
+import { renderTrendGroups } from '../../core/lab-charts.js';
 import {
   buildTrendGroups, filterTrendGroups, latestTrendTimestamp, countTrendVariables,
 } from '../lab-trends.js';

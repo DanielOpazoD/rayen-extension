@@ -1,8 +1,8 @@
-import { esc } from '../core/text.js';
-import { esMiaAtencion } from '../core/sic-rules.js';
-import { CONFIG } from '../core/config.js';
-import { SECTION_LABELS } from '../core/ficha.js';
-import { whenLabel } from '../core/labels.js';
+import { esc } from './text.js';
+import { esMiaAtencion } from './sic-rules.js';
+import { CONFIG } from './config.js';
+import { SECTION_LABELS } from './ficha.js';
+import { whenLabel } from './labels.js';
 
 /**
  * Printable clinical history for one patient, built from the same data the

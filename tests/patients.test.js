@@ -10,7 +10,7 @@ const rec = (over = {}) => ({
 const sic = (over = {}) => ({
   id: 90, paciente: { run: '1K', nombre: 'Ana Pérez' }, especialidad: 'Reumatología',
   estado: 'Nueva', estadoId: 13, grupo: 'pendiente', antiguedadDias: 30,
-  registrador: { id: 439550, nombre: 'Opazo' }, ejecutor: { id: 9, nombre: 'Otra' }, ...over,
+  registrador: { id: 439550, nombre: 'Opazo Damiani Daniel' }, ejecutor: { id: 9, nombre: 'Pérez Tuki Ana María' }, ...over,
 });
 
 test('buildPatients agrupa atenciones por paciente y toma la más reciente como referencia', () => {

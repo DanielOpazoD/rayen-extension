@@ -6,8 +6,8 @@ const ME = 439550;
 const NONE = { q: '', fecha: '', dia: '', sexo: '', estado: '', prev: '', tipo: '', prest: '', ic: '', dx: '' };
 
 const rows = [
-  { id: 1, nombre: 'Ana Pérez',  run: '1K',  runStr: '1-K', fechaAtencion: '01-09-2026', diaSemana: 'Mar', sexo: 'Mujer',  estado: 'Completado', prevision: 'Fonasa A', tipoAtencion: 'Morbilidad', prestadores: [{ nombre: 'Opazo' }], esIC: true,  esUrgencia: false, diagnosticos: [{ nombre: 'HTA', esAuge: true }] },
-  { id: 2, nombre: 'Luis Soto',  run: '2K',  runStr: '2-K', fechaAtencion: '02-09-2026', diaSemana: 'Mié', sexo: 'Hombre', estado: 'Iniciado',   prevision: 'Fonasa B', tipoAtencion: 'Control',    prestadores: [{ nombre: 'Kine' }],  esIC: false, esUrgencia: true,  diagnosticos: [] },
+  { id: 1, nombre: 'Ana Pérez',  run: '1K',  runStr: '1-K', fechaAtencion: '01-09-2026', diaSemana: 'Mar', sexo: 'Mujer',  estado: 'Completado', prevision: 'Fonasa A', tipoAtencion: 'Morbilidad', prestadores: [{ nombre: 'Opazo Damiani Daniel' }], esIC: true,  esUrgencia: false, diagnosticos: [{ nombre: 'HTA', esAuge: true }] },
+  { id: 2, nombre: 'Luis Soto',  run: '2K',  runStr: '2-K', fechaAtencion: '02-09-2026', diaSemana: 'Mié', sexo: 'Hombre', estado: 'Iniciado',   prevision: 'Fonasa B', tipoAtencion: 'Control',    prestadores: [{ nombre: 'Pakarati Hito Kine' }],  esIC: false, esUrgencia: true,  diagnosticos: [] },
   { id: 3, nombre: 'Eva Ruiz',   run: null,  runStr: '',    fechaAtencion: '02-09-2026', diaSemana: 'Mié', sexo: 'Mujer',  estado: 'No se presentó', prevision: '', tipoAtencion: 'Control', prestadores: [], esIC: false, esUrgencia: false, diagnosticos: [{ nombre: 'Asma', esAuge: false }] },
 ];
 const sicsByRun = new Map([
@@ -30,7 +30,7 @@ test('applyFilters: free text matches name, RUN and diagnosis, case-insensitivel
 test('applyFilters: simple equality filters', () => {
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, fecha: '02-09-2026' }, ctx)), [2, 3]);
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, sexo: 'Mujer', estado: 'Completado' }, ctx)), [1]);
-  assert.deepEqual(ids(applyFilters(rows, { ...NONE, prest: 'Kine' }, ctx)), [2]);
+  assert.deepEqual(ids(applyFilters(rows, { ...NONE, prest: 'Pakarati Hito Kine' }, ctx)), [2]);
   assert.deepEqual(ids(applyFilters(rows, { ...NONE, tipo: 'Control', dia: 'Mié' }, ctx)), [2, 3]);
 });
 

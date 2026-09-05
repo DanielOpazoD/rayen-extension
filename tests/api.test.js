@@ -45,7 +45,7 @@ test('returns null without a session token and touches nothing', async () => {
 
 test('cache-first: only today is re-fetched when every other day is on disk', async () => {
   const dates = window1m();
-  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [{ id: 7, fecha8: dates[0], nombre: 'X' }], extra: {}, savedAt: 1 });
+  fake.local.set(CONFIG.cacheKey, { fetchedDates: dates, records: [{ id: 7, fecha8: dates[0], nombre: 'Paciente Prueba Tres' }], extra: {}, savedAt: 1 });
   scriptFetch(url => dayOf(url) === today8 ? [rawCita(99, today8)] : []);
   const res = await loadData(1, () => {}, { historial: false });
   assert.equal(calls.length, 1);

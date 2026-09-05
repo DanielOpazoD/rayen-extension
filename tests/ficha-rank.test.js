@@ -23,8 +23,8 @@ test('rankProblems agrupa por problema y ordena por peso: GES, crónicos, recurr
 
 test('rankProblems marca lo mío y usa el nombre más reciente del mismo código', () => {
   const visits = [
-    visita('01-09-2026', [dx('DM2', { codigo: 'E11' })], [{ id: 439550, nombre: 'Yo' }]),
-    visita('01-07-2026', [dx('Diabetes mellitus tipo 2', { codigo: 'E11' })], [{ id: 7, nombre: 'Otro' }]),
+    visita('01-09-2026', [dx('DM2', { codigo: 'E11' })], [{ id: 439550, nombre: 'Opazo Damiani Daniel' }]),
+    visita('01-07-2026', [dx('Diabetes mellitus tipo 2', { codigo: 'E11' })], [{ id: 7, nombre: 'Pérez Tuki Ana María' }]),
   ];
   const [p] = rankProblems(visits, { officerId: 439550 });
   assert.equal(p.n, 2); assert.equal(p.nombre, 'DM2'); assert.equal(p.mio, true);

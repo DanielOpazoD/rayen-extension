@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL, isMedicalVisit, isMedico } from '../src/ui/patient-report.js';
+import { filterVisitsByScope, buildPatientReport, SCOPE_LABEL, isMedicalVisit, isMedico } from '../src/core/patient-report.js';
 import { ageBucket } from '../src/ui/charts.js';
 import { CONFIG } from '../src/core/config.js';
 
@@ -33,9 +33,9 @@ test('buildPatientReport falls back to the agenda when the ficha is not loaded a
 
 test('buildPatientReport: interconsultas scope renders the clinical SIC without administrative metadata', () => {
   const sic = { id: 9, fecha: '10-08-2026', especialidad: 'Reumatología', estado: 'Atendido', grupo: 'atendida', esAuge: true,
-    registrador: { nombre: 'Opazo' }, ejecutor: { nombre: 'Mezzano' }, motivo: 'Confirmación', diagnostico: 'AR', cie10: 'M06.9',
+    registrador: { nombre: 'Opazo Damiani Daniel' }, ejecutor: { nombre: 'Mezzano Rojas Carla' }, motivo: 'Confirmación', diagnostico: 'AR', cie10: 'M06.9',
     fundamentos: 'Dolor poliarticular', examenes: '' };
-  const cur = { record: { nombre: 'P', runStr: '', dob: '', sexo: '', prevision: '' }, visits: [], sics: [sic], ficha: { visits: [yo], master: null, antecedentes: { farmacos: [] } } };
+  const cur = { record: { nombre: 'Paciente Prueba Uno', runStr: '', dob: '', sexo: '', prevision: '' }, visits: [], sics: [sic], ficha: { visits: [yo], master: null, antecedentes: { farmacos: [] } } };
   const { fragment } = buildPatientReport(cur, 'ic');
   assert.match(fragment, /Interconsultas · 1/);
   assert.match(fragment, /M06\.9/);
@@ -44,7 +44,7 @@ test('buildPatientReport: interconsultas scope renders the clinical SIC without 
 });
 
 test('buildPatientReport: completo includes atenciones, IC and fármacos', () => {
-  const cur = { record: { nombre: 'P', runStr: '', dob: '', sexo: '', prevision: '' }, visits: [], sics: [],
+  const cur = { record: { nombre: 'Paciente Prueba Uno', runStr: '', dob: '', sexo: '', prevision: '' }, visits: [], sics: [],
     ficha: { visits: [yo, otro], master: { ficha: '123', dob: '01-01-1990', sexo: 'Mujer', prevision: 'Fonasa A', telefonos: '9' },
              antecedentes: { farmacos: [{ label: 'Losartán 50 mg', posologia: '1 c/12 h', estado: 'Pendiente', fecha: '28-08-2026', hearts: true }] } } };
   const { fragment } = buildPatientReport(cur, 'completo');
@@ -62,7 +62,7 @@ test('ageBucket follows clinical brackets and tolerates bad input', () => {
 // Panel: pestañas internas Medicina / Otros. Decide por el instrumento del
 // prestador; «Técnico Paramédico» y «Tecnólogo Médico» no son médicos.
 test('isMedicalVisit separa profesional médico de otros profesionales', () => {
-  const v = (instrumento, tipoAtencion = '') => ({ prestadores: instrumento ? [{ id: 1, nombre: 'X', instrumento }] : [], tipoAtencion });
+  const v = (instrumento, tipoAtencion = '') => ({ prestadores: instrumento ? [{ id: 1, nombre: 'Médico Prueba Uno', instrumento }] : [], tipoAtencion });
   assert.equal(isMedicalVisit(v('Médico')), true);
   assert.equal(isMedicalVisit(v('Médico Cirujano')), true);
   assert.equal(isMedicalVisit(v('Matrona')), false);

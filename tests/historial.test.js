@@ -45,7 +45,7 @@ test('mergeHistorial appends the officer\'s atenciones without a cita as extra r
 });
 
 test('mergeHistorial ignores other prestadores\' unmatched atenciones', () => {
-  const other = atencion({ Id: 9, RutPaciente: '292421311', FuncionariosPrestadores: [{ Id: 1, NombreCompleto: 'Otro', NombreInstrumento: 'Kinesiólogo(a)' }] });
+  const other = atencion({ Id: 9, RutPaciente: '292421311', FuncionariosPrestadores: [{ Id: 1, NombreCompleto: 'Pérez Tuki Ana María', NombreInstrumento: 'Kinesiólogo(a)' }] });
   assert.equal(mergeHistorial([], [other]).length, 0);
 });
 

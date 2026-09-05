@@ -1,5 +1,5 @@
 /** Pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o, sin ficha, la agenda. */
-import { isMedicalVisit } from '../patient-report.js';
+import { isMedicalVisit } from '../../core/patient-report.js';
 import { SECTION_LABELS } from '../../core/ficha.js';
 import { CONFIG } from '../../core/config.js';
 import { esc, stateDot, $ } from '../dom.js';

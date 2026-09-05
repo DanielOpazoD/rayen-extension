@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.51.0 — 2026-09-05
+
+Saneamiento, tanda 4 de 4: pruebas y frontera `core`/`ui`.
+
+- **`core/patient-report.js` y `core/lab-charts.js`**: la historia imprimible y los gráficos de tendencia producen cadenas (HTML, SVG) sin tocar el DOM; vivían en `ui` y ahora los protege la valla de pureza. `ui/exam-request-view.js` se queda en `ui` porque dispara la impresión.
+- **Datos sintéticos con la forma real** (`tests/helpers/fixtures.js`): paciente, cita, atención e interconsulta con nombres de varias palabras y RUN con verificador, probados contra el cruce agenda–historial, pendientes y el anonimizador. Los 17 nombres de persona de una sola palabra que quedaban en las pruebas («Opazo», «Otro», «Rosa», «X») pasan a la forma real; la memoria del proyecto registra dos regresiones clínicas que esa forma habría destapado.
+- Las dos únicas aserciones «no lanza» del repositorio ahora afirman el valor devuelto.
+
 ## 2.50.0 — 2026-09-05
 
 Saneamiento, tanda 3 de 4: vallas de complejidad.

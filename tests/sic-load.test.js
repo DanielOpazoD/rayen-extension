@@ -29,7 +29,7 @@ const rawSic = id => ({
   NumeroSolicitud: id, FechaHora: '01-08-2026', Prioridad: 2, Estado: 'Atendido', IdEstado: 5, AntiguedadDias: 33,
   SolicitudInterconsulta: {
     FechaHora: '20260801 090000', IdFuncionarioRegistrador: ME, IdFuncionarioEjecutor: 9,
-    NombreFuncionarioRegistrador: 'Opazo', NombreFuncionarioEjecutor: 'Otro',
+    NombreFuncionarioRegistrador: 'Opazo Damiani Daniel', NombreFuncionarioEjecutor: 'Pérez Tuki Ana María',
     UsuarioAps: { NombreCompletoPaciente: 'Paciente Uno', Rut: '1K' },
   },
 });

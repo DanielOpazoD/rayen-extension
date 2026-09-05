@@ -278,6 +278,6 @@ test('las funciones toleran un hallazgo vacío sin reventar', () => {
   assert.equal(classifyLabSpecimen(null), 'unknown');
   assert.equal(classifyLabSpecimen(undefined), 'unknown');
   assert.equal(classifyLabSpecimen({}), 'unknown');
-  assert.doesNotThrow(() => isLabComparisonEligible(null));
-  assert.doesNotThrow(() => isLabTrendSpecimenEligible(null));
+  assert.equal(isLabComparisonEligible(null), true, 'sin muestra conocida se conserva en la matriz');
+  assert.equal(isLabTrendSpecimenEligible(null), true, 'y sin muestra conocida tampoco se descarta de la tendencia: decide el analito');
 });
