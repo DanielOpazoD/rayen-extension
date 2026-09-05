@@ -78,7 +78,7 @@ export function renderAt(cur, atFilter) {
     // Sólo agenda: todas son atenciones propias, es decir, de Medicina. Las
     // pestañas internas se muestran igual para que la vista no cambie de forma.
     html = segGroup('at', 'Tipo de atención', [['medicina', 'Medicina', visits.length], ['otros', 'Otros', 0]], atFilter) +
-      (ficha ? `<div class="pp-empty">La ficha electrónica no tiene atenciones registradas; se muestra la agenda.</div>` : '') +
+      (ficha ? `<div class="pp-empty">${ficha.errors?.length ? `Ficha no disponible (${ficha.errors.length} ${ficha.errors.length === 1 ? 'fuente falló' : 'fuentes fallaron'}); se muestra la agenda.` : 'La ficha electrónica no tiene atenciones registradas; se muestra la agenda.'}</div>` : '') +
       (atFilter === 'otros' ? empty('Sin atenciones de otros profesionales')
         : (visits.length ? visits.map(agendaVisitHTML).join('') : empty('Sin atenciones')));
     setTabCount('at', visits.length);

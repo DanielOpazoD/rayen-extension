@@ -8,6 +8,7 @@ import { segGroup, h4, empty, setTabCount } from './helpers.js';
 export function renderRx(cur, rxFilter) {
   const { ficha } = cur;
   if (!ficha) { $('ppPaneRx').innerHTML = empty(cur.fichaFailed ? 'La ficha clínica no está disponible' : 'Consultando ficha…'); return; }
+  if (!ficha.visits.length && ficha.errors?.length) { $('ppPaneRx').innerHTML = empty('Ficha no disponible: no se pudieron consultar las recetas'); setTabCount('rx', 0); return; }
   // Activas o vencidas por la duración escrita en la receta y la fecha de la atención.
   const estadoDe = (texto, v, suspendido) => prescripcionEstado(texto, v.fecha8, { suspendido });
   const conRx = ficha.visits.filter(v => v.sections.prescripciones || v.sections.recetas || v.sections.prescExtra);

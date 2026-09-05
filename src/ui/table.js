@@ -127,7 +127,9 @@ function icCell(p, { sicsById, sicsByRun }) {
   if (others.length > shown) {
     lines.push(`<span class="ic-chip bg sic-run" data-run="${esc(p.run)}" data-tip="${esc(others.slice(shown).map(s => `${s.especialidad} · ${s.estado}`).join('\n'))}">+${others.length - shown}</span>`);
   }
-  return lines.join('');
+  // Fila flexible: la línea se recorta con puntos suspensivos y el chip «+n»
+  // conserva su sitio (antes quedaba bajo la celda de notas y el clic caía allí).
+  return lines.length ? `<span class="ic-row">${lines.join('')}</span>` : '';
 }
 
 /** Exportada para poner bajo prueba el contrato de la fila (una parada de tabulación, una SIC). */

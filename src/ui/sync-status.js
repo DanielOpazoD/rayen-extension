@@ -87,15 +87,23 @@ async function renderSyncStatusBody(health) {
   }).join('');
 }
 
+function setDetails(open) {
+  const details = $('syncDetails');
+  if (details.hidden === !open) return;
+  details.hidden = !open;
+  $('btnSyncDetails').setAttribute('aria-expanded', String(open));
+  $('btnSyncDetails').textContent = open ? 'Ocultar' : 'Detalle';
+  $('btnSyncDetails').setAttribute('aria-label', `${$('syncOverall').textContent}. ${open ? 'Ocultar detalle' : 'Ver detalle'}`);
+}
+
 export function initSyncStatus(onRetry) {
-  $('btnSyncDetails').addEventListener('click', () => {
-    const details = $('syncDetails');
-    const open = details.hidden;
-    details.hidden = !open;
-    $('btnSyncDetails').setAttribute('aria-expanded', String(open));
-    $('btnSyncDetails').textContent = open ? 'Ocultar' : 'Detalle';
-    $('btnSyncDetails').setAttribute('aria-label', `${$('syncOverall').textContent}. ${open ? 'Ocultar detalle' : 'Ver detalle'}`);
+  $('btnSyncDetails').addEventListener('click', () => setDetails($('syncDetails').hidden));
+  // Es un desplegable que tapa contenido: se va con un clic fuera, con Escape o al cambiar de pestaña.
+  document.addEventListener('click', e => { if (!e.target.closest('#syncHealth')) setDetails(false); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('syncDetails').hidden) { setDetails(false); $('btnSyncDetails').focus(); }
   });
+  document.querySelector('.tabs')?.addEventListener('click', () => setDetails(false));
   $('btnRetrySync').addEventListener('click', onRetry);
   // Si no se pudo recuperar una fuente colgada, se pinta lo que haya: renderSyncStatus no lanza.
   recoverStaleSyncSources().catch(() => {}).then(() => renderSyncStatus());

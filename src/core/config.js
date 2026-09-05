@@ -83,6 +83,9 @@ export const SIC_GRUPO = Object.freeze({
   fallida:   { label: 'Fallida',    ids: [6, 7, 9, 12, 27, 29, 30] },
 });
 
+/** Rechazada por el destino, por el paciente o por el sistema: hay que decidir si re-emitir. */
+export const SIC_RECHAZADA_IDS = Object.freeze(new Set([7, 27, 30]));
+
 export function sicGrupo(estadoId) {
   for (const [k, g] of Object.entries(SIC_GRUPO)) if (g.ids.includes(estadoId)) return k;
   return 'otro';

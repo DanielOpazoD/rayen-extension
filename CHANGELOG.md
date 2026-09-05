@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 2.36.0 — 2026-09-04
+
+Flujos, tercera tanda del saneamiento: lo que los revisores encontraron roto o confuso, con un recorrido de Playwright por cada arreglo.
+
+- **Botón «Lab» del panel** volvía a funcionar: cerraba el panel antes de leer el sexo del paciente y fallaba en silencio. Ahora abre Exámenes complementarios con el RUN.
+- **Escape jerárquico**: cierra primero el menú abierto o la hoja de informe, y sólo después el panel. Los menús (PDF, Exportar, Columnas, Preferencias) se recorren con ↓ ↑ Inicio Fin y se cierran con clic fuera.
+- **«Detalle» de sincronización** se cierra con clic fuera, Escape o al cambiar de pestaña; antes tapaba el contenido y el botón «Consultar» del Explorador.
+- **Chip «+n» de interconsultas** era inclicable: quedaba bajo la celda de notas. La celda es ahora una fila flexible y el chip conserva su sitio.
+- **Interconsulta rechazada** (por destino, paciente o sistema) es un pendiente con decisión, aparece en la portada del panel y en Pacientes como «n rechazadas»; antes se contaba entre las «cerradas».
+- **Honestidad con la ficha caída**: Atenciones dice «Ficha no disponible (n fuentes fallaron); se muestra la agenda» y Recetas «no se pudieron consultar las recetas», en vez de afirmar que no hay.
+- Contraste: días de otro mes en el calendario y botón «Ficha» pasan de 2,4:1 a más de 4,5:1.
+
 ## 2.35.0 — 2026-09-04
 
 Modularidad, segunda tanda del saneamiento. Sin cambios de comportamiento.

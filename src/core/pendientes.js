@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, SIC_RECHAZADA_IDS } from './config.js';
 import { dateToInt, localDateStr } from './parser.js';
 
 /**
@@ -51,6 +51,20 @@ export function computePendientes(allData, sics = [], opts = {}) {
       paciente: s.paciente.nombre,
       titulo: `Interconsulta sin cursar · ${s.especialidad}`,
       detalle: `Sigue en estado «Nueva» ${dias} días después de emitida (${rol(s)}).`,
+    });
+  }
+
+  // ── 1b. SIC rechazada: no está «abierta», pero exige una decisión ──
+  // Antes una derivación rechazada se contaba entre las cerradas y nadie se enteraba.
+  for (const s of sics) {
+    if (!SIC_RECHAZADA_IDS.has(s.estadoId)) continue;
+    if (soloMias && !mine(s)) continue;
+    const dias = s.antiguedadDias ?? daysSince(s.fecha8, hoy8) ?? 0;
+    out.push({
+      tipo: 'sic-rechazada', severidad: 2, dias, sicId: s.id, run: s.paciente.run,
+      paciente: s.paciente.nombre,
+      titulo: `Interconsulta rechazada · ${s.especialidad}`,
+      detalle: `Estado «${s.estado}» (${rol(s)}). Decide si se re-emite o se cierra.`,
     });
   }
 
@@ -116,6 +130,7 @@ export function resumirPendientes(pendientes) {
 
 const TIPO_LABEL = {
   'sic-nueva':       'Interconsultas sin cursar',
+  'sic-rechazada':   'Interconsultas rechazadas',
   'cita-pasada':     'Citas pasadas sin resolver',
   'control-vencido': 'Controles vencidos',
 };

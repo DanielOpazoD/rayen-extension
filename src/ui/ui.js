@@ -78,6 +78,21 @@ export function initMenu(btnId, menuId, wrapId, onOpen = null) {
     onOpen?.();
   });
   m.menu.addEventListener('click', e => e.stopPropagation());
+  // ↓/↑/Inicio/Fin recorren las opciones; ↓ sobre el botón abre y entra.
+  const items = () => [...m.menu.querySelectorAll('button:not([disabled]),[role="menuitem"]:not([disabled])')];
+  m.menu.addEventListener('keydown', e => {
+    const list = items(); if (!list.length) return;
+    const i = list.indexOf(document.activeElement);
+    const go = j => { e.preventDefault(); list[(j + list.length) % list.length].focus(); };
+    if (e.key === 'ArrowDown') go(i + 1); else if (e.key === 'ArrowUp') go(i - 1);
+    else if (e.key === 'Home') go(0); else if (e.key === 'End') go(list.length - 1);
+  });
+  m.btn.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    if (!m.menu.classList.contains('open')) m.btn.click();
+    items()[0]?.focus();
+  });
   if (MENUS.length > 1) return;
   document.addEventListener('click', e => {
     for (const o of MENUS) if (!o.wrap || !o.wrap.contains(e.target)) closeMenu(o);
@@ -127,4 +142,3 @@ function measureChrome() {
 }
 export const remeasure = () => requestAnimationFrame(measureChrome);
 window.addEventListener('resize', remeasure);
-
