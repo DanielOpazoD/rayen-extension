@@ -1,4 +1,4 @@
-/** Pestaña Problemas: diagnósticos con peso, antecedentes, alergias y programas. */
+/** Pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una lista, alergias y programas. */
 import { rankProblems } from '../../core/ficha-rank.js';
 import { CONFIG } from '../../core/config.js';
 import { esc, $ } from '../dom.js';
@@ -14,20 +14,29 @@ export function renderDx(cur) {
   const a = ficha?.antecedentes;
   let html = '';
 
-  html += h4(ficha?.visits?.length ? 'Problemas (historial completo, todos los profesionales)' : 'Problemas (mis atenciones)');
-  html += probs.length ? probs.map(d => {
-    const meta = [d.codigo, d.ultima].filter(Boolean).join(' · ');
+  // Una sola lista: los diagnósticos de las atenciones (con peso) y los
+  // antecedentes mórbidos de la ficha, unidos por nombre. Antes iban en dos
+  // listas y el mismo problema aparecía dos veces.
+  const norm = t => String(t ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const filas = probs.map(d => ({ ...d, key: norm(d.nombre) }));
+  const vistos = new Set(filas.map(f => f.key));
+  for (const m of a?.morbidos ?? []) {
+    const k = norm(m.label);
+    if (!k || vistos.has(k)) continue;
+    vistos.add(k);
+    filas.push({ nombre: m.label, clasificacion: '', codigo: '', esAuge: false, ultima: m.fecha, key: k, antecedente: true });
+  }
+  html += h4(ficha?.visits?.length ? 'Antecedentes y diagnósticos (todos los profesionales)' : 'Antecedentes y diagnósticos (mis atenciones)');
+  html += filas.length ? filas.map(d => {
+    const meta = [d.codigo, d.antecedente ? 'antecedente' : '', d.ultima].filter(Boolean).join(' · ');
     return `<div class="pp-row"><span class="pp-row-t">${esc(d.nombre)}${d.clasificacion && d.clasificacion !== d.nombre ? ` <em>${esc(d.clasificacion)}</em>` : ''}${d.esAuge ? ' <span class="bges">GES</span>' : ''}</span>` +
       `<span class="pp-row-m">${esc(meta)}</span></div>`;
-  }).join('') : empty('Sin diagnósticos registrados');
-
-  if (a?.morbidos.length) html += h4('Antecedentes mórbidos') + a.morbidos.map(m =>
-    `<div class="pp-row"><span class="pp-row-t">${esc(m.label)}</span><span class="pp-row-m">${esc(m.fecha)}</span></div>`).join('');
+  }).join('') : empty('Sin diagnósticos ni antecedentes registrados');
   if (a?.alergias.length || ficha?.ram.length) html += h4('Alergias / RAM') + [...a.alergias, ...ficha.ram].map(x =>
     `<div class="pp-row"><span class="pp-row-t">${esc(x.label)}</span><span class="pp-row-m">${esc(x.details.join(' · '))}</span></div>`).join('');
   if (ficha?.programas.length) html += h4('Programas de salud') + ficha.programas.map(p =>
     `<div class="pp-row"><span class="pp-row-t">${esc(p.nombre)}</span><span class="pp-row-m">${p.vigente ? 'ingreso' : `estado ${esc(p.estado)}`} · ${esc(p.fecha)}</span></div>`).join('');
 
   $('ppPaneDx').innerHTML = html;
-  setTabCount('dx', probs.length);
+  setTabCount('dx', filas.length);
 }

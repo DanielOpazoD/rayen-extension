@@ -12,11 +12,15 @@ async function abrirPrimerPaciente(page, query = '') {
 
 test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo, recetas y el informe la declara completa', async ({ page }) => {
   await abrirPrimerPaciente(page);
-  await expect(page.locator('#ppFichaToggle')).toHaveAttribute('title', /Ficha completa/, { timeout: 10000 });
+  await expect(page.locator('#ppAvatar')).toHaveAttribute('data-ficha', /Ficha completa/, { timeout: 10000 });
+  await page.locator('#ppAvatar').click();
+  await expect(page.locator('#ppFichaStatus')).toContainText('Ficha completa');
+  await page.locator('#ppAvatar').click();
   await expect(page.locator('#ppPaneDx .pp-row').first()).toBeVisible();
   await page.locator('.pp-tab[data-pt="at"]').click();
   const conCuerpo = page.locator('#ppPaneAt .pp-visit.has-body');
   await expect(conCuerpo.first()).toBeVisible();
+  await expect(conCuerpo.first().locator('.pp-expand')).toBeVisible(); // el botón de desplegar se ve
   await conCuerpo.first().locator('.pp-vhead').click();
   await expect(conCuerpo.first()).toHaveClass(/expanded/);
   await expect(conCuerpo.first().locator('.pp-sec-l').first()).toHaveText(/Motivo de consulta|Evolución/);
@@ -33,7 +37,8 @@ test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo,
 
 test('con la ficha caída (?ficha=off) el panel lo dice y no afirma ausencia clínica', async ({ page }) => {
   await abrirPrimerPaciente(page, '?ficha=off');
-  await expect(page.locator('#ppFichaToggle')).toHaveAttribute('title', /fuentes fallaron|fuente falló/, { timeout: 10000 });
+  await expect(page.locator('#ppAvatar')).toHaveAttribute('data-ficha', /fuentes fallaron|fuente falló/, { timeout: 10000 });
+  await expect(page.locator('#ppAvatar')).toHaveClass(/ficha-warn/);
   await page.locator('.pp-tab[data-pt="at"]').click();
   await expect(page.locator('#ppPaneAt')).toContainText('Ficha no disponible');
   await page.locator('.pp-tab[data-pt="rx"]').click();

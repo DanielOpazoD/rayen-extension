@@ -43,7 +43,7 @@ export function renderDatos(cur) {
   const important = ficha ? (ficha.master?.fallecido || ficha.master?.activo === false || ficha.antecedentes.alergias.length || ficha.ram.length) : false;
 
   $('ppAvatar').classList.toggle('dot', !!important); // el punto rojo de alertas va en las iniciales
-  $('ppDatos').innerHTML =
+  $('ppDatosBody').innerHTML =
     `<div class="pp-datos-grp">${h4('Contacto')}<div class="kv-grid">${kv('Teléfono', tel)}${kv('Dirección', dir)}${kv('Email', m?.email)}</div>${!tel && !dir ? empty(ficha ? 'Sin contacto registrado' : 'Consultando ficha…') : ''}</div>` +
     (m ? `<div class="pp-datos-grp">${h4('Inscripción')}<div class="kv-grid">` +
       kv('Ficha', m.ficha) + kv('Familia', m.familia ? `${m.familia}${m.parentesco ? ` · ${m.parentesco}` : ''}` : '') +

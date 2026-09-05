@@ -35,7 +35,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
         ${v.esEspontanea ? `<span class="flag flag-esp" data-tip="Espontánea">E</span>` : ''}
         <span class="spacer"></span>
         ${cita ? `<button class="btn-mini" data-pdf="${esc(certificadoPath(cita.id))}" data-tip="Certificado de atención">Cert.</button>` : ''}
-        ${hasBody ? `<span class="caret">▾</span>` : ''}
+        ${hasBody ? `<span class="pp-expand" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>` : ''}
       </div>
       <div class="pp-who ${mine ? 'me' : ''}">${esc(who)}</div>
       ${(v.diagnosticos ?? []).map(d =>

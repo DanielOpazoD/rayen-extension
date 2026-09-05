@@ -69,7 +69,7 @@ flowchart LR
 1. `ui/patient-panel.js → openPanel` arma `cur` (agenda del paciente, sus SIC, contacto) y pinta al instante con `ui/panel/*`.
 2. `io/ficha-load.js → loadFicha` pide la ficha administrativa y luego seis fuentes en paralelo, con memoización por paciente sólo cuando todas respondieron; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran; una sesión vencida se lee del transporte y avisa como la carga principal.
 3. El panel es un diálogo modal real: fondo inerte, trampa de Tab, foco devuelto a la fila. Escape cierra lo más interno: menú, hoja de informe, panel.
-4. La pestaña Problemas (`panel/problemas.js`) es la portada: ordena los diagnósticos por peso (`core/ficha-rank.js`). Cada receta de una atención lleva su impresora (PDF de Eloisa).
+4. La pestaña Antecedentes (`panel/problemas.js`) es la portada: diagnósticos por peso (`core/ficha-rank.js`) y antecedentes mórbidos en una sola lista. Cada receta de una atención lleva su impresora (PDF de Eloisa).
 
 ### Interconsultas y pendientes
 
@@ -234,13 +234,13 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/patient-panel.js` — controlador del panel del paciente: paciente abierto y filtros, diálogo modal, cableado y reparto del pintado entre `panel/`.
 - `src/ui/panel/helpers.js` — piezas de HTML y DOM que comparten las pestañas del panel (`kv`, `h4`, `segGroup`, `setTabCount`, `isMineVisit`).
 - `src/ui/panel/datos.js` — cabecera del panel y datos administrativos.
-- `src/ui/panel/problemas.js` — pestaña Problemas.
+- `src/ui/panel/problemas.js` — pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una sola lista, alergias y programas.
 - `src/ui/panel/atenciones.js` — pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o agenda.
 - `src/ui/panel/interconsultas.js` — pestaña Interconsultas (Mías / De otros) y derivaciones.
 - `src/ui/panel/recetas.js` — pestaña Recetas (activas / vencidas).
 - `src/ui/panel/notas.js` — diario de notas del paciente y su cableado.
 - `src/ui/panel/pdf-menu.js` — menú «PDF ▾» de la historia del paciente.
-- `src/ui/panel/ficha-status.js` — estado de la ficha tras el botón «Ficha» y su texto.
+- `src/ui/panel/ficha-status.js` — estado de la ficha dentro de Datos (avatar), con su tono en el avatar.
 - `src/ui/patient-report.js` — modelo de historia clínica imprimible.
 - `src/ui/patients.js` — agregación pura de atenciones por paciente.
 - `src/ui/pdf-merge.js` — fusión de informes en un PDF único, con pdf-lib cargado bajo demanda.

@@ -157,16 +157,12 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
     const inside = await page.evaluate(() => document.getElementById('patientPanel').contains(document.activeElement));
     expect(inside, `Tab nº ${i + 1} salió del diálogo`).toBe(true);
   }
-  // El estado de la ficha queda detrás de un botón discreto; el botón describe el estado.
+  // El estado de la ficha vive dentro de Datos (avatar) y el avatar lo describe.
   await expect(page.locator('#ppFichaStatus')).toBeHidden();
-  await page.locator('#ppFichaToggle').click();
-  await expect(page.locator('#ppFichaStatus')).toBeVisible();
-  await expect(page.locator('#ppFichaToggle')).toHaveAttribute('aria-label', /Estado de la ficha clínica: /);
-  await page.locator('#ppFichaToggle').click();
-  await expect(page.locator('#ppFichaStatus')).toBeHidden();
+  await expect(page.locator('#ppAvatar')).toHaveAttribute('aria-label', /Ficha: /);
   // Problemas primero: la lista con peso es la portada.
   await expect(page.locator('.pp-tab[data-pt="dx"]')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('#ppPaneDx h4').first()).toHaveText(/Problemas/);
+  await expect(page.locator('#ppPaneDx h4').first()).toHaveText(/Antecedentes y diagnósticos/);
   // Cabecera mínima: RUN y edad; Datos se abre desde las iniciales.
   await expect(page.locator('#ppMeta')).toHaveText(/^RUN [\d.]+-[\dK] · \d+ años$/);
   await expect(page.locator('#ppDatosBtn')).toHaveCount(0);

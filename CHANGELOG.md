@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.44.0 — 2026-09-04
+
+Panel del paciente, ajustes pedidos por Daniel con datos reales.
+
+- **Pestaña «Antecedentes»** (antes «Problemas») con una sola lista: los diagnósticos de las atenciones, con peso, y los antecedentes mórbidos de la ficha, unidos por nombre; antes el mismo problema aparecía en dos listas. Los que sólo vienen de la ficha se marcan «antecedente».
+- **Botón claro para desplegar una atención**: un círculo con chevrón a la derecha de cada atención con contenido; gira al abrir.
+- **El estado de la ficha vive dentro de Datos** (al pulsar las iniciales del paciente); el avatar lleva un punto ámbar o rojo cuando la ficha es parcial o falló, y su nombre accesible incluye el estado. Desaparece el botón «Ficha».
+
 ## 2.43.1 — 2026-09-04
 
 - **Carga automática al abrir**: la agenda se carga sola (caché primero, red después) sin pulsar «Actualizar». Se apaga en Preferencias («Cargar al abrir»). El título de la pestaña vuelve al que tenía al arrancar cuando termina la carga.

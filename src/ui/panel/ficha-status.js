@@ -1,4 +1,4 @@
-/** Estado de la ficha detrás del botón discreto «Ficha», con su punto de tono. */
+/** Estado de la ficha dentro de Datos, con su tono en el avatar. */
 import { esc, $ } from '../dom.js';
 import { humanError } from '../../core/errors.js';
 import { isMineVisit } from './helpers.js';
@@ -12,12 +12,14 @@ import { isMineVisit } from './helpers.js';
 export function setFichaStatus(html, tone = '') {
   const box = $('ppFichaStatus');
   box.innerHTML = html;
-  const dot = $('ppFichaDot');
-  dot.hidden = !tone;
-  dot.className = `dot ${tone}`;
+  // El estado vive dentro de Datos (avatar). El tono se ve en el propio avatar:
+  // punto ámbar (parcial, sin sesión) o rojo (fallo), sin abrir nada.
+  const av = $('ppAvatar');
+  av.classList.toggle('ficha-warn', tone === 'warn');
+  av.classList.toggle('ficha-bad', tone === 'bad');
   const texto = box.textContent.replace(/\s+/g, ' ').trim();
-  $('ppFichaToggle').setAttribute('aria-label', `Estado de la ficha clínica: ${texto || 'sin datos'}`);
-  $('ppFichaToggle').title = texto;
+  av.dataset.ficha = texto;
+  av.setAttribute('aria-label', `Datos del paciente${texto ? `. Ficha: ${texto}` : ''}`);
 }
 
 const humanFichaError = e => { const m = String(e).match(/^([^:]{2,40}):\s*(.+)$/); return m ? `${m[1]}: ${humanError(m[2], 'Eloisa')}` : humanError(e, 'Eloisa'); };
