@@ -131,3 +131,70 @@ test('fetchRecetaDetalle propaga el error y no memoriza el fallo', async () => {
   await assert.rejects(fetchRecetaDetalle('tok', 404));
   assert.equal(calls.length, 2);
 });
+
+// ── Bordes que la mutación mostró sin defender (Stryker, 05-09-2026: receta.js 69 %) ──
+
+test('mapaFarmacosEnUso: recorta el estado, conserva la fecha y no inventa nada cuando faltan', () => {
+  const m = mapaFarmacosEnUso([{ receta: 5, estado: '  Por Despachar ', fecha: '04-09-2026' }, { receta: 6 }]);
+  assert.deepEqual(m.get(5), { estado: 'Por Despachar', fecha: '04-09-2026', n: 1 });
+  assert.deepEqual(m.get(6), { estado: '', fecha: '', n: 1 });
+});
+
+test('estadoPrescripcion: la suspendida y el respaldo devuelven la forma completa, y el respaldo usa la fecha «hoy» que se le pasa', () => {
+  assert.deepEqual(estadoPrescripcion({ texto: 'x', fecha8: '20260904', receta: 1, suspendido: true }, new Map()), { estado: 'suspendida', fuente: 'rayen', detalle: '' });
+  // Receta de 2020 «por 12 meses»: activa si hoy es julio de 2020, vencida con el reloj real. Si se ignorara `hoy`, esto fallaría.
+  assert.deepEqual(estadoPrescripcion({ texto: 'Losartan por 12 meses', fecha8: '20200101', receta: 9 }, new Map(), { hoy: new Date(2020, 6, 1) }), { estado: 'activa', fuente: 'duracion', detalle: '' });
+});
+
+test('parseRecetaDetalle: nombre y posología con y sin el separador « : », y sin artículo', () => {
+  const det = p => parseRecetaDetalle({ Id: 1, Prescripciones: [p] }).prescripciones[0];
+  // Con separador y artículo: el artículo manda en el nombre; la posología es lo que sigue al separador.
+  assert.deepEqual([det({ Descripcion: 'Losartan 50 mg : 1 comprimido cada 12 horas', DescripcionArticulo: 'Losartan Potasico 50 mg ' }).label, det({ Descripcion: 'Losartan 50 mg : 1 comprimido cada 12 horas', DescripcionArticulo: 'Losartan Potasico 50 mg ' }).posologia],
+    ['Losartan Potasico 50 mg', '1 comprimido cada 12 horas']);
+  // Sin separador pero con artículo al inicio: se quita el artículo y los dos puntos pegados.
+  assert.deepEqual([det({ Descripcion: 'Metformina 850 mg: 1 comprimido cada 12 horas', DescripcionArticulo: 'Metformina 850 mg' }).label, det({ Descripcion: 'Metformina 850 mg: 1 comprimido cada 12 horas', DescripcionArticulo: 'Metformina 850 mg' }).posologia],
+    ['Metformina 850 mg', '1 comprimido cada 12 horas']);
+  // Descripción igual al artículo: no hay posología.
+  assert.equal(det({ Descripcion: 'Aspirina 100 mg', DescripcionArticulo: 'Aspirina 100 mg' }).posologia, '');
+  // Sin artículo ni separador: el nombre es la descripción entera.
+  assert.deepEqual([det({ Descripcion: 'Aspirina 100 mg' }).label, det({ Descripcion: 'Aspirina 100 mg' }).posologia], ['Aspirina 100 mg', '']);
+});
+
+test('parseRecetaDetalle: cada campo de la prescripción tiene su valor por defecto y su lectura', () => {
+  const det = p => parseRecetaDetalle({ Id: 1, Prescripciones: [p] }).prescripciones[0];
+  const vacia = det({ Descripcion: 'X' });
+  assert.deepEqual([vacia.id, vacia.observacion, vacia.suspendida, vacia.fechaSuspension, vacia.total, vacia.despachado, vacia.saldo, vacia.proximoDespacho, vacia.controlado, vacia.psicotropico],
+    [0, '', false, '', 0, 0, 0, '', false, false]);
+  const llena = det({ Id: 7, Descripcion: 'X', Observacion: ' 2 puff SOS ', SuspenderTratamiento: true, FechaSuspendeTratamiento: '20260910 120000', TotalRecetado: 20, CantidadDespachada: 25, FechaProximoDespacho: '20261004 000000', Controlado: true, Psicotropico: 1 });
+  assert.deepEqual([llena.id, llena.observacion, llena.suspendida, llena.fechaSuspension, llena.saldo, llena.proximoDespacho, llena.controlado, llena.psicotropico],
+    [7, '2 puff SOS', true, '10-09-2026', 0, '04-10-2026', true, true]);
+  assert.equal(det({ Descripcion: 'X', SuspenderTratamiento: false }).suspendida, false);
+  assert.equal(det({ Descripcion: 'X', SuspenderTratamiento: 0 }).suspendida, false);
+  assert.equal(det({ Descripcion: 'X', TotalRecetado: 20, CantidadDespachada: 5, SaldoPendiente: 3 }).saldo, 3, 'el saldo que declara Rayen manda sobre el cálculo');
+  assert.equal(det({ Descripcion: 'X', TotalRecetado: 20, CantidadDespachada: 5 }).saldo, 15, 'sin saldo declarado, se calcula');
+});
+
+test('parseRecetaDetalle: fechas que no son fechas, vigencia que vence hoy mismo, y banderas de la receta', () => {
+  const hoy = new Date(2026, 8, 4);
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: '2026' }).vigenteHasta, '', 'cuatro dígitos no son una fecha');
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: 'x20261203 000000' }).vigenteHasta, '', 'la fecha debe empezar en el primer carácter');
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: '20260904 235959' }, { hoy }).vencida, false, 'vence hoy: todavía vigente');
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: '20260903 235959' }, { hoy }).vencida, true);
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: '20261203 101010' }).vigenteHasta, '03-12-2026', 'se lee sólo la fecha, no la hora');
+  const r = parseRecetaDetalle({ Id: 1, EsExterna: true, FechaGeneracion: '00010101 000000', FechaProximoDespacho: '20261004 000000', Prescripciones: 'no es lista' });
+  assert.deepEqual([r.externa, r.emitida, r.proximoDespacho, r.prescripciones], [true, '', '04-10-2026', []]);
+  assert.equal(parseRecetaDetalle({ Id: 1 }).externa, false);
+  assert.equal(parseRecetaDetalle({ Id: 0, TerminoVigencia: '20261203 000000' }), null, 'Id 0 no es una receta');
+});
+
+test('parseRecetaDetalle: los dos puntos pegados y el separador, tal como los escribe Rayen', () => {
+  const det = p => parseRecetaDetalle({ Id: 1, Prescripciones: [p] }).prescripciones[0];
+  assert.equal(det({ Descripcion: 'Metformina 850 mg :1 comp cada 12 h', DescripcionArticulo: 'Metformina 850 mg' }).posologia, '1 comp cada 12 h', 'espacio antes de los dos puntos, ninguno después');
+  assert.equal(det({ Descripcion: 'Metformina 850 mg 1 comp: noche', DescripcionArticulo: 'Metformina 850 mg' }).posologia, '1 comp: noche', 'los dos puntos de más adentro no se tocan');
+  assert.deepEqual([det({ Descripcion: 'Losartan 50 mg : 1 comp' }).label, det({ Descripcion: 'Losartan 50 mg : 1 comp' }).posologia], ['Losartan 50 mg', '1 comp'], 'sin artículo, el nombre es lo que precede al separador');
+  assert.equal(det({ Descripcion: 'X', SuspenderTratamiento: '0' }).suspendida, false, '«0» como texto tampoco es suspensión');
+  assert.equal(det({ Descripcion: 'X', SuspenderTratamiento: null }).suspendida, false);
+  assert.equal(parseRecetaDetalle({ Id: 1, TerminoVigencia: '2026' }, { hoy }).vencida, false, 'una no-fecha no vence nada');
+  assert.equal(parseRecetaDetalle('texto'), null);
+  assert.equal(parseRecetaDetalle(5), null);
+});

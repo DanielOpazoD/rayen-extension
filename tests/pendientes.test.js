@@ -134,3 +134,61 @@ test('el umbral de días es inclusivo: justo en el umbral ya es pendiente, un d�
   assert.equal(computePendientes([], [sic(21)], { hoy: new Date(2026, 8, 4) }).length, 1);
   assert.equal(computePendientes([], [sic(20)], { hoy: new Date(2026, 8, 4) }).length, 0);
 });
+
+// ── Bordes que la mutación mostró sin defender (Stryker, 05-09-2026: pendientes.js 76 %) ──
+
+test('cada regla dice quién debe actuar y respeta «solo mías» salvo que se pida lo contrario', () => {
+  const ajena = { registrador: { id: 77, nombre: 'Pérez Tuki Ana María' }, ejecutor: { id: 78, nombre: 'Riroroko Haoa Luis' } };
+  const nueva = sic({ estadoId: 13, estado: 'Nueva', grupo: 'pendiente', antiguedadDias: 30 });
+  assert.match(computePendientes([], [nueva], { hoy: HOY })[0].detalle, /emitida por ti/);
+  assert.match(computePendientes([], [sic({ ...nueva, registrador: { id: 77 }, ejecutor: { id: ME } })], { hoy: HOY })[0].detalle, /a resolver por ti/);
+  assert.deepEqual(computePendientes([], [sic({ ...nueva, ...ajena })], { hoy: HOY }), [], 'la de otro no es mía');
+  assert.equal(computePendientes([], [sic({ ...nueva, ...ajena })], { hoy: HOY, soloMias: false }).length, 1, 'salvo que se pida ver todas');
+  const citaPasada = sic({ estadoId: 4, estado: 'Con Cita Confirmada', grupo: 'enviada', fechaCita: '01-08-2026 10:30' });
+  assert.equal(computePendientes([], [sic({ ...citaPasada, ...ajena })], { hoy: HOY }).length, 0);
+  assert.equal(computePendientes([], [sic({ ...citaPasada, ...ajena })], { hoy: HOY, soloMias: false }).length, 1);
+  assert.equal(computePendientes([], [sic({ ...citaPasada, estadoId: 5 })], { hoy: HOY }).length, 0, 'sólo agendada (3) o confirmada (4) cuentan como cita pasada');
+  assert.equal(computePendientes([], [sic({ ...citaPasada, estadoId: 3 })], { hoy: HOY }).length, 1);
+});
+
+test('los umbrales son inclusivos y configurables: cita pasada, rechazada y control vencido', () => {
+  const dia = n => { const d = new Date(HOY); d.setDate(d.getDate() - n); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`; };
+  const conCita = n => sic({ estadoId: 4, estado: 'Con Cita Confirmada', grupo: 'enviada', fechaCita: `${dia(n)} 10:30` });
+  assert.equal(computePendientes([], [conCita(5)], { hoy: HOY, umbrales: { citaDias: 5 } }).length, 1, 'justo en el umbral');
+  assert.equal(computePendientes([], [conCita(4)], { hoy: HOY, umbrales: { citaDias: 5 } }).length, 0, 'un día antes no');
+  const rechazada = n => sic({ estadoId: 7, estado: 'Rechazada', grupo: 'rechazada', antiguedadDias: n });
+  assert.equal(computePendientes([], [rechazada(90)], { hoy: HOY }).length, 1, 'a los 90 días aún exige decisión');
+  assert.equal(computePendientes([], [rechazada(91)], { hoy: HOY }).length, 0, 'a los 91 ya es historia');
+  assert.equal(computePendientes([], [rechazada(31)], { hoy: HOY, umbrales: { rechazadaDias: 30 } }).length, 0, 'el umbral se puede acortar');
+  const d8 = n => { const d = new Date(HOY); d.setDate(d.getDate() - n); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+  const rec = (fecha8, control) => ({ id: 1, run: '1K', nombre: 'Paciente Uno', fecha8, proximoControl: control ? [{ id: 5, fecha8: d8(control), fecha: dia(control), motivo: 'Control', descartada: false }] : [] });
+  assert.equal(computePendientes([rec(d8(30), 3)], [], { hoy: HOY, umbrales: { controlDias: 3 } }).length, 1, 'control vencido justo en el umbral');
+  assert.equal(computePendientes([rec(d8(30), 2)], [], { hoy: HOY, umbrales: { controlDias: 3 } }).length, 0);
+});
+
+test('control vencido: una atención el mismo día del control no lo da por hecho, y el mismo control en dos filas cuenta una vez', () => {
+  const rec = (id, fecha8) => ({ id, run: '1K', nombre: 'Paciente Uno', fecha8, proximoControl: [{ id: 5, fecha8: '20260810', fecha: '10-08-2026', motivo: 'Control con exámenes', descartada: false }] });
+  const mismoDia = computePendientes([rec(1, '20260701'), { id: 2, run: '1K', nombre: 'Paciente Uno', fecha8: '20260810', proximoControl: [] }], [], { hoy: HOY });
+  assert.equal(mismoDia.length, 1, 'la atención del mismo día no es «posterior»');
+  assert.equal(mismoDia[0].titulo, 'Control vencido sin agendar');
+  assert.match(mismoDia[0].detalle, /Control con exámenes — sugerido para 10-08-2026/);
+  const duplicado = computePendientes([rec(1, '20260701'), rec(2, '20260701')], [], { hoy: HOY });
+  assert.equal(duplicado.length, 1, 'el mismo control (mismo id) en dos registros del paciente es un solo pendiente');
+});
+
+test('títulos y detalles exactos de cada tipo, y el resumen etiqueta los tipos conocidos', () => {
+  const p = computePendientes(
+    [{ id: 1, run: '1K', nombre: 'Paciente Uno', fecha8: '20260701', proximoControl: [{ id: 5, fecha8: '20260810', fecha: '10-08-2026', motivo: '', descartada: false }] }],
+    [sic({ estadoId: 13, estado: 'Nueva', grupo: 'pendiente', antiguedadDias: 30 }), sic({ id: 2, estadoId: 7, estado: 'Rechazada', grupo: 'rechazada', antiguedadDias: 10 }),
+     sic({ id: 3, estadoId: 4, estado: 'Con Cita Confirmada', grupo: 'enviada', fechaCita: '01-08-2026 10:30' })],
+    { hoy: HOY });
+  const porTipo = Object.fromEntries(p.map(x => [x.tipo, x]));
+  assert.equal(porTipo['sic-nueva'].titulo, 'Interconsulta sin cursar · Reumatología');
+  assert.equal(porTipo['sic-rechazada'].titulo, 'Interconsulta rechazada · Reumatología');
+  assert.match(porTipo['sic-rechazada'].detalle, /Estado «Rechazada» \(emitida por ti\)\. Decide/);
+  assert.equal(porTipo['cita-pasada'].titulo, 'Cita pasada sin resolver · Reumatología');
+  assert.equal(porTipo['cita-pasada'].detalle, 'La cita era el 01-08-2026 10:30 y la solicitud sigue «Con Cita Confirmada».');
+  assert.match(porTipo['control-vencido'].detalle, /^Control — sugerido para 10-08-2026/, 'sin motivo, dice «Control»');
+  const resumen = resumirPendientes([...p, { tipo: 'otro-tipo', dias: 1 }]);
+  assert.deepEqual(resumen.map(r => r.titulo), ['Interconsultas sin cursar', 'Interconsultas rechazadas', 'Citas pasadas sin resolver', 'Controles vencidos', 'otro-tipo']);
+});
