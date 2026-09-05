@@ -49,6 +49,10 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 | `scripts/check-architecture.mjs` (`npm run docs:check`) | mapa de módulos completo y por capa; rutas citadas existen | `check` |
 | `scripts/coverage.mjs` (`npm run coverage`) | cobertura de `core`, `io` y `ai` con umbral (líneas ≥ 90 %, ramas ≥ 75 %); la interfaz la cubren los recorridos | manual |
 | Playwright (`npm run test:e2e`) | 16 recorridos × 2 anchos sobre el arnés `/dev/` | CI |
+| `dependency-cruiser` (`npm run deps:check`) | el grafo de módulos contra las mismas reglas de capas y ciclos, con informe por regla; `npm run deps:graph` lo exporta en DOT | `check` |
+| `fast-check` (`tests/property.test.js`) | propiedades sobre cientos de entradas generadas: fechas inversas, ningún RUN válido sobrevive al anonimizador, el cruce agenda–historial nunca usa una atención dos veces | `check` (vía `npm test`) |
+| Stryker (`npm run mutation`) | mutación sobre las reglas clínicas puras (`dates`, `historial-merge`, `pendientes`, `sic-rules`, `receta`): mide si las pruebas detectan errores; tarda minutos | manual |
+| Playwright visual (`e2e/visual.spec.js`) | capturas de referencia de PIN, tabla y panel con el reloj congelado; se saltan en CI (fuentes de Linux) y se regeneran con `npm run visual:update` cuando el cambio es intencional | local |
 | `.githooks/pre-commit` | lint + tipos + unitarios antes de cada commit (`npm install` lo activa vía `prepare`; `git commit -n` lo salta) | local |
 
 ## Convenciones de código

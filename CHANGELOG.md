@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.53.0 — 2026-09-05
+
+Herramientas, segunda parte.
+
+- **`dependency-cruiser`** en `check`: el grafo de 105 módulos validado contra las reglas de capas y ciclos, con informe por regla y exportación en DOT.
+- **Pruebas por propiedades** con `fast-check`: fechas inversas y días antisimétricos para cualquier fecha entre 1950 y 2100; ningún RUN válido, en ninguno de sus tres formatos, sobrevive al anonimizador; las palabras del nombre del paciente nunca quedan en el texto libre; el cruce agenda–historial nunca usa una atención dos veces ni pierde una cita, para cualquier combinación de fechas y estados.
+- **Stryker** sobre las reglas clínicas puras (`npm run mutation`, manual). Primera medición: 74,6 % de mutantes muertos (473 mutantes, 161 sobrevivientes) en `dates`, `historial-merge`, `pendientes`, `sic-rules` y `receta`: ahí están las pruebas que faltan.
+- **Capturas visuales de referencia** (PIN, tabla, panel) con el reloj congelado; locales, se regeneran con `npm run visual:update`.
+
 ## 2.52.0 — 2026-09-05
 
 Herramientas de control del código (sin build ni framework).

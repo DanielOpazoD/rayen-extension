@@ -19,5 +19,8 @@
   "ignoreBinaries": [
     "tail",
     "report"
+  ],
+  "ignoreDependencies": [
+    "@stryker-mutator/command-runner"
   ]
 }
