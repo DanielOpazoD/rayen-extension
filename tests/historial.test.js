@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeHistorial, aggregateTeam } from '../src/io/historial.js';
+import { mergeHistorial, aggregateTeam, loadHistorial } from '../src/io/historial.js';
+import { installFakeChrome } from './helpers/fake-chrome.js';
 import { parseAtencion } from '../src/core/parser.js';
 
 const OFFICER = 439550;
@@ -159,4 +160,41 @@ test('mergeHistorial: la ficha abierta la víspera (jueves) se cruza con la cita
   assert.equal(dos.find(c => c.id === 1).atencionId, null);
   // Una cita anulada no recibe ficha.
   assert.equal(mergeHistorial([cita({ fecha8: '20260904', fechaAtencion: '04-09-2026', estado: 'Anulada' })], [atencion({ Id: 9, Fecha: '20260903 213000' })]).length, 2);
+});
+
+test('mergeHistorial: la cita exacta que declara Rayen (IdCita / FechaCita) manda sobre la más cercana', () => {
+  // Guardado el 03-09; una cita el 02-09 (más cercana) y otra el 08-09 que es la verdadera según IdCita.
+  const citas = [cita({ id: 1, fecha8: '20260902', fechaAtencion: '02-09-2026' }), cita({ id: 555, fecha8: '20260908', fechaAtencion: '08-09-2026', estado: 'Confirmado' })];
+  const porId = mergeHistorial(citas, [{ ...atencion({ Id: 9, Fecha: '20260903 213000' }), idCita: 555 }]);
+  assert.equal(porId.find(c => c.id === 555).atencionId, 9);
+  assert.equal(porId.find(c => c.id === 555).cruceEstimado, undefined, 'cruce exacto, no estimado');
+  assert.equal(porId.find(c => c.id === 1).atencionId, null);
+  // Sin IdCita útil pero con FechaCita: mismo resultado por RUN + día de la cita.
+  const porFecha = mergeHistorial(citas, [{ ...atencion({ Id: 9, Fecha: '20260903 213000' }), fechaCita8: '20260908' }]);
+  assert.equal(porFecha.find(c => c.id === 555).atencionId, 9);
+  // Si la cita declarada no está en la agenda cargada, no se adivina: fila suelta.
+  const ajena = mergeHistorial(citas, [{ ...atencion({ Id: 9, Fecha: '20260903 213000' }), idCita: 999 }]);
+  assert.equal(ajena.length, 3);
+  // Sin dato exacto, la heurística queda marcada como estimada.
+  const est = mergeHistorial(citas, [atencion({ Id: 9, Fecha: '20260903 213000' })]);
+  assert.equal(est.find(c => c.id === 1).cruceEstimado, true);
+});
+
+test('loadHistorial resuelve la cita exacta de una atención mía sin cita ese día con la consulta por paciente', async () => {
+  installFakeChrome();
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init?.body ?? '{}');
+    calls.push(body.IdUsuario ? `paciente:${body.IdUsuario}:${body.FechaInicio.slice(0, 8)}` : `nodo:${body.FechaInicio.slice(0, 8)}`);
+    const item = { Id: 9, IdCita: 0, IdUsp: 4242, Fecha: '20260903 213000', RutPaciente: '25106217k', NombreCompleto: 'Paciente Uno',
+      TipoDeAtencion: 'Morbilidad Medica', Diagnosticos: [], Actividades: [], FuncionariosPrestadores: [{ Id: OFFICER, NombreCompleto: 'Opazo Damiani Daniel' }] };
+    const data = body.IdUsuario ? [{ ...item, IdCita: 555, FechaCita: '20260904 090000' }] : [item];
+    return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const r = await loadHistorial('tok', ['20260903'], new Set());
+  assert.deepEqual(calls, ['nodo:20260903', 'paciente:4242:20260903']);
+  const a = r.atenciones.find(x => x.id === 9);
+  assert.equal(a.idCita, 555);
+  assert.equal(a.fechaCita8, '20260904');
+  assert.equal(a.fecha8, '20260903', 'en el almacén sigue bajo su día de guardado');
 });

@@ -149,7 +149,7 @@ export function row(p, ctx) {
   const edadTip = [p.dob ? `Nac. ${p.dob}` : '', p.edadLabel].filter(Boolean).join(' · ');
 
   return `<tr data-id="${esc(p.id)}" class="${rowCls}" tabindex="-1">
-    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}${p.estado ? ` · ${esc(p.estado)}` : ''}${p.fechaRegistro ? ` · ficha registrada el ${esc(p.fechaRegistro)}` : ''}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}${p.estado ? `<span class="sdot st-${stateTone(p.estado)}" role="img" aria-label="${esc(p.estado)}"></span>` : ''}</td>
+    <td data-c="fechaAtencion" class="sticky s1" data-tip="${esc(whenLabel(p))}${p.estado ? ` · ${esc(p.estado)}` : ''}${p.fechaRegistro ? ` · ficha registrada el ${esc(p.fechaRegistro)}${p.cruceEstimado ? ' (cruce estimado por cercanía)' : ''}` : ''}"><span class="fd">${esc(p.fechaAtencion)}</span>${p.hora ? `<span class="fh">${esc(p.hora)}</span>` : ''}${p.estado ? `<span class="sdot st-${stateTone(p.estado)}" role="img" aria-label="${esc(p.estado)}"></span>` : ''}</td>
     <td data-c="nombre" class="sticky s2 pat-link" data-id="${esc(p.id)}" role="button" tabindex="-1" data-tip="Ver ficha del paciente"><span class="pname">${esc(p.nombre)}</span>${p.runStr ? `<span class="run copy-run" data-run="${esc(p.runStr)}" role="button" tabindex="-1" data-tip="Copiar RUN">${p.runStr}</span>` : ''}</td>
     <td data-c="edad" class="num"><span class="tip" data-tip="${esc(edadTip)}">${p.edad ?? ''}</span></td>
     <td data-c="sexo" class="sex" data-tip="${esc(p.sexo)}">${sexLetter(p.sexo)}</td>

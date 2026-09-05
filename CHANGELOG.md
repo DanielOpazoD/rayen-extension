@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.47.0 — 2026-09-04
+
+- **Cruce exacto con la cita.** Pregunta de Daniel: ¿y si el paciente tuvo dos citas en diez días? Ahora, para cada atención mía sin cita ese día, la sincronización pide ese único día del paciente a Rayen (la consulta por paciente sí trae `IdCita` y `FechaCita`) y enlaza la cita exacta, aunque no sea la más cercana. La heurística por cercanía queda sólo para cuando esa consulta falla, y entonces el tooltip de la fecha dice «cruce estimado por cercanía». Una cita declarada que no está en la agenda cargada no se adivina.
+
 ## 2.46.2 — 2026-09-04
 
 - **Ficha abierta la víspera.** Si abres la ficha el jueves para la cita del viernes, la atención queda guardada el jueves y aparecía como día de atención. El cruce con la agenda ahora mira también las citas de los 7 días siguientes (antes, sólo 14 días hacia atrás) y elige la más cercana; sólo se excluyen citas no atendidas, anuladas, canceladas o suspendidas. La fila cae en el día de la cita y el jueves queda limpio.
