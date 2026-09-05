@@ -1,4 +1,4 @@
-import { $ } from './dom.js';
+import { $, targetOf, closestOf, qsa } from './dom.js';
 import { PERIODS } from '../core/period.js';
 
 /** Small DOM patterns that every tab repeats. Pure wiring, no data. */
@@ -18,7 +18,7 @@ export function initChips(containerId, hiddenId, onChange) {
   const box = $(containerId), hidden = $(hiddenId);
   const set = key => {
     hidden.value = key;
-    box.querySelectorAll('.chip').forEach(c => {
+    qsa(box, '.chip').forEach(c => {
       const on = c.dataset.per === key;
       c.classList.toggle('on', on);
       c.setAttribute('aria-pressed', String(on));
@@ -27,7 +27,7 @@ export function initChips(containerId, hiddenId, onChange) {
   box.innerHTML = Object.entries(PERIODS).map(([k, l]) =>
     `<button type="button" class="chip ${k === hidden.value ? 'on' : ''}" data-per="${k}" aria-pressed="${k === hidden.value}">${l}</button>`).join('');
   box.addEventListener('click', e => {
-    const b = e.target.closest('.chip');
+    const b = closestOf(e, '.chip');
     if (!b) return;
     set(b.dataset.per);
     onChange();
@@ -79,11 +79,11 @@ export function initMenu(btnId, menuId, wrapId, onOpen = null) {
   });
   m.menu.addEventListener('click', e => e.stopPropagation());
   // ↓/↑/Inicio/Fin recorren las opciones; ↓ sobre el botón abre y entra.
-  const items = () => [...m.menu.querySelectorAll('button:not([disabled]),[role="menuitem"]:not([disabled]),input:not([disabled]),select:not([disabled])')];
+  const items = () => qsa(m.menu, 'button:not([disabled]),[role="menuitem"]:not([disabled]),input:not([disabled]),select:not([disabled])');
   m.menu.addEventListener('keydown', e => {
-    if (e.target.closest('.menu') !== m.menu) return; // un menú anidado (Preferencias dentro de «⋯») ya lo atendió
+    if (closestOf(e, '.menu') !== m.menu) return; // un menú anidado (Preferencias dentro de «⋯») ya lo atendió
     const list = items(); if (!list.length) return;
-    const i = list.indexOf(document.activeElement);
+    const i = list.indexOf(/** @type {import('./dom.js').FormEl} */ (document.activeElement));
     const go = j => { e.preventDefault(); list[(j + list.length) % list.length].focus(); };
     if (e.key === 'ArrowDown') go(i + 1); else if (e.key === 'ArrowUp') go(i - 1);
     else if (e.key === 'Home') go(0); else if (e.key === 'End') go(list.length - 1);
@@ -96,7 +96,7 @@ export function initMenu(btnId, menuId, wrapId, onOpen = null) {
   });
   if (MENUS.length > 1) return;
   document.addEventListener('click', e => {
-    for (const o of MENUS) if (!o.wrap || !o.wrap.contains(e.target)) closeMenu(o);
+    for (const o of MENUS) if (!o.wrap || !o.wrap.contains(targetOf(e))) closeMenu(o);
   });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
@@ -128,11 +128,12 @@ export function markSorted(headers, active, dir) {
  */
 let observed = false;
 function measureChrome() {
-  const pane = document.querySelector('.tab-pane.active');
-  const bar  = pane?.querySelector('.toolbar');
-  const fp   = pane?.querySelector('.filter-panel:not([hidden])');
+  const pane = /** @type {HTMLElement|null} */ (document.querySelector('.tab-pane.active'));
+  const q = sel => /** @type {HTMLElement|null} */ (pane?.querySelector(sel));
+  const bar  = q('.toolbar');
+  const fp   = q('.filter-panel:not([hidden])');
   const h = ($('topbar')?.offsetHeight ?? 0) + (bar?.offsetHeight ?? 0) + (fp?.offsetHeight ?? 0)
-          + (pane?.querySelector('.stats')?.offsetHeight ?? 0) + 48;
+          + (q('.stats')?.offsetHeight ?? 0) + 48;
   document.documentElement.style.setProperty('--chrome-h', `${h}px`);
   const tabs = document.querySelector('.tabs');
   if (tabs) {

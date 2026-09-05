@@ -6,7 +6,7 @@ import { exportCSV, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } 
 import { certificadoPath, openPDF } from '../../io/pdf.js';
 import { savePrefs } from '../../io/cache.js';
 import { toast } from '../toast.js';
-import { esc, $, revealRow } from '../dom.js';
+import { esc, $, revealRow, targetOf, closestOf, qsa } from '../dom.js';
 import { state, on, tableCtx, setRendered } from '../../io/state.js';
 import { initChips, initFilterFold, initMenu, markSorted, debounce, setStatus } from '../ui.js';
 import { writeNote, openPatientById, copyRun, jumpToSIC } from '../actions.js';
@@ -34,7 +34,7 @@ function render() {
   setRendered(data);
   renderTable(data, state.allData.length, tableCtx());
   // Roving tabindex: la primera fila es la única parada de Tab.
-  const first = $('tbody').querySelector('tr[data-id]');
+  const first = /** @type {HTMLElement|null} */ ($('tbody').querySelector('tr[data-id]'));
   if (first) first.tabIndex = 0;
   requestAnimationFrame(() => { const w = $('tblWrap'); w.classList.toggle('more-right', w.scrollLeft + w.clientWidth < w.scrollWidth - 1); });
   updateFilterCount();
@@ -102,7 +102,7 @@ function buildColumnsMenu() {
     `<label><input type="checkbox" data-col="${id}" ${hiddenCols.has(id) ? '' : 'checked'}> ${esc(label)}</label>`
   ).join('');
   menu.addEventListener('change', e => {
-    const cb = e.target.closest('input[data-col]');
+    const cb = closestOf(e, 'input[data-col]');
     if (!cb) return;
     cb.checked ? hiddenCols.delete(cb.dataset.col) : hiddenCols.add(cb.dataset.col);
     applyColumnVisibility($('mainTable'), hiddenCols);
@@ -137,7 +137,8 @@ export function init(prefs) {
 
   // Closing the panel returns you to the row you came from, and says which one
   document.addEventListener('rayen:panel-closed', e => {
-    if (e.detail?.id != null) revealRow(rowSelector(e.detail.id));
+    const d = /** @type {CustomEvent} */ (e).detail;
+    if (d?.id != null) revealRow(rowSelector(d.id));
   });
 
   on('data', () => {
@@ -158,7 +159,7 @@ export function init(prefs) {
 
 /** Orden por columna: clic en la cabecera, recordado en preferencias. */
 function wireSorting() {
-  const headers = [...document.querySelectorAll('th[data-col]')];
+  const headers = qsa(document, 'th[data-col]');
   markSorted(headers, headers.find(t => t.dataset.col === sortCol), sortDir);
   headers.forEach(th => th.addEventListener('click', () => {
     const col = th.dataset.col;
@@ -213,7 +214,7 @@ function wireScroll() {
   // tamaño y el observador recalcula las pistas.
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => scrollHints($('tblWrap'))).observe($('tblWrap'));
   $('tblWrap').addEventListener('scroll', e => {
-    const w = e.currentTarget;
+    const w = /** @type {HTMLElement} */ (e.currentTarget);
     scrollHints(w);
     if (hasMoreRows() && w.scrollTop + w.clientHeight > w.scrollHeight - 600) appendChunk();
   }, { passive: true });
@@ -225,30 +226,30 @@ function wireRows() {
   // cada fila tenía tres paradas de tabulación (nombre, info, RUN): unas 360
   // por tabla. La fila enfocada es la única con tabindex 0.
   $('tbody').addEventListener('keydown', e => {
-    const row = e.target.closest('tr[data-id]');
-    if (!row || e.target.tagName === 'TEXTAREA') return;
+    const row = closestOf(e, 'tr[data-id]');
+    if (!row || targetOf(e).tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const next = e.key === 'ArrowDown' ? row.nextElementSibling : row.previousElementSibling;
+      const next = /** @type {HTMLElement|null} */ (e.key === 'ArrowDown' ? row.nextElementSibling : row.previousElementSibling);
       if (!next?.dataset.id) return;
       e.preventDefault();
       row.tabIndex = -1; next.tabIndex = 0; next.focus();
-    } else if ((e.key === 'Enter' || e.key === ' ') && e.target === row) {
+    } else if ((e.key === 'Enter' || e.key === ' ') && targetOf(e) === row) {
       e.preventDefault();
       openPatientById(row.dataset.id);
     }
   });
   $('tbody').addEventListener('focusin', e => {
-    const row = e.target.closest('tr[data-id]');
+    const row = closestOf(e, 'tr[data-id]');
     if (!row) return;
-    $('tbody').querySelectorAll('tr[tabindex="0"]').forEach(r => { if (r !== row) r.tabIndex = -1; });
+    qsa($('tbody'), 'tr[tabindex="0"]').forEach(r => { if (r !== row) r.tabIndex = -1; });
     row.tabIndex = 0;
   });
   $('tbody').addEventListener('click', async e => {
-    const sicChip = e.target.closest('.sic-link');
+    const sicChip = closestOf(e, '.sic-link');
     if (sicChip) { jumpToSIC({ id: sicChip.dataset.sic }); return; }
-    const runChip = e.target.closest('.sic-run');
+    const runChip = closestOf(e, '.sic-run');
     if (runChip) { jumpToSIC({ run: runChip.dataset.run }); return; }
-    const cert = e.target.closest('.pdf-cert');
+    const cert = closestOf(e, '.pdf-cert');
     if (cert) {
       cert.disabled = true;
       const err = await openPDF(certificadoPath(cert.dataset.id));
@@ -256,11 +257,11 @@ function wireRows() {
       if (err) setStatus(err, 'err');
       return;
     }
-    const copy = e.target.closest('.copy-run');
+    const copy = closestOf(e, '.copy-run');
     if (copy) { e.stopPropagation(); copyRun(copy); return; }
-    const patCell = e.target.closest('.pat-link');
+    const patCell = closestOf(e, '.pat-link');
     if (patCell) { openPatientById(patCell.dataset.id); return; }
-    const noteCell = e.target.closest('.note-cell');
+    const noteCell = closestOf(e, '.note-cell');
     if (noteCell && !noteCell.classList.contains('editing')) startNoteEdit(noteCell);
   });
 }
@@ -269,7 +270,7 @@ function wireRows() {
 function wireExport() {
   initMenu('btnExport', 'exportMenu', 'exportWrap');
   $('exportMenu').addEventListener('click', async e => {
-    const b = e.target.closest('button[data-fmt]');
+    const b = closestOf(e, 'button[data-fmt]');
     if (!b) return;
     $('exportMenu').classList.remove('open');
     $('btnExport').setAttribute('aria-expanded', 'false');

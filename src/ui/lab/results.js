@@ -2,7 +2,7 @@
 import { fmtDMY } from '../../core/dates.js';
 import { humanCase } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
-import { esc, $ } from '../dom.js';
+import { esc, $, qsa } from '../dom.js';
 import { informeResultado } from '../../io/lab-api.js';
 import { syslabPdfUrl } from '../../io/syslab-api.js';
 
@@ -45,7 +45,7 @@ export function renderHsrResults(ordenes, deps) {
     </td></tr>` : ''}`;
   }).join('');
   wireRows(tbody, 'hsr', deps);
-  tbody.querySelectorAll('.lab-expand').forEach(btn => {
+  qsa(tbody, '.lab-expand').forEach(btn => {
     btn.addEventListener('click', () => {
       const row = $(`labPrest${btn.dataset.row}`);
       const abierto = !row.hidden;

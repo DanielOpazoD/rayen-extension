@@ -5,7 +5,7 @@ import { CONFIG } from '../core/config.js';
 import { humanError } from '../core/errors.js';
 import { savePrefs, clearAllCaches, clearEverything } from '../io/cache.js';
 import { diffWatched } from '../io/watch.js';
-import { esc, $ } from './dom.js';
+import { esc, $, targetOf, closestOf } from './dom.js';
 import { state, setData, setPrefs, on } from '../io/state.js';
 import { initMenu, setStatus } from './ui.js';
 import { armRefresh } from './loader.js';
@@ -29,8 +29,8 @@ function fillSettings() {
   $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
   $('setAutoLoad').checked = state.prefs.autoLoad !== false;
   $('setNetTimeout').value = String(state.prefs.netTimeoutSec ?? 20);
-  $('setNueva').value = umbrales.nuevaDias;
-  $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
+  $('setNueva').value = String(umbrales.nuevaDias);
+  $('setCita').value = String(umbrales.citaDias); $('setControl').value = String(umbrales.controlDias);
 }
 
 export function init({ lock }) {
@@ -48,7 +48,7 @@ export function init({ lock }) {
   initMenu('btnMore', 'hdrMore', 'hdrWrap');
 
   $('settingsMenu').addEventListener('change', async e => {
-    const t = e.target;
+    const t = targetOf(e);
     if (t.id === 'setRefresh') {
       setPrefs({ refreshMin: Number(t.value) });
       if (state.allData.length) armRefresh();
@@ -78,7 +78,7 @@ export function init({ lock }) {
       setPrefs({ umbrales }, { rerender: true });
       await savePrefs({ umbrales });
     }
-    const cb = t.closest('input[data-esp]');
+    const cb = /** @type {HTMLInputElement|null} */ (t.closest('input[data-esp]'));
     if (cb) {
       const esp = cb.dataset.esp, cur = state.prefs.watchEsp;
       const watchEsp = cb.checked ? [...new Set([...cur, esp])] : cur.filter(x => x !== esp);
@@ -92,7 +92,7 @@ export function init({ lock }) {
   });
 
   $('clearMenu').addEventListener('click', async e => {
-    const b = e.target.closest('button[data-clear]');
+    const b = closestOf(e, 'button[data-clear]');
     if (!b) return;
     const all = b.dataset.clear === 'all';
     const msg = all

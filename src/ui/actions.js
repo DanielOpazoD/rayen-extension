@@ -103,6 +103,12 @@ export function copyRun(el) {
 }
 
 /** Jump to one SIC (by id) or to every SIC of a patient (by RUN). The IC tab listens. */
+/**
+ * Lleva a la pestaña Interconsultas y muestra una solicitud (por id) o las de un paciente (por RUN).
+ * @param {object} q
+ * @param {string|number} [q.id]
+ * @param {string} [q.run]
+ */
 export function jumpToSIC({ id, run }) {
   showTab('interconsultas');
   const q = id ? String(id) : (sicsByRun().get(run)?.[0]?.paciente.runStr ?? run);

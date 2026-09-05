@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 2.55.0 — 2026-09-05
+
+Comprobación de tipos en toda la interfaz (`src/ui` y `app.js`): de 272 avisos a cero, dentro de `npm run check`.
+
+- **Ayudantes de DOM tipados** en `ui/dom.js`: `$` devuelve un elemento con las propiedades de formulario (`value`, `checked`, `disabled`, `options`) como opcionales; `targetOf(e)` y `closestOf(e, sel)` reemplazan a `e.target` y `e.target.closest`, que el DOM declara como `EventTarget` sin `closest` ni `value`; `qsa(root, sel)` devuelve una lista de elementos, no de `Element` a secas. Con eso desaparecen 230 de los 272 avisos sin un cast por línea.
+- **Lo que los tipos destaparon**: `toast('…', 'warn')` pasaba el tono como cadena y se mostraba como éxito; el tono `warn` no existía en el tipo ni en la hoja de estilos (`.toast-warn` añadido); la documentación de `initPanel` estaba pegada a otra declaración y no describía sus dependencias; `stateDot` no declaraba `tone` aunque cinco módulos lo pasaban; el ordenamiento exigía `1|-1` y recibía un número; `patientKey` y `jumpToSIC` aceptan objetos parciales y no lo decían; tres campos numéricos se asignaban a `value` sin convertir.
+
 ## 2.54.0 — 2026-09-05
 
 Mutación, segunda ronda: `anonimizar`, `ficha-rank` y `parser` entran a Stryker; 2073 mutantes en total, 85,8 % muertos (umbral 85).

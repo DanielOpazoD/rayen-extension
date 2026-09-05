@@ -117,16 +117,17 @@ export function row(p, ctx) {
 const CHUNK = 120;
 let pending = [], rendered = 0, lastCtx = null;
 
-/**
- * Renders the atenciones table body (first chunk only; the rest streams in).
- * @param {object[]} data   already filtered + sorted
- * @param {number}   total  size of the unfiltered dataset
- * @param {{ sicsById: Map, sicsByRun: Map }} ctx
- */
+/** Selector CSS de la fila de una atención por su id. */
 export function rowSelector(id) {
   return `#tbody tr[data-id="${CSS.escape(String(id))}"]`;
 }
 
+/**
+ * Renders the atenciones table body (first chunk only; the rest streams in).
+ * @param {object[]} data   already filtered + sorted
+ * @param {number}   total  size of the unfiltered dataset
+ * @param {{ sicsById: Map, sicsByRun: Map }} [ctx]
+ */
 export function renderTable(data, total, ctx = { sicsById: new Map(), sicsByRun: new Map() }) {
   const tbody = document.getElementById('tbody');
   pending = data; rendered = 0; lastCtx = ctx;

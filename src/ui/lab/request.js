@@ -1,5 +1,5 @@
 /** Solicitud de exámenes: formulario de casillas que se imprime; no se envía a ningún sistema. */
-import { $ } from '../dom.js';
+import { $, targetOf } from '../dom.js';
 import { toggleExamSelection } from '../../core/exam-request.js';
 import {
   renderExamRequestForm, buildExamRequestPrintFragment, EXAM_REQUEST_PRINT_CSS,
@@ -17,7 +17,7 @@ export function initRequest(deps) {
   $('labRequestPrint').addEventListener('click', printRequest);
   // Delegación: son 67 casillas y un solo escucha basta.
   $('labRequestBody').addEventListener('change', e => {
-    const key = e.target.dataset?.key;
+    const key = targetOf(e).dataset?.key;
     if (!key) return;
     requestSelected = toggleExamSelection(requestSelected, key);
     updateRequestCount();

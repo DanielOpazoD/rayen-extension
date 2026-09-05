@@ -11,7 +11,7 @@ function sortValue(p, col) {
 /**
  * @param {object[]} data
  * @param {string} sortCol  id de columna (COLUMNS de ui/table.js)
- * @param {1|-1} sortDir
+ * @param {number} sortDir  1 ascendente, -1 descendente
  */
 export function sortRecords(data, sortCol, sortDir) {
   return data.slice().sort((a, b) => {

@@ -1,4 +1,4 @@
-import { $, esc } from './dom.js';
+import { $, esc, qsa } from './dom.js';
 
 /** Compact serialization for a multi-value filter kept in a hidden input. */
 export function decodeMultiValue(value) {
@@ -56,11 +56,11 @@ export function initMultiSelect({ inputId, buttonId, menuId, allLabel = 'Todos',
     const open = menu.hidden;
     menu.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
-    if (open) menu.querySelector('input:checked, input')?.focus();
+    if (open) /** @type {HTMLElement|null} */ (menu.querySelector('input:checked, input'))?.focus();
   });
   menu.addEventListener('click', event => event.stopPropagation());
   menu.addEventListener('change', () => {
-    setValues([...menu.querySelectorAll('input:checked')].map(item => item.value));
+    setValues(qsa(menu, 'input:checked').map(item => item.value));
   });
   menu.querySelector('[data-multi-clear]').addEventListener('click', () => setValues([]));
   document.addEventListener('click', close);

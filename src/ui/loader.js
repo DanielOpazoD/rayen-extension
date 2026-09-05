@@ -4,7 +4,7 @@ import { attachNotes } from '../io/notes.js';
 import { savePrefs } from '../io/cache.js';
 import { cancelRun } from '../io/http.js';
 import { toast } from './toast.js';
-import { $, skeletonRows, skeletonCards } from './dom.js';
+import { $, skeletonRows, skeletonCards, closestOf } from './dom.js';
 import { COLUMNS } from './table.js';
 import { CONFIG } from '../core/config.js';
 import { state, setData, emit, setLoadedMonths } from '../io/state.js';
@@ -27,7 +27,7 @@ async function applyResult(result) {
 async function performFetch({ retryOnly = false, forceHistorial = false } = {}) {
   const operationId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const btn  = $('btnFetch');
-  const prog = $('progress');
+  const prog = /** @type {HTMLProgressElement} */ (/** @type {unknown} */ ($('progress')));
   setLoadedMonths(parseInt($('months').value));
   const selectedHistorial = $('optHistorial').checked;
   const historial = selectedHistorial || forceHistorial;
@@ -186,7 +186,7 @@ export function init(prefs) {
     $('btnCancel').disabled = true;
     setStatus('Cancelando… se conserva lo ya descargado', 'warn');
   });
-  document.addEventListener('click', e => { if (e.target.closest('.empty-cta[data-act="fetch"]')) handleFetch(); });
+  document.addEventListener('click', e => { if (closestOf(e, '.empty-cta[data-act="fetch"]')) handleFetch(); });
   // When the user comes back after logging in again, retry once automatically
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && expired && !$('btnFetch').disabled) handleFetch();
