@@ -24,13 +24,9 @@ const rol  = s => s.registrador.id === CONFIG.officerId ? 'emitida por ti' : 'a 
  * @param {{ hoy?: Date, umbrales?: object, soloMias?: boolean }} opts
  * @returns {object[]} pendientes, most urgent first
  */
-export function computePendientes(allData, sics = [], opts = {}) {
-  const hoy8 = localDateStr(opts.hoy ?? new Date());
-  const U = { ...CONFIG.pendientes, ...(opts.umbrales ?? {}) };
-  const soloMias = opts.soloMias !== false;
+/** Interconsultas que nunca salieron del hospital: siguen «Nueva» pasados `nuevaDias`. */
+function sicSinCursar(sics, { hoy8, U, soloMias }) {
   const out = [];
-
-  // ── 1. SIC que nunca salió del hospital ───────────────────────
   for (const s of sics) {
     if (s.estadoId !== 13) continue;               // Nueva
     if (soloMias && !mine(s)) continue;
@@ -43,9 +39,12 @@ export function computePendientes(allData, sics = [], opts = {}) {
       detalle: `Sigue en estado «Nueva» ${dias} días después de emitida (${rol(s)}).`,
     });
   }
+  return out;
+}
 
-  // ── 1b. SIC rechazada: no está «abierta», pero exige una decisión ──
-  // Antes una derivación rechazada se contaba entre las cerradas y nadie se enteraba.
+/** Interconsulta rechazada: no está «abierta», pero exige una decisión durante `rechazadaDias`. */
+function sicRechazadas(sics, { hoy8, U, soloMias }) {
+  const out = [];
   for (const s of sics) {
     if (!SIC_RECHAZADA_IDS.has(s.estadoId)) continue;
     if (soloMias && !mine(s)) continue;
@@ -58,13 +57,16 @@ export function computePendientes(allData, sics = [], opts = {}) {
       detalle: `Estado «${s.estado}» (${rol(s)}). Decide si se re-emite o se cierra.`,
     });
   }
+  return out;
+}
 
-  // ── 2. Cita pasada y la SIC sigue sin cerrarse ────────────────
+/** Cita del especialista ya pasada y la solicitud sigue agendada o confirmada. */
+function citasPasadas(sics, { hoy8, U, soloMias }) {
+  const out = [];
   for (const s of sics) {
     if (![3, 4].includes(s.estadoId)) continue;    // agendada / confirmada
     if (soloMias && !mine(s)) continue;
-    const cita8 = toDate8(s.fechaCita);
-    const dias = daysSince(cita8, hoy8);
+    const dias = daysSince(toDate8(s.fechaCita), hoy8);
     if (dias === null || dias < U.citaDias) continue;
     out.push({
       tipo: 'cita-pasada', severidad: 1, dias, sicId: s.id, run: s.paciente.run,
@@ -73,9 +75,14 @@ export function computePendientes(allData, sics = [], opts = {}) {
       detalle: `La cita era el ${s.fechaCita} y la solicitud sigue «${s.estado}».`,
     });
   }
+  return out;
+}
 
-  // ── 3. Control que él mismo pidió, vencido y sin cita posterior ──
-  // OrdenAtencionInterna comes free with the day-level ficha; nothing extra is fetched.
+/**
+ * Control que el propio médico pidió (OrdenAtencionInterna, gratis con la ficha
+ * diaria), vencido y sin ninguna atención posterior del paciente.
+ */
+function controlesVencidos(allData, { hoy8, U }) {
   const porPaciente = new Map();
   for (const r of allData) {
     const k = r.run || r.nombre;
@@ -83,6 +90,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
     porPaciente.get(k).push(r);
   }
   const vistos = new Set();
+  const out = [];
   for (const r of allData) {
     for (const c of r.proximoControl ?? []) {
       if (!c.fecha8 || c.descartada) continue;
@@ -92,8 +100,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
       if (vistos.has(clave)) continue;
       vistos.add(clave);
       // Any later appointment counts as the control having happened
-      const posterior = (porPaciente.get(r.run || r.nombre) ?? [])
-        .some(x => x.fecha8 && x.fecha8 > c.fecha8);
+      const posterior = (porPaciente.get(r.run || r.nombre) ?? []).some(x => x.fecha8 && x.fecha8 > c.fecha8);
       if (posterior) continue;
       out.push({
         tipo: 'control-vencido', severidad: 1, dias, recordId: r.id, run: r.run,
@@ -103,7 +110,22 @@ export function computePendientes(allData, sics = [], opts = {}) {
       });
     }
   }
+  return out;
+}
 
+/**
+ * Las cuatro reglas de pendientes, en el orden de la tabla del README.
+ * @param {object[]} allData  atenciones (agenda cruzada con historial)
+ * @param {object[]} [sics]
+ * @param {{ hoy?: Date, umbrales?: object, soloMias?: boolean }} [opts]
+ */
+export function computePendientes(allData, sics = [], opts = {}) {
+  const ctx = {
+    hoy8: localDateStr(opts.hoy ?? new Date()),
+    U: { ...CONFIG.pendientes, ...(opts.umbrales ?? {}) },
+    soloMias: opts.soloMias !== false,
+  };
+  const out = [...sicSinCursar(sics, ctx), ...sicRechazadas(sics, ctx), ...citasPasadas(sics, ctx), ...controlesVencidos(allData, ctx)];
   // Oldest first inside each severity: severity is the class, days is the urgency
   out.sort((a, b) => b.severidad - a.severidad || b.dias - a.dias);
   return out;

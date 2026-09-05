@@ -38,7 +38,7 @@ flowchart LR
 ## Convenciones de código
 
 1. **Un módulo, una responsabilidad.** Los controladores (`ui/tabs/*`, `ui/patient-panel.js`, `ui/tabs/laboratorio.js`) cablean eventos y reparten el pintado; no calculan. Las funciones de pintado reciben los datos por parámetro (`renderAt(cur, filtro)`), no leen variables de módulo.
-2. **Tamaño.** Ninguna función supera 150 líneas útiles ni ningún módulo 500 (lint). Catálogos, arnés, pruebas y scripts están exentos.
+2. **Tamaño.** Ninguna función supera 100 líneas útiles ni ningún módulo 500 (lint). Catálogos, arnés, pruebas y scripts están exentos.
 3. **Estado.** Sólo `src/io/state.js` muta el estado global; las vistas lo cambian con sus funciones (`setData`, `setPrefs`, `setNote`, `setLoadedMonths`, `setRendered`) y se enteran por los eventos `data` y `notes`.
 4. **Errores.** Los transportes lanzan clases con nombre (`AuthError`, `TimeoutError`, `CancelledError`, `LabAuthError`, `SyslabAuthError`). Lo que ve la persona pasa por `core/errors.js → humanError`. Un `catch` vacío lleva siempre un comentario con el porqué.
 5. **HTML.** Todo texto de la API que entra en `innerHTML` pasa por `esc()`. Nunca `display:flex` sobre un `td`. Un solo nivel de énfasis, el contrato de tres niveles al inicio de `styles/app.css`.

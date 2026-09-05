@@ -234,9 +234,9 @@ function sanitizeFinding(value) {
  *   puntos medibles y comparador exacto (un «<0,01» no es un punto de gráfico).
  * - `reports`: informes del más reciente al más antiguo.
  */
-export function buildAnalysis(details, exams) {
-  const safeExams = sanitizeExamList(exams);
-  const examById = new Map(safeExams.map(exam => [exam.id, exam]));
+/** Un informe por detalle interpretado, con sus hallazgos saneados, en orden cronológico. */
+function buildReports(details, exams) {
+  const examById = new Map(sanitizeExamList(exams).map(exam => [exam.id, exam]));
   const reports = [];
   for (const detail of Array.isArray(details) ? details : []) {
     if (!detail) continue;
@@ -255,7 +255,42 @@ export function buildAnalysis(details, exams) {
       error: cleanText(detail.error),
     });
   }
-  reports.sort((a, b) => a.timestamp - b.timestamp);
+  return reports.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+/**
+ * Series temporales por fila de la matriz: sólo muestras sistémicas, comparador
+ * exacto y sin ambigüedad de unidad; el rango viaja con cada punto.
+ */
+function buildTrends(comparison, reports) {
+  return comparison.map(row => ({
+    analysis: row.analysis,
+    unit: row.unit,
+    section: row.section,
+    points: reports.map(report => {
+      const finding = row.values[report.examId];
+      if (!finding || !isSystemicTrendEligible(finding)) return null;
+      const measurement = parseMeasurement(finding.result, finding);
+      // Un «4.500» sin unidad puede ser 4,5 o 4500: no entra a la tendencia.
+      if (!measurement || measurement.comparator !== '=' || measurement.ambiguous) return null;
+      // El rango puede cambiar entre informes (distinto laboratorio, distinta
+      // edad); el gráfico sólo dibuja la banda normal cuando todos coinciden.
+      const bounds = referenceBounds(finding.refValue, finding);
+      return {
+        examId: report.examId,
+        label: report.label,
+        timestamp: report.timestamp,
+        value: measurement.value,
+        alert: finding.alert,
+        refMin: bounds ? bounds.min : null,
+        refMax: bounds ? bounds.max : null,
+      };
+    }).filter(Boolean),
+  })).filter(trend => trend.points.length >= 2).slice(0, 24);
+}
+
+export function buildAnalysis(details, exams) {
+  const reports = buildReports(details, exams);
 
   const columns = reports.map(report => ({
     key: report.examId,
@@ -332,31 +367,7 @@ export function buildAnalysis(details, exams) {
     .sort((a, b) => comparisonSortIndex(a.analysis) - comparisonSortIndex(b.analysis) ||
       analysisSort(a.analysis, b.analysis));
 
-  const trends = comparison.map(row => ({
-    analysis: row.analysis,
-    unit: row.unit,
-    section: row.section,
-    points: reports.map(report => {
-      const finding = row.values[report.examId];
-      if (!finding || !isSystemicTrendEligible(finding)) return null;
-      const measurement = parseMeasurement(finding.result, finding);
-      // Un «4.500» sin unidad puede ser 4,5 o 4500: no entra a la tendencia.
-      if (!measurement || measurement.comparator !== '=' || measurement.ambiguous) return null;
-      // El rango viaja con cada punto: puede cambiar entre informes (distinto
-      // laboratorio, distinta edad), y el gráfico sólo puede dibujar la banda
-      // normal cuando todos los puntos declaran el mismo.
-      const bounds = referenceBounds(finding.refValue, finding);
-      return {
-        examId: report.examId,
-        label: report.label,
-        timestamp: report.timestamp,
-        value: measurement.value,
-        alert: finding.alert,
-        refMin: bounds ? bounds.min : null,
-        refMax: bounds ? bounds.max : null,
-      };
-    }).filter(Boolean),
-  })).filter(trend => trend.points.length >= 2).slice(0, 24);
+  const trends = buildTrends(comparison, reports);
 
   return {
     columns,

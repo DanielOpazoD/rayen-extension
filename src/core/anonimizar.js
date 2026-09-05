@@ -93,15 +93,27 @@ function shiftDate(str, days) {
   return null;
 }
 
+/**
+ * Qué dice la clave sobre el valor: nombre fuerte (Apellido, NombreFormateado…),
+ * débil («Nombre» dentro de un objeto de persona), por subcadena (NombreMadre,
+ * salvo catálogos como NombreExamen) o de rol (Medico, Tutor… si parece persona).
+ */
+function claveDePersona(key, node, parent) {
+  const esNombre = /^nombres?$/i.test(key);
+  return {
+    strong: STRONG_NAME_KEY.test(key),
+    weak: esNombre && !!parent && isPersonObject(parent),
+    sub: !esNombre && NAME_SUBSTRING_KEY.test(key) && !CATALOG_NAME_KEY.test(key),
+    rol: ROLE_KEY.test(key) && looksLikePerson(node),
+  };
+}
+
 /** Recoge las palabras de los nombres de personas, para borrarlas también del texto libre. */
 function collectNameTokens(node, tokens, key = '', parent = null) {
   if (Array.isArray(node)) { node.forEach(n => collectNameTokens(n, tokens, key, parent)); return; }
   if (node && typeof node === 'object') { for (const [k, v] of Object.entries(node)) collectNameTokens(v, tokens, k, node); return; }
   if (typeof node !== 'string' || !node.trim()) return;
-  const strong = STRONG_NAME_KEY.test(key);
-  const weak = /^nombres?$/i.test(key) && parent && isPersonObject(parent);
-  const sub = !/^nombres?$/i.test(key) && NAME_SUBSTRING_KEY.test(key) && !CATALOG_NAME_KEY.test(key);
-  const rol = ROLE_KEY.test(key) && looksLikePerson(node);
+  const { strong, weak, sub, rol } = claveDePersona(key, node, parent);
   if (!strong && !weak && !sub && !rol) return;
   // «Nombre» de un catálogo ({Id, Nombre:'Mujer'}) no es una persona; por eso la regla débil exige un hermano de persona.
   if (/^nombres?$/i.test(key) && !weak && !/^nombres$/i.test(key)) return;
@@ -126,7 +138,8 @@ export function anonimizar(data, opts = {}) {
   let nextId = 100001;
   const informe = { nombres: 0, ruts: 0, contactos: 0, direcciones: 0, identificadores: 0, fechas: 0, textos: 0, secretos: 0 };
 
-  const shiftTextDate = (m, d, sep, mo, y, y8, mo8, d8) => {
+  const shiftTextDate = (...g) => {
+    const [m, d, sep, mo, y, y8, mo8, d8] = g; // grupos de TEXT_DATE_RE
     if (y8) { const t = shiftDate(`${y8}${mo8}${d8}`, days); return t ?? m; }
     const t = shiftDate(`${d.padStart(2, '0')}-${mo.padStart(2, '0')}-${y}`, days);
     return t ? t.replace(/-/g, sep) : m;
@@ -144,14 +157,13 @@ export function anonimizar(data, opts = {}) {
     return out.replace(/<nombre>(?:\s+<nombre>)+/g, '<nombre>'); // «Rosa Tuki» es una persona, no dos marcadores
   };
 
-  const walk = (node, key = '', parent = null) => {
-    if (Array.isArray(node)) return node.map(n => walk(n, key, parent));
-    if (node && typeof node === 'object') { const o = {}; for (const [k, v] of Object.entries(node)) o[k] = walk(v, k, node); return o; }
-    if (node === null || node === undefined || typeof node === 'boolean') return node;
+  // Valores que se deciden sólo por la clave: secretos, RUT, contactos, direcciones e identificadores.
+  const porClave = (key, node) => {
+    const vacio = node === '' || node === 0;
     if (SECRET_KEY.test(key)) { informe.secretos++; return '<secreto>'; }
-    if (RUT_KEY.test(key)) { if (node === '' || node === 0) return node; informe.ruts++; return '<rut>'; }
-    if (CONTACT_KEY.test(key)) { if (node === '' || node === 0) return node; informe.contactos++; return '<contacto>'; }
-    if (ADDRESS_KEY.test(key)) { if (node === '' || node === 0) return node; informe.direcciones++; return typeof node === 'number' ? 0 : '<direccion>'; }
+    if (RUT_KEY.test(key)) { if (!vacio) informe.ruts++; return vacio ? node : '<rut>'; }
+    if (CONTACT_KEY.test(key)) { if (!vacio) informe.contactos++; return vacio ? node : '<contacto>'; }
+    if (ADDRESS_KEY.test(key)) { if (!vacio) informe.direcciones++; return vacio ? node : typeof node === 'number' ? 0 : '<direccion>'; }
     if (ID_KEY.test(key) && (typeof node === 'number' || /^\d+$/.test(String(node)))) {
       if (node === 0 || node === '0') return node;
       const k = String(node);
@@ -159,12 +171,18 @@ export function anonimizar(data, opts = {}) {
       informe.identificadores++;
       return typeof node === 'number' ? ids.get(k) : String(ids.get(k));
     }
+    return undefined;
+  };
+
+  const walk = (node, key = '', parent = null) => {
+    if (Array.isArray(node)) return node.map(n => walk(n, key, parent));
+    if (node && typeof node === 'object') { const o = {}; for (const [k, v] of Object.entries(node)) o[k] = walk(v, k, node); return o; }
+    if (node === null || node === undefined || typeof node === 'boolean') return node;
+    const decidido = porClave(key, node);
+    if (decidido !== undefined) return decidido;
     if (typeof node === 'number') return node;
     const s = String(node);
-    const strong = STRONG_NAME_KEY.test(key);
-    const weak = /^nombres?$/i.test(key) && parent && isPersonObject(parent);
-    const sub = !/^nombres?$/i.test(key) && NAME_SUBSTRING_KEY.test(key) && !CATALOG_NAME_KEY.test(key);
-    const rol = ROLE_KEY.test(key) && looksLikePerson(s);
+    const { strong, weak, sub, rol } = claveDePersona(key, s, parent);
     if ((strong && !(/^nombre$/i.test(key) && !weak)) || weak || sub || rol) {
       if (!s.trim()) return s;
       informe.nombres++;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { periodRange, resolveRange, inRange, isoToDate8, date8ToIso, PERIODS } from '../src/core/period.js';
+import { periodRange, resolveRange, inRange, isoToDate8, date8ToIso, PERIODS, periodoDesde } from '../src/core/period.js';
 
 const HOY = new Date(2026, 8, 3); // miércoles 3 de septiembre de 2026
 
@@ -46,4 +46,13 @@ test('inRange incluye ambos extremos y sólo acepta sin fecha cuando no hay rang
   assert.equal(inRange('20260901', '20260901', '20260930'), true); assert.equal(inRange('20260930', '20260901', '20260930'), true);
   assert.equal(inRange('20261001', '20260901', '20260930'), false); assert.equal(inRange('20260831', '20260901', '20260930'), false);
   assert.equal(inRange('', '', ''), true); assert.equal(inRange('', '20260901', ''), false);
+});
+
+test('periodoDesde: años enteros, fracciones en meses y sin período', () => {
+  const hoy = new Date(2026, 8, 5);
+  assert.equal(periodoDesde(0, hoy), null);
+  assert.equal(periodoDesde(NaN, hoy), null);
+  assert.deepEqual([periodoDesde(1, hoy).getFullYear(), periodoDesde(1, hoy).getMonth(), periodoDesde(1, hoy).getDate()], [2025, 8, 5]);
+  assert.deepEqual([periodoDesde(0.5, hoy).getFullYear(), periodoDesde(0.5, hoy).getMonth()], [2026, 2], 'medio año = seis meses');
+  assert.equal(periodoDesde(5, hoy).getFullYear(), 2021);
 });
