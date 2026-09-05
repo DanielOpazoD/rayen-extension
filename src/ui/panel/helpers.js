@@ -14,5 +14,3 @@ export function setTabCount(id, n) {
   const b = document.querySelector(`.pp-tab[data-pt="${id}"] .cnt`);
   if (b) b.textContent = n ? String(n) : '';
 }
-/** Ocho dígitos de hoy, el formato de fecha de Rayen. */
-export const hoy8 = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };

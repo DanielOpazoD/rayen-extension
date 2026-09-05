@@ -438,9 +438,21 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 #patientPanel{position:fixed;top:0;right:0;width:560px;max-width:100vw;height:100vh;background:var(--card);border-left:1px solid var(--rule);box-shadow:var(--shadow-pop);transform:translateX(100%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s;z-index:100;overflow-y:auto;display:flex;flex-direction:column}
 #patientPanel.open{transform:translateX(0);visibility:visible;transition:transform .2s ease}
 #patientPanel:focus{outline:none}
-.pp-header{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4);background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:3}
+.pp-header{display:flex;flex-direction:column;gap:10px;padding:var(--sp-3) var(--sp-4) 10px;background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:3}
+.pp-head-row{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+/* Acciones del paciente: píldoras con icono, una fila propia para que el nombre no se parta. */
+.pp-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pp-act{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 10px;border:1px solid var(--rule);border-radius:999px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:var(--t-sm);font-weight:500;cursor:pointer;white-space:nowrap}
+.pp-act svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--ink-3)}
+.pp-act:hover,.pp-act[aria-expanded="true"]{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-2)}
+.pp-act:hover svg,.pp-act[aria-expanded="true"] svg{color:var(--brand-2)}
+.pp-act-caret{font-size:10px;color:var(--ink-3);margin-left:-2px}
+.pp-print{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;margin-left:8px;vertical-align:middle;flex:none}
+.pp-print svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pp-item{display:flex;align-items:center;flex-wrap:wrap;gap:2px 8px}
+.pp-item>span{flex:1 1 auto;min-width:0}
 /* Las iniciales son el botón de Datos: un control menos en la cabecera. */
-.pp-avatar{position:relative;width:36px;height:36px;border-radius:var(--r-full);border:1px solid var(--rule);background:var(--surface-2);color:var(--ink-2);display:flex;align-items:center;justify-content:center;font-size:var(--t-sm);font-weight:600;flex-shrink:0;cursor:pointer;padding:0;font-family:inherit}
+.pp-avatar{position:relative;width:40px;height:40px;border-radius:var(--r-full);border:1px solid var(--rule);background:var(--surface-2);color:var(--ink-2);display:flex;align-items:center;justify-content:center;font-size:var(--t-sm);font-weight:600;flex-shrink:0;cursor:pointer;padding:0;font-family:inherit}
 .pp-avatar:hover,.pp-avatar.on{border-color:var(--brand);color:var(--brand-2);background:var(--brand-soft)}
 .pp-avatar.dot::after{content:'';position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--card)}
 /* Medicina / Otros dentro de Atenciones. */
@@ -451,10 +463,10 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-seg .cnt{font-variant-numeric:tabular-nums;opacity:.8}
 .pp-info{flex:1;min-width:0}
 /* En estrecho los cinco controles bajan a una segunda línea y el nombre respira. */
-@media(max-width:700px){.pp-header{flex-wrap:wrap}.pp-info{flex:1 1 200px}}
+@media(max-width:700px){.pp-info{flex:1 1 120px}}
 /* El nombre del paciente no se recorta: puede ocupar dos líneas. */
-.pp-info h2{font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.2;text-wrap:balance;overflow-wrap:anywhere}
-.pp-info p{font-size:var(--t-sm);color:var(--ink-2);line-height:1.4}
+.pp-info h2{font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-info p{font-size:var(--t-sm);color:var(--ink-2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ppSector{font-size:var(--t-xs);color:var(--ink-3)}
 #ppClose{background:none;border:none;color:var(--ink-3);font-size:var(--t-base);cursor:pointer;padding:4px 8px;border-radius:var(--r-sm);flex-shrink:0}
 #ppClose:hover{background:var(--surface-2);color:var(--ink)}

@@ -5,6 +5,8 @@ import { esc, $ } from '../dom.js';
 import { recetaPdfPath } from '../../io/pdf.js';
 import { segGroup, h4, empty, setTabCount } from './helpers.js';
 
+const PRINTER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>';
+
 export function renderRx(cur, rxFilter) {
   const { ficha } = cur;
   if (!ficha) { $('ppPaneRx').innerHTML = empty(cur.fichaFailed ? 'La ficha clínica no está disponible' : 'Consultando ficha…'); return; }
@@ -33,7 +35,7 @@ export function renderRx(cur, rxFilter) {
       for (const it of items) {
         if (it.kind === 'receta') {
           html += `<div class="pp-rx-r"><span>${esc(it.r.label)}</span><small>${esc(it.r.details.join(' · '))}</small>` +
-            `<button class="btn-mini" data-pdf="${esc(recetaPdfPath(v.id, it.r.raw.Id, prest))}" data-tip="Receta emitida (PDF)">PDF</button></div>`;
+            `<button class="btn-mini pp-print" data-pdf="${esc(recetaPdfPath(v.id, it.r.raw.Id, prest))}" data-tip="Imprimir la receta (PDF de Eloisa)" aria-label="Imprimir receta">${PRINTER}</button></div>`;
         } else {
           html += `<div class="pp-item ${it.p.suspendido ? 'susp' : ''}"><span>${esc(it.p.label)}</span><small>${esc([...it.p.details, it.estado === 'suspendida' ? '' : it.estado].filter(Boolean).join(' · '))}</small></div>`;
         }
