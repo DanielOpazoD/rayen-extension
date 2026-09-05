@@ -1,9 +1,10 @@
 import { loadPrefs, DEFAULT_PREFS } from './src/io/cache.js';
+import { applyNetPrefs } from './src/io/http.js';
 import { initPanel, syncNote } from './src/ui/patient-panel.js';
 import { initPalette } from './src/ui/palette.js';
 import { initLock } from './src/ui/lock.js';
 import { $, initTooltips, initTablist, activateOnKey } from './src/ui/dom.js';
-import { setPrefs, on, setLoadedMonths } from './src/io/state.js';
+import { state, setPrefs, on, setLoadedMonths } from './src/io/state.js';
 import { remeasure } from './src/ui/ui.js';
 import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
 import { CONFIG } from './src/core/config.js';
@@ -28,9 +29,11 @@ setPrefs({
   refreshMin: Number.isFinite(+prefs.refreshMin) ? +prefs.refreshMin : 15,
   watchEsp:   Array.isArray(prefs.watchEsp) && prefs.watchEsp.length ? prefs.watchEsp : [...CONFIG.watchEspecialidades],
   umbrales:   prefs.umbrales && typeof prefs.umbrales === 'object' ? { ...CONFIG.pendientes, ...prefs.umbrales } : { ...CONFIG.pendientes },
+  netTimeoutSec: Number.isFinite(+prefs.netTimeoutSec) && +prefs.netTimeoutSec >= 5 ? +prefs.netTimeoutSec : 20,
   retentionMonths: Number.isFinite(+prefs.retentionMonths) && +prefs.retentionMonths > 0 ? +prefs.retentionMonths : CONFIG.retentionMonths,
 });
 setLoadedMonths(prefs.months);
+applyNetPrefs(state.prefs);
 
 // Tabs: click or ←/→ (WAI-ARIA tablist, roving tabindex)
 const showTab = initTablist(document.querySelector('.tabs'), name => {

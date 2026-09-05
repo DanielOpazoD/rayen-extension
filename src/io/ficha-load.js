@@ -4,7 +4,7 @@
  * para el Explorador API. El análisis de cada respuesta vive en core/ficha.js;
  * aquí sólo hay red, tiempo y memoria.
  */
-import { apiGet, apiPost, session } from './http.js';
+import { apiGet, apiPost, session, net } from './http.js';
 import { CONFIG } from '../core/config.js';
 import { localDateStr, fmtDate } from '../core/parser.js';
 import { describe, parseAntecedentes, parseFichaAtencion, parseMaster, parseProgramas } from '../core/ficha.js';
@@ -62,7 +62,7 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
       IdUsuario: id, IdFuncionarioPrestador: null,
       FechaInicio: `${localDateStr(from)} 000000`, FechaTermino: `${localDateStr(to)} 235900`,
       ...FLAGS_ALL,
-    }), 'Historial', 'FichaClinica/HistorialAtencion'),
+    }, { timeoutMs: net.longTimeoutMs }), 'Historial', 'FichaClinica/HistorialAtencion'),
     soft(apiGet(token, `/API/api/rayen/FichaClinica/RecuperarAntecedentes/${id}`), 'Antecedentes'),
     soft(apiGet(token, `/API/api/rayen/inscripcion/HistorialUsuarioApsEnProgramaSalud/IdUsuarioAps=${id}`), 'Programas'),
     // Estas tres también pasan por soft(): antes devolvían [] en silencio, y un
@@ -89,6 +89,6 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
     errors,
     savedAt: Date.now(),
   };
-  memo.set(key, { savedAt: ficha.savedAt, ficha });
+  if (!ficha.errors.length) memo.set(key, { savedAt: ficha.savedAt, ficha }); // una ficha a medias no se recuerda 30 min
   return ficha;
 }

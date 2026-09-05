@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.38.0 — 2026-09-04
+
+Red y sincronización, con las correcciones de una revisión adversarial de los PR #27–#31.
+
+- **Tiempo límite por tipo de llamada**: 20 s para la agenda y la ficha diaria, 60 s para la ficha completa de un paciente (una sola llamada de diez años). Nueva preferencia «Espera máxima por petición» (20 / 40 / 60 / 90 s); la ficha completa espera el triple. Una ficha a medias ya no se recuerda 30 minutos: el siguiente intento vuelve a pedirla.
+- **Cancelar sólo cancela la carga**. Desde 2.34.0 la bandera de cancelación quedaba puesta y hacía fallar con «Carga cancelada» el panel del paciente, las interconsultas y los PDF hasta la siguiente carga. Ahora sólo las peticiones de la carga llevan la señal, la bandera se repone al terminar, y no depende de `AbortSignal.any` (Chrome anteriores a 116 abortan igual). Un día cancelado queda pendiente, no «fallido», y el estado de sincronización lo muestra como pendiente.
+- **Plan de sincronización** (`io/sync-plan.js`, puro y con pruebas): fechas del período, refrescos por estado mutable, reintentos y historial acoplado en un solo objeto documentado; la carga lo ejecuta en dos pasos (agenda, ficha) sobre un `SyncRun` en vez de una bolsa de dieciséis parámetros.
+- **Token rechazado**: tras un 401 la extensión recuerda el token y no lo vuelve a entregar aunque la pestaña de Eloisa siga mostrándolo; una carga nueva vuelve a darle una oportunidad. La sesión vencida al cargar la ficha del panel avisa de verdad (2.34.0 lo afirmaba, pero la carga de la ficha nunca lanzaba) y el aviso de sesión no se cuenta como «fuente fallida».
+- **Escape y flechas de verdad**: Escape con un menú abierto cerraba también el panel (el recorrido lo daba por bueno por la transición de 200 ms); las flechas en Exportar y Preferencias saltaban opciones por el menú «⋯» anidado, y Columnas no respondía. Corregido y probado con un recorrido que espera la transición.
+- La hoja de informe se cierra con Escape desde cualquier foco; «Pendientes: ninguno» en una línea se reconoce como sección con su cuerpo; una SIC rechazada deja de ser pendiente a los 90 días.
+
 ## 2.37.1 — 2026-09-04
 
 Documentación, cierre del saneamiento.

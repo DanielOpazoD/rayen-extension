@@ -266,7 +266,7 @@ test('an interrupted agenda run records the clinical-history dates it did not re
   });
   const res = await loadData(1, () => {}, { historial: true });
   assert.equal(res.cancelled, true);
-  assert.equal(res.sync.historial.status, 'error');
+  assert.equal(res.sync.historial.status, 'partial', 'cancelar deja pendientes, no un error');
   assert.ok(res.sync.historial.failedItems.length > 0);
   assert.equal(calls.some(url => url.includes('HistorialAtencion')), false);
 });
@@ -318,7 +318,7 @@ test('a normal shorter load preserves pending dates outside its visible window',
 
   assert.ok(res.sync.agenda.failedItems.includes(old8));
   assert.ok(res.sync.historial.failedItems.includes(old8));
-  assert.equal(res.sync.agenda.status, 'error');
+  assert.equal(res.sync.agenda.status, 'partial', 'una fecha pendiente de antes, fuera de la ventana, no es un error de esta carga');
   assert.equal(res.sync.historial.status, 'partial');
 });
 

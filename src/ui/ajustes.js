@@ -1,3 +1,4 @@
+import { applyNetPrefs } from '../io/http.js';
 import { CONFIG } from '../core/config.js';
 import { humanError } from '../core/errors.js';
 import { savePrefs, clearAllCaches, clearEverything } from '../io/cache.js';
@@ -24,6 +25,7 @@ function fillSettings() {
   $('setRefresh').value = String(refreshMin);
   $('setLock').value    = String(lockCtl?.minutes ?? 15);
   $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
+  $('setNetTimeout').value = String(state.prefs.netTimeoutSec ?? 20);
   $('setNueva').value = umbrales.nuevaDias;
   $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
 }
@@ -48,6 +50,12 @@ export function init({ lock }) {
       await savePrefs({ lockMin: m });
     }
     if (t.id === 'setStartTab') await savePrefs({ startTab: t.value });
+    if (t.id === 'setNetTimeout') {
+      const sec = Number(t.value) || 20;
+      setPrefs({ netTimeoutSec: sec });
+      applyNetPrefs(state.prefs);
+      await savePrefs({ netTimeoutSec: sec });
+    }
     if (t.id === 'setRetention') {
       const m = Number(t.value) || CONFIG.retentionMonths;
       setPrefs({ retentionMonths: m });

@@ -24,9 +24,10 @@ test('Escape cierra primero el menú PDF y sólo después el panel', async ({ pa
   await expect(page.locator('#ppPdfMenu')).toHaveClass(/open/);
   await page.keyboard.press('Escape');
   await expect(page.locator('#ppPdfMenu')).not.toHaveClass(/open/);
-  await expect(page.locator('#patientPanel')).toBeVisible();
+  await page.waitForTimeout(400); // la transición del panel dura 200 ms: «visible» recién pulsado no prueba nada
+  await expect(page.locator('#patientPanel')).toHaveClass(/open/);
   await page.keyboard.press('Escape');
-  await expect(page.locator('#patientPanel')).toBeHidden();
+  await expect(page.locator('#patientPanel')).not.toHaveClass(/open/);
 });
 
 test('el chip «+n» de interconsultas es clicable y lleva a Interconsultas', async ({ page }) => {
@@ -54,4 +55,24 @@ test('el desplegable «Detalle» de sincronización se cierra con un clic fuera 
   await expect(page.locator('#syncDetails')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.locator('#syncDetails')).toBeHidden();
+});
+
+test('las flechas recorren el menú Exportar de una en una', async ({ page }) => {
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.locator('#btnFetch').click();
+  await expect(page.locator('#statusBar')).toContainText('atenciones');
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones', exact: true }).click();
+  const btn = page.locator('#btnExport');
+  if (!(await btn.isVisible())) await page.locator('#btnMore').click(); // en estrecho, Exportar vive tras «⋯»
+  await btn.focus();
+  await page.keyboard.press('ArrowDown');
+  const items = page.locator('#exportMenu button[data-fmt]');
+  await expect(items.nth(0)).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(items.nth(1)).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(items.last()).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#exportMenu')).not.toHaveClass(/open/);
 });

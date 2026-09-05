@@ -55,12 +55,17 @@ export function createApiProvider({ apiKey = '', endpoint = API_DEFAULTS.endpoin
  */
 const norm = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 // Un título puede venir como «## 1) Problemas Activos (por relevancia)», «**Pendientes:**» o «Pendientes:».
+// Devuelve { titulo, cuerpo, laxa }: `laxa` marca las formas sin «#» (negrita, «Título:»),
+// que sólo se aceptan si el título coincide exacto con uno de la plantilla.
+const limpiar = t => t.replace(/\*\*/g, '').replace(/\s*\([^)]*\)\s*$/, '').replace(/:\s*$/, '').trim();
 const cabecera = linea => {
   const md = /^\s{0,3}#{1,4}\s*(?:\d+[.)]\s*)?(.+?)\s*#*\s*$/.exec(linea);
-  const negrita = /^\s*(?:\d+[.)]\s*)?\*\*(.+?)\*\*\s*:?\s*$/.exec(linea);
-  const dosPuntos = /^\s*(?:\d+[.)]\s*)?([A-ZÁÉÍÓÚÑ][^:]{2,60}):\s*$/.exec(linea);
-  const t = (md ?? negrita ?? dosPuntos)?.[1];
-  return t ? t.replace(/\*\*/g, '').replace(/\s*\([^)]*\)\s*$/, '').replace(/:\s*$/, '').trim() : null;
+  if (md) return { titulo: limpiar(md[1]), cuerpo: '', laxa: false };
+  const negrita = /^\s*(?:\d+[.)]\s*)?\*\*(.+?)\*\*\s*:?\s*(.*)$/.exec(linea);
+  if (negrita) return { titulo: limpiar(negrita[1]), cuerpo: negrita[2].trim(), laxa: true };
+  const dosPuntos = /^\s*(?:\d+[.)]\s*)?([A-ZÁÉÍÓÚÑ][^:]{2,60}):\s*(.*)$/.exec(linea);
+  if (dosPuntos) return { titulo: limpiar(dosPuntos[1]), cuerpo: dosPuntos[2].trim(), laxa: true };
+  return null;
 };
 export function parsearRespuesta(texto, plantilla) {
   const lineas = (texto ?? '').split(/\r?\n/);
@@ -69,15 +74,13 @@ export function parsearRespuesta(texto, plantilla) {
   let actual = null;
   for (const linea of lineas) {
     const h = cabecera(linea);
-    if (h !== null) {
-      const hn = norm(h);
-      const t = titulos.find(x => x.n === hn) ?? titulos.find(x => hn.startsWith(x.n) || x.n.startsWith(hn));
-      if (t) {
-        if (secciones[t.s.id]) { repetidas.push(t.s.id); secciones[t.s.id] += '\n'; }
-        actual = t.s.id; secciones[actual] = secciones[actual] ?? ''; continue;
-      }
-      actual = null; extra.push(linea); continue;
+    const hn = h ? norm(h.titulo) : '';
+    const t = h ? (titulos.find(x => x.n === hn) ?? (h.laxa ? null : titulos.find(x => hn.startsWith(x.n) || x.n.startsWith(hn)))) : null;
+    if (t) {
+      if (secciones[t.s.id]) { repetidas.push(t.s.id); secciones[t.s.id] += '\n'; }
+      actual = t.s.id; secciones[actual] = (secciones[actual] ?? '') + (h.cuerpo ? h.cuerpo : ''); continue;
     }
+    if (h && !h.laxa) { actual = null; extra.push(linea); continue; } // un «#» que no es de la plantilla cierra la sección
     if (actual) secciones[actual] += (secciones[actual] ? '\n' : '') + linea;
     else if (linea.trim()) extra.push(linea);
   }

@@ -26,7 +26,8 @@ const humanFichaError = e => { const m = String(e).match(/^([^:]{2,40}):\s*(.+)$
 export function fichaStatusHtml(ficha) {
   const mineN = ficha.visits.filter(isMineVisit).length;
   const n = ficha.visits.length;
-  const fallos = ficha.errors.length;
+  // Sólo fuentes («Historial: …»); el aviso de sesión vencida no es una fuente.
+  const fallos = ficha.errors.filter(e => /^[^:]{2,40}:\s/.test(e)).length;
   const estado = fallos ? `Ficha parcial · ${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}` : 'Ficha completa';
   const hora = new Date(ficha.savedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
   const html = `<span>${estado} · ${n} ${n === 1 ? 'atención' : 'atenciones'} (${mineN} mías)${n ? ` desde ${esc(ficha.visits[n - 1].fechaAtencion)}` : ''} · ${hora}</span>` +

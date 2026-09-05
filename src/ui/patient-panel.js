@@ -8,6 +8,7 @@ import { loadFicha } from '../io/ficha-load.js';
 import { SCOPE_LABEL } from './patient-report.js';
 import { initIaPanel, openIa, closeIa } from './ia-panel.js';
 import { showExpired } from './loader.js';
+import { session } from '../io/http.js';
 import { copyToClipboard } from './toast.js';
 import { isMine as isMineSic } from '../core/sic-rules.js';
 import { renderHeader, renderDatos } from './panel/datos.js';
@@ -193,7 +194,8 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   // Escape cierra lo más interno: un menú abierto o la hoja de informe antes que el panel.
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (document.querySelector('.menu.open') || !$('iaSheet').hidden) return;
+    if (document.querySelector('.menu.open')) return;
+    if (!$('iaSheet').hidden) { closeIa(); return; }
     close();
   });
 }
@@ -229,6 +231,7 @@ async function loadAndRenderFicha(force = false) {
     if (cur !== me) return; // user moved to another patient meanwhile
     me.ficha = ficha;
     renderAll();
+    if (session.expired) showExpired(); // loadFicha no lanza: la sesión muerta se lee del transporte
     const { html, tone } = fichaStatusHtml(ficha);
     setFichaStatus(html, tone);
   } catch (err) {
