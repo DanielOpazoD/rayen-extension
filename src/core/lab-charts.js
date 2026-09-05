@@ -10,7 +10,7 @@
  * que el resto de los gráficos de la aplicación.
  */
 
-import { esc } from '../core/text.js';
+import { esc } from './text.js';
 
 const LINE = 'var(--brand)';
 const ALERT = 'var(--bad)';

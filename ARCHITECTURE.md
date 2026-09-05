@@ -38,7 +38,7 @@ flowchart LR
 ## Convenciones de código
 
 1. **Un módulo, una responsabilidad.** Los controladores (`ui/tabs/*`, `ui/patient-panel.js`, `ui/tabs/laboratorio.js`) cablean eventos y reparten el pintado; no calculan. Las funciones de pintado reciben los datos por parámetro (`renderAt(cur, filtro)`), no leen variables de módulo.
-2. **Tamaño.** Ninguna función supera 100 líneas útiles ni ningún módulo 500 (lint). Catálogos, arnés, pruebas y scripts están exentos.
+2. **Tamaño y complejidad.** Ninguna función supera 100 líneas útiles, complejidad ciclomática 40 ni cinco parámetros, y ningún módulo 500 líneas (lint). Catálogos, arnés, pruebas y scripts están exentos. Meta declarada: complejidad 25.
 3. **Estado.** Sólo `src/io/state.js` muta el estado global; las vistas lo cambian con sus funciones (`setData`, `setPrefs`, `setNote`, `setLoadedMonths`, `setRendered`) y se enteran por los eventos `data` y `notes`.
 4. **Errores.** Los transportes lanzan clases con nombre (`AuthError`, `TimeoutError`, `CancelledError`, `LabAuthError`, `SyslabAuthError`). Lo que ve la persona pasa por `core/errors.js → humanError`. Un `catch` vacío lleva siempre un comentario con el porqué.
 5. **HTML.** Todo texto de la API que entra en `innerHTML` pasa por `esc()`. Nunca `display:flex` sobre un `td`. Un solo nivel de énfasis, el contrato de tres niveles al inicio de `styles/app.css`.
@@ -95,7 +95,7 @@ flowchart LR
 - `ui/patients.js` agrega atenciones por identidad estable; `ui/patient-panel.js` solicita y presenta el detalle longitudinal.
 - Los filtros viven en los controladores de Atenciones e Interconsultas. `ui/multi-select.js` aporta el selector accesible de selección múltiple.
 - `state.rendered` conserva el mismo orden visible que utilizan navegación y exportación.
-- `ui/export.js`, `ui/patient-report.js` y `io/pdf.js` generan salidas a partir de la selección actual; no escriben de vuelta en Eloisa. Exportar una tabla avisa cuántos pacientes y qué campos salen.
+- `ui/export.js`, `core/patient-report.js` y `io/pdf.js` generan salidas a partir de la selección actual; no escriben de vuelta en Eloisa. Exportar una tabla avisa cuántos pacientes y qué campos salen.
 
 ## Cifrado en reposo
 
@@ -149,7 +149,7 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 | Reglas de pendientes | `src/core/pendientes.js`, `src/core/config.js` | prueba por regla con el caso positivo y el negativo («sólo las mías») |
 | Vista Hoy | `src/ui/today.js`, `src/ui/tabs/hoy.js`, `src/core/calendar.js` | jornada vacía, antecedentes, calendario y navegación de paciente |
 | Panel del paciente | `src/ui/patient-panel.js`, `src/ui/panel/*.js`, `src/core/ficha.js`, `src/io/ficha-load.js` | identidad, escape de texto, ficha caída honesta, foco y Escape |
-| Historia imprimible | `src/ui/patient-report.js`, `src/ui/export.js` | variantes del reporte y aviso de exportación |
+| Historia imprimible | `src/core/patient-report.js`, `src/ui/export.js` | variantes del reporte y aviso de exportación |
 | Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js`, `src/ui/lab/*.js` | sesión cookie, parsing de órdenes, guardia de origen |
 | Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js` | pestaña con sesión, espera de navegación, identidad del lote |
 | Interpretación de informes | `src/core/lab-parser.js`, `src/core/lab-analytics.js`, `src/core/lab-catalog.js` | corpus de líneas reales anonimizadas; la marca del laboratorio fuerza la alerta |
@@ -185,6 +185,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
 - `src/core/sync-rules.js` — fuentes de sincronización y qué quedó pendiente, sin almacenamiento.
 - `src/core/labels.js` — etiquetas puras compartidas por tabla, Pacientes, Hoy y la historia imprimible: día con hora, letra del sexo, rol en una interconsulta, «tipo · razón».
+- `src/core/lab-charts.js` — series de tendencia en SVG (cadena, sin DOM), con las alteraciones destacadas.
 - `src/core/lab-analytics.js` — identidad del paciente, lote íntegro, matriz comparativa y tendencias.
 - `src/core/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
 - `src/core/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
@@ -193,6 +194,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
 - `src/core/load-summary.js` — resumen honesto y compacto del resultado de carga.
 - `src/core/parser.js` — normalización de fechas, RUN y respuestas de Eloisa.
+- `src/core/patient-report.js` — modelo y HTML de la historia clínica imprimible, sin DOM; la impresión la dispara `ui/panel/pdf-menu.js`.
 - `src/core/pendientes.js` — reglas explicables de pendientes clínico-administrativos.
 - `src/core/period.js` — periodos rápidos y rangos explícitos.
 - `src/core/sic-rules.js` — quién es «mío»: la interconsulta que registré o ejecuto y la atención en la que soy prestador (única definición); contactos por RUN desde las SIC. (antes: reglas puras de interconsultas (`isMine`, `contactsFromSICs`), sin red ni estado.)
@@ -233,7 +235,6 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/export.js` — exportación filtrada a CSV, XLS, HTML, JSON y PDF.
 - `src/ui/ia-panel.js` — hoja «Informe con IA» del panel: plantilla, ventana, fuentes, contexto visible, copiar prompt, pegar respuesta, informe e impresión (proveedor manual).
 - `src/ui/ic-tab.js` — presentación, filtros y orden de interconsultas.
-- `src/ui/lab-charts.js` — series de tendencia en SVG, con las alteraciones destacadas.
 - `src/ui/lab-trends.js` — agrupa las series en tarjetas clínicas y las filtra por período, texto y alteración.
 - `src/ui/loader.js` — orquestación de carga, progreso, reintento y sesión vencida.
 - `src/ui/lock.js` — pantalla local de privacidad por inactividad.
@@ -250,7 +251,6 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/panel/notas.js` — diario de notas del paciente y su cableado.
 - `src/ui/panel/pdf-menu.js` — menú «PDF ▾» de la historia del paciente.
 - `src/ui/panel/ficha-status.js` — estado de la ficha dentro de Datos (avatar), con su tono en el avatar.
-- `src/ui/patient-report.js` — modelo de historia clínica imprimible.
 - `src/ui/patients.js` — agregación de atenciones por paciente y su pintado en la pestaña Pacientes.
 - `src/ui/pdf-merge.js` — fusión de informes en un PDF único, con pdf-lib cargado bajo demanda.
 - `src/ui/stats.js` — estadísticas: cálculos y su pintado (barra, gráficos, filtros).

@@ -1,7 +1,7 @@
 /** Menú «PDF ▾» del panel: la historia del paciente por alcance, en report.html. */
 import { $ } from '../dom.js';
 import { initMenu } from '../ui.js';
-import { buildPatientReport } from '../patient-report.js';
+import { buildPatientReport } from '../../core/patient-report.js';
 import { openReport } from '../export.js';
 
 export function initPdfMenu({ getCur, onError }) {

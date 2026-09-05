@@ -5,7 +5,7 @@ import { esc, $, initTablist, activateOnKey, skeletonCards } from './dom.js';
 import { openPDF } from '../io/pdf.js';
 import { getToken } from '../io/auth.js';
 import { loadFicha } from '../io/ficha-load.js';
-import { SCOPE_LABEL } from './patient-report.js';
+import { SCOPE_LABEL } from '../core/patient-report.js';
 import { initIaPanel, openIa, closeIa } from './ia-panel.js';
 import { showExpired } from './loader.js';
 import { session } from '../io/http.js';

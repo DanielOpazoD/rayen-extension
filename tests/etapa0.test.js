@@ -63,7 +63,7 @@ const RAW_SIC = {
   NumeroSolicitud: 21450486, FechaHora: '01-01-2026', Prioridad: 2, Estado: 'Atendido', IdEstado: 5,
   SolicitudInterconsulta: {
     FechaHora: '20260101 090000', IdFuncionarioRegistrador: ME, IdFuncionarioEjecutor: 9,
-    NombreFuncionarioRegistrador: 'Opazo', NombreFuncionarioEjecutor: 'Otro',
+    NombreFuncionarioRegistrador: 'Opazo Damiani Daniel', NombreFuncionarioEjecutor: 'Pérez Tuki Ana María',
     UsuarioAps: { NombreCompletoPaciente: 'Paciente Uno', Rut: '1K' },
   },
 };
@@ -83,7 +83,7 @@ test('una SIC sin antigüedad informada se evalúa por su fecha', () => {
     estado: 'Atendido', estadoId: 5, grupo: 'atendida', especialidad: 'Reumatología',
     contrarreferencias: [], prioridad: 2,
     paciente: { nombre: 'Paciente Uno', run: '1K', runStr: '1-K' },
-    registrador: { id: ME, nombre: 'Opazo' }, ejecutor: { id: 9, nombre: 'Otro' },
+    registrador: { id: ME, nombre: 'Opazo Damiani Daniel' }, ejecutor: { id: 9, nombre: 'Pérez Tuki Ana María' },
   };
   // Una SIC atendida ya no genera pendiente: la regla «sin contrarreferencia»
   // se retiró con el PR #7 (metadato administrativo).
