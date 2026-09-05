@@ -86,10 +86,15 @@ function routeEloisa(url, init) {
   return json('dev: sin red', 503);
 }
 
-globalThis.fetch = (url, init) =>
-  String(url).startsWith('https://clinicohangaroa.eloisa.cl')
-    ? later(routeEloisa(String(url), init))
-    : realFetch(url, init);
+// Nada sale de la máquina: Eloisa se enruta; los laboratorios (HSR, SysLab) responden 503 en local,
+// salvo que un recorrido de Playwright declare `globalThis.__RAYEN_DEV_NET = 'mock'` porque los simula con sus rutas.
+const OFFLINE = ['https://examenesusuarios.hsalvador.cl', 'http://10.4.69.90'];
+globalThis.fetch = (url, init) => {
+  const u = String(url);
+  if (u.startsWith('https://clinicohangaroa.eloisa.cl')) return later(routeEloisa(u, init));
+  if (OFFLINE.some(o => u.startsWith(o)) && globalThis.__RAYEN_DEV_NET !== 'mock') return later(json('dev: sin red', 503));
+  return realFetch(url, init);
+};
 
 /** Pre-populates chrome.storage.local (call before app.js is imported). */
 export function seed(obj) {

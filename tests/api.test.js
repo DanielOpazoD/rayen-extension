@@ -400,3 +400,11 @@ test('progress is reported in order and ends at 100', async () => {
   assert.ok(seen.every(([, p]) => p === 'citas'));
   for (let i = 1; i < seen.length; i++) assert.ok(seen[i][0] >= seen[i - 1][0], 'monotonic');
 });
+
+test('un elemento nulo o vacío en la respuesta de la agenda no tumba la carga: las citas válidas se guardan', async () => {
+  scriptFetch(url => [null, {}, { UsuarioAps: null }, rawCita(4242, dayOf(url))]);
+  const res = await loadData(1, () => {}, { historial: false });
+  assert.ok(res, 'la carga terminó');
+  assert.ok(res.records.some(r => r.id === 4242), 'la cita válida está');
+  assert.equal(res.failedDays, 0);
+});

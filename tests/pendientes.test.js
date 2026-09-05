@@ -128,3 +128,9 @@ test('una interconsulta rechazada es un pendiente con decisión, no una «cerrad
   assert.equal(computePendientes([], [{ ...sic, registrador: { id: 1 } }], { hoy: new Date(2026, 8, 4) }).length, 0, 'sólo las mías');
   assert.equal(computePendientes([], [{ ...sic, antiguedadDias: 300 }], { hoy: new Date(2026, 8, 4) }).length, 0, 'a los 300 días ya no es una decisión pendiente');
 });
+
+test('el umbral de días es inclusivo: justo en el umbral ya es pendiente, un día antes no', () => {
+  const sic = d => ({ id: 1, estadoId: 13, estado: 'Nueva', especialidad: 'X', fecha8: '20260801', antiguedadDias: d, paciente: { run: '1-9', nombre: 'X' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } });
+  assert.equal(computePendientes([], [sic(21)], { hoy: new Date(2026, 8, 4) }).length, 1);
+  assert.equal(computePendientes([], [sic(20)], { hoy: new Date(2026, 8, 4) }).length, 0);
+});

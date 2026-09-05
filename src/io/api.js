@@ -135,6 +135,7 @@ async function fetchAgendaBatches(token, toFetch, store, citasShare, onProgress)
       succeededDates.push(batch[i]);
       dropDay(store, batch[i]);
       for (const c of day) {
+        if (!c || typeof c !== 'object') continue; // un elemento nulo en la respuesta no tumba la carga entera
         if (rawSamples.length < 30) rawSamples.push(c);
         const r = parseCita(c);
         if (r) newRecords.push(r);

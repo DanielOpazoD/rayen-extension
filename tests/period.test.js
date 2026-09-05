@@ -41,3 +41,9 @@ test('iso <-> date8 round-trips and rejects junk', () => {
 test('every chip key has a label', () => {
   for (const k of Object.keys(PERIODS)) assert.ok(PERIODS[k].length > 0, k);
 });
+
+test('inRange incluye ambos extremos y sólo acepta sin fecha cuando no hay rango', () => {
+  assert.equal(inRange('20260901', '20260901', '20260930'), true); assert.equal(inRange('20260930', '20260901', '20260930'), true);
+  assert.equal(inRange('20261001', '20260901', '20260930'), false); assert.equal(inRange('20260831', '20260901', '20260930'), false);
+  assert.equal(inRange('', '', ''), true); assert.equal(inRange('', '20260901', ''), false);
+});

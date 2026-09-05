@@ -157,6 +157,7 @@ export const CITA_KNOWN_FIELDS = new Set([
  * Returns null if the cita has no usable patient data.
  */
 export function parseCita(cita) {
+  if (!cita || typeof cita !== 'object') return null;
   const aps = cita.UsuarioAps;
   if (!aps?.NombreFormateado) return null;
 
