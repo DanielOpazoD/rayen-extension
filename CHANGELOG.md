@@ -1,5 +1,16 @@
 # Historial de cambios
 
+## 2.34.0 — 2026-09-04
+
+Cimientos, primera tanda tras el balance 6 (ingeniería 5,0 · clínico 4,6 · seguridad 4,0).
+
+- **Red con tiempo límite y cancelación real** (`io/http.js`): cada petición a Eloisa se aborta a los 20 s; «Cancelar» aborta lo que está en vuelo y no encola más lotes. Antes una red muda dejaba la carga colgada. Un 401/403 invalida además la copia del token en `storage.session`. Errores nuevos `TimeoutError` y `CancelledError`, traducidos por `core/errors.js`. La sesión vencida al cargar la ficha del panel avisa igual que la carga principal.
+- **Estado sin mutaciones externas**: `setLoadedMonths` y `setRendered` en `io/state.js`; las pestañas ya no escriben en el estado a mano.
+- **Sin ciclos de importación**: `isMine` y `contactsFromSICs` pasan a `core/sic-rules.js` (el registro clínico de IA ya no importa un cargador); `state.js` deja de importar `sic.js`. Nuevo `scripts/check-cycles.mjs` en `npm run check`.
+- **Capa core sin código de navegador**: `lab-pdf-text.js` y `lab-report.js` (cargan pdf.js) pasan a `io/`; el lint prohíbe en `core` los `import()` en tiempo de ejecución.
+- **Pruebas negativas** para tres garantías que antes nadie defendía: el token no sale del origen de Eloisa (`fetch` no se llama), la marca del laboratorio fuerza la alerta, y el anonimizador devuelve `verificado=false` cuando un nombre sobrevive donde su recorrido no llega. Más pruebas de tiempo límite, cancelación e invalidación del token.
+- **Documentación verificada**: `docs:check` exige ahora que toda ruta `src/…` citada en ARCHITECTURE.md, README.md y DOCUMENTATION_MAP.md exista (había 24 rutas viejas); corregidos «world MAIN» en README y la afirmación de que el manifiesto bloquea la API de IA.
+
 ## 2.33.1 — 2026-09-04
 
 - El informe con IA muestra el RUN con puntos y guion, como el panel; venía en bruto desde la agenda.

@@ -14,6 +14,7 @@ import { whenLabel } from './table.js';
 import { buildPatientReport, SCOPE_LABEL } from './patient-report.js';
 import { openReport } from './export.js';
 import { initIaPanel, openIa, closeIa } from './ia-panel.js';
+import { showExpired } from './loader.js';
 import { copyToClipboard } from './toast.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -572,6 +573,7 @@ async function loadAndRenderFicha(force = false) {
       (fallos ? `<span class="al al-warn" tabindex="0" role="img" aria-label="${fallos} ${fallos === 1 ? 'fuente falló' : 'fuentes fallaron'}" data-tip="${esc(ficha.errors.map(humanFichaError).join('\n'))}">⚠</span>` : ''),
       fallos ? 'warn' : '');
   } catch (err) {
+    if (err?.name === 'AuthError') showExpired(); // la sesión murió: que la barra lo diga y ofrezca recargar
     if (cur === me) { me.fichaFailed = true; renderRx(); renderResumen(); setFichaStatus(`<span class="al al-bad">Ficha clínica: ${esc(humanError(err, 'Eloisa'))}</span>`, 'bad'); }
   }
 }

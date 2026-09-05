@@ -1,5 +1,7 @@
 import { nameOf } from '../core/text.js';
 import { state } from './state.js';
+import { isMine, contactsFromSICs } from '../core/sic-rules.js';
+export { isMine, contactsFromSICs }; // los importadores históricos siguen encontrándolos aquí
 import { CONFIG, SIC_ESTADOS, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO, sicGrupo } from '../core/config.js';
 import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
 import { formatRun, fmtDate, localDateStr } from '../core/parser.js';
@@ -82,9 +84,6 @@ export function parseSIC(raw) {
 }
 
 /** True when the officer registered or is the executor of the SIC. */
-export function isMine(sic) {
-  return sic.registrador.id === CONFIG.officerId || sic.ejecutor.id === CONFIG.officerId;
-}
 
 // ── Fetching ───────────────────────────────────────────────────
 
@@ -193,20 +192,3 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
   return { sics, fromCache: false, savedAt: completedAt, failed: 0 };
 }
 
-/** Contact/demographic info per RUN, harvested from SIC patient payloads. */
-export function contactsFromSICs(sics) {
-  const map = new Map();
-  for (const s of sics) {
-    const p = s.paciente;
-    if (!p.run) continue;
-    const cur = map.get(p.run) ?? {};
-    map.set(p.run, {
-      telefono:    p.telefono    || cur.telefono    || '',
-      direccion:   p.direccion   || cur.direccion   || '',
-      prevision:   p.prevision   || cur.prevision   || '',
-      tipoUsuario: p.tipoUsuario || cur.tipoUsuario || '',
-      edad:        p.edad        || cur.edad        || '',
-    });
-  }
-  return map;
-}

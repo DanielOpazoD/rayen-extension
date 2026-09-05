@@ -6,7 +6,7 @@ import { certificadoPath, openPDF } from '../../io/pdf.js';
 import { savePrefs } from '../../io/cache.js';
 import { toast } from '../toast.js';
 import { esc, $, revealRow } from '../dom.js';
-import { state, on, tableCtx } from '../../io/state.js';
+import { state, on, tableCtx, setRendered } from '../../io/state.js';
 import { initChips, initFilterFold, initMenu, markSorted, debounce, setStatus } from '../ui.js';
 import { writeNote, openPatientById, copyRun, jumpToSIC } from '../actions.js';
 import { decodeMultiValue, initMultiSelect } from '../multi-select.js';
@@ -30,7 +30,7 @@ export function currentRows() {
 
 export function render() {
   const data = currentRows();
-  state.rendered = data;
+  setRendered(data);
   renderTable(data, state.allData.length, tableCtx());
   // Roving tabindex: la primera fila es la única parada de Tab.
   const first = $('tbody').querySelector('tr[data-id]');

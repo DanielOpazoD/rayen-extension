@@ -34,3 +34,12 @@ export async function getToken() {
     chrome.storage.session.get('rayenToken', d => resolve(d.rayenToken ?? null))
   );
 }
+
+/**
+ * Borra la copia del token en storage.session. Se llama al recibir 401/403:
+ * seguir entregando un token que Eloisa ya rechazó sólo produce más 401.
+ */
+export async function invalidateToken() {
+  try { await new Promise(resolve => chrome.storage.session.remove('rayenToken', () => resolve())); }
+  catch { /* sin chrome (pruebas) o sin storage.session: no hay nada que borrar */ }
+}

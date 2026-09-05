@@ -10,7 +10,7 @@
  *   biopsias:     { fecha, muestra, informe, diagnostico, fuente }
  */
 import { rankProblems, prescripcionEstado } from '../core/ficha-rank.js';
-import { isMine as sicEsMia } from '../io/sic.js';
+import { isMine as sicEsMia } from '../core/sic-rules.js';
 import { formatRun } from '../core/parser.js';
 
 const RECORD_VERSION = 1;

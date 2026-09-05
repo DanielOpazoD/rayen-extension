@@ -27,6 +27,7 @@ export default [
     rules: {
       'no-restricted-globals': ['error', 'document', 'window', 'chrome', 'fetch', 'localStorage', 'sessionStorage', 'navigator', 'location'],
       'no-restricted-imports': ['error', { patterns: [{ group: ['**/io/**', '**/ui/**', '**/ai/**'], message: 'core es puro: sin io, ui ni ai.' }] }],
+      'no-restricted-syntax': ['error', { selector: 'ImportExpression', message: 'core no carga módulos en tiempo de ejecución (vendor, pdf.js): eso es io.' }],
     },
   },
   {

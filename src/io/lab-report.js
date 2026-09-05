@@ -16,8 +16,8 @@
  */
 
 import { pdfBytesToText } from './lab-pdf-text.js';
-import { extractRutBodyFromReportText, parseReportText, cleanText } from './lab-parser.js';
-import { normalizeRutBody } from './lab-analytics.js';
+import { extractRutBodyFromReportText, parseReportText, cleanText } from '../core/lab-parser.js';
+import { normalizeRutBody } from '../core/lab-analytics.js';
 
 const DETAIL_CONCURRENCY = 3;
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractAnyRutBody, buildDetail, buildDetails } from '../src/core/lab-report.js';
+import { extractAnyRutBody, buildDetail, buildDetails } from '../src/io/lab-report.js';
 
 // Nota de alcance: la conversión PDF → texto usa pdf.js, que necesita el
 // navegador. Estas pruebas cubren la identidad y la tolerancia a fallos, que es

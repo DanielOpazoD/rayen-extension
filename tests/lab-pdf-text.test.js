@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizePdfText, groupPdfTextItemsIntoLines } from '../src/core/lab-pdf-text.js';
+import { normalizePdfText, groupPdfTextItemsIntoLines } from '../src/io/lab-pdf-text.js';
 
 /** Fragmento con la forma que entrega `getTextContent()` de pdf.js. */
 const frag = (str, x, y) => ({ str, transform: [1, 0, 0, 1, x, y] });

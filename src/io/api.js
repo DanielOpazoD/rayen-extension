@@ -116,6 +116,7 @@ export async function loadData(months, onProgress = () => {}, {
   onProgress(toFetch.length ? 0 : citasShare, 'citas');
 
   for (const batch of chunk(toFetch, CONFIG.batchSize)) {
+    if (session.expired || run.cancelled) break;
     const responses = await Promise.all(batch.map(d => fetchDay(token, d)));
     const okDates = [], newRecords = [];
 

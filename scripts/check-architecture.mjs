@@ -37,4 +37,12 @@ assert.match(readme, /\(DOCUMENTATION_MAP\.md\)/, 'README.md must link to DOCUME
 assert.match(documentationMap, /\(ARCHITECTURE\.md\)/, 'DOCUMENTATION_MAP.md must link to ARCHITECTURE.md');
 assert.match(documentationMap, /\(MAPA_API\.html\)/, 'DOCUMENTATION_MAP.md must link to MAPA_API.html');
 
-globalThis.console.log(`Mapa arquitectónico vigente: ${actual.length} módulos documentados.`);
+// Toda ruta src/… citada en la documentación debe existir: una tabla «dónde tocar»
+// con rutas viejas es peor que ninguna.
+const existing = new Set(actual);
+for (const [name, text] of [['ARCHITECTURE.md', architecture], ['README.md', readme], ['DOCUMENTATION_MAP.md', documentationMap]]) {
+  const phantom = [...new Set([...text.matchAll(/src\/[A-Za-z0-9_./-]+\.js/g)].map(m => m[0]))].filter(p => !existing.has(p));
+  assert.deepEqual(phantom, [], `${name} cita módulos que no existen`);
+}
+
+globalThis.console.log(`Mapa arquitectónico vigente: ${actual.length} módulos documentados; rutas citadas verificadas.`);

@@ -24,6 +24,7 @@ export const CONFIG = Object.freeze({
 
   // SIC list is re-fetched when older than this (states change over time)
   sicTtlMs: 30 * 60 * 1000,
+  httpTimeoutMs: 20 * 1000,        // una petición a Eloisa que no responde en 20 s se aborta; el resto sigue
   // Cached days older than this are pruned on load
   retentionMonths: 13,
   // Per-patient ficha window (years back). The API accepts any range.
