@@ -18,15 +18,19 @@ export default [
       'prefer-const': 'error',
       eqeqeq: ['error', 'smart'],
       'no-console': 'off',
-      // Una función de más de 150 líneas útiles o un módulo de más de 500 ya no se leen de una vez: se parten.
-      'max-lines-per-function': ['error', { max: 150, skipBlankLines: true, skipComments: true }],
+      // Una función de más de 100 líneas útiles o un módulo de más de 500 ya no se leen de una vez: se parten.
+      'max-lines-per-function': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+      // Complejidad ciclomática: techo 40 hoy (las cuatro que lo superaban se partieron); meta declarada 25.
+      complexity: ['error', 40],
+      // Más de cinco parámetros es una bolsa: se pasa un objeto con nombres.
+      'max-params': ['error', 5],
     },
   },
   {
     // Catálogos de datos, arnés, pruebas y scripts: largos por naturaleza, no por diseño.
     files: ['src/core/*-catalog.js', 'dev/**', 'tests/**', 'scripts/**'],
-    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
+    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off', complexity: 'off', 'max-params': 'off' },
   },
   // Capas: core no toca DOM, red ni Chrome y no importa io/ui; io no importa ui; ai no importa ui.
   // La valla la hace cumplir el lint, no la disciplina.

@@ -65,19 +65,39 @@ function interconsulta(s) {
  * @param {number} p.officerId
  * @param {string} [p.generado] — ISO; sólo para pruebas
  */
+/** Estado de cada fuente: el informe dice con qué se armó y qué faltó. */
+function fuentesDe({ ficha, visits, sics, laboratorio, imagenologia, biopsias }) {
+  const fichaEstado = !ficha ? 'ausente' : ficha.errors?.length ? (ficha.visits?.length ? 'parcial' : 'fallida') : 'completa';
+  const opcional = (id, lista) => ({ id, estado: lista.length ? 'completa' : 'ausente', n: lista.length });
+  return [
+    { id: 'eloisa-agenda', estado: 'completa', n: visits.length },
+    { id: 'eloisa-ficha', estado: fichaEstado, n: ficha?.visits?.length ?? 0, errores: (ficha?.errors ?? []).length },
+    { id: 'eloisa-sic', estado: 'completa', n: sics.length },
+    opcional('laboratorio', laboratorio), opcional('imagenologia', imagenologia), opcional('biopsias', biopsias),
+  ];
+}
+
+/** Antecedentes de la ficha como texto plano: fármacos, mórbidos, alergias, RAM, programas, vigencias, riesgo. */
+function antecedentesDe(ficha) {
+  const ant = ficha?.antecedentes ?? {};
+  const etiqueta = x => texto(x.label ?? x);
+  return {
+    farmacos: (ant.farmacos ?? []).map(f => ({ texto: [f.label, f.posologia].filter(Boolean).join(' · '), estado: texto(f.estado), fecha: texto(f.fecha) })),
+    morbidos: (ant.morbidos ?? []).map(etiqueta).filter(Boolean),
+    alergias: (ant.alergias ?? []).map(etiqueta).filter(Boolean),
+    ram: (ficha?.ram ?? []).map(r => texto(r.label ?? r.descripcion ?? r)).filter(Boolean),
+    programas: (ficha?.programas ?? []).map(p => ({ nombre: texto(p.nombre ?? p.label), estado: texto(p.estado), fecha: texto(p.fecha) })),
+    vigencia: (ficha?.vigencia ?? []).map(v => ({ ok: !!v.ok, mensaje: texto(v.mensaje) })),
+    riesgo: (ficha?.riesgo ?? []).map(r => texto(r.label ?? r.descripcion ?? r.nombre ?? r)).filter(Boolean),
+  };
+}
+
 export function buildClinicalRecord({ record, ficha = null, visits = [], sics = [], laboratorio = [], imagenologia = [], biopsias = [], officerId, generado = new Date().toISOString() }) {
   const src = ficha?.visits?.length ? ficha.visits : visits;
   const atenciones = src.map(v => atencion(v, officerId)).sort((a, b) => (b.fecha8 ?? '').localeCompare(a.fecha8 ?? '') || b.fecha.localeCompare(a.fecha));
   const problemas = rankProblems(src, { officerId }).map(p => ({ nombre: p.nombre, codigo: p.codigo, esAuge: p.esAuge, cronico: p.cronico, recurrente: p.recurrente, n: p.n, primera: p.primera, ultima: p.ultima }));
-  const ant = ficha?.antecedentes ?? {};
-  const fuentes = [
-    { id: 'eloisa-agenda', estado: 'completa', n: visits.length },
-    { id: 'eloisa-ficha', estado: !ficha ? 'ausente' : ficha.errors?.length ? (ficha.visits?.length ? 'parcial' : 'fallida') : 'completa', n: ficha?.visits?.length ?? 0, errores: (ficha?.errors ?? []).length },
-    { id: 'eloisa-sic', estado: 'completa', n: sics.length },
-    { id: 'laboratorio', estado: laboratorio.length ? 'completa' : 'ausente', n: laboratorio.length },
-    { id: 'imagenologia', estado: imagenologia.length ? 'completa' : 'ausente', n: imagenologia.length },
-    { id: 'biopsias', estado: biopsias.length ? 'completa' : 'ausente', n: biopsias.length },
-  ];
+  const fuentes = fuentesDe({ ficha, visits, sics, laboratorio, imagenologia, biopsias });
+  const conFuente = (lista, fuente) => lista.map(x => ({ ...x, fuente: x.fuente ?? fuente }));
   return {
     version: RECORD_VERSION, generado, fuentes,
     paciente: {
@@ -85,19 +105,11 @@ export function buildClinicalRecord({ record, ficha = null, visits = [], sics = 
       prevision: texto(record.prevision ?? ficha?.master?.prevision), idUsp: record.idUsp ?? ficha?.master?.idUsp ?? null,
     },
     problemas, atenciones,
-    antecedentes: {
-      farmacos: (ant.farmacos ?? []).map(f => ({ texto: [f.label, f.posologia].filter(Boolean).join(' · '), estado: texto(f.estado), fecha: texto(f.fecha) })),
-      morbidos: (ant.morbidos ?? []).map(m => texto(m.label ?? m)).filter(Boolean),
-      alergias: (ant.alergias ?? []).map(a => texto(a.label ?? a)).filter(Boolean),
-      ram: (ficha?.ram ?? []).map(r => texto(r.label ?? r.descripcion ?? r)).filter(Boolean),
-      programas: (ficha?.programas ?? []).map(p => ({ nombre: texto(p.nombre ?? p.label), estado: texto(p.estado), fecha: texto(p.fecha) })),
-      vigencia: (ficha?.vigencia ?? []).map(v => ({ ok: !!v.ok, mensaje: texto(v.mensaje) })),
-      riesgo: (ficha?.riesgo ?? []).map(r => texto(r.label ?? r.descripcion ?? r.nombre ?? r)).filter(Boolean),
-    },
+    antecedentes: antecedentesDe(ficha),
     interconsultas: sics.map(interconsulta),
-    laboratorio: laboratorio.map(x => ({ ...x, fuente: x.fuente ?? 'laboratorio' })),
-    imagenologia: imagenologia.map(x => ({ ...x, fuente: x.fuente ?? 'imagenologia' })),
-    biopsias: biopsias.map(x => ({ ...x, fuente: x.fuente ?? 'biopsias' })),
+    laboratorio: conFuente(laboratorio, 'laboratorio'),
+    imagenologia: conFuente(imagenologia, 'imagenologia'),
+    biopsias: conFuente(biopsias, 'biopsias'),
     notas: (record.notas ?? []).map(n => ({ fecha: n.at ?? null, texto: texto(n.text) })),
   };
 }

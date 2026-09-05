@@ -33,7 +33,7 @@ function sharedReferenceBand(points) {
 }
 
 /** La banda normal como rectángulo de fondo; una cota abierta llega al borde. */
-function bandRect(band, min, span, P, plotH, width) {
+function bandRect(band, { min, span, P, plotH, width }) {
   if (!band) return '';
   const yOf = v => P.top + plotH - ((v - min) / span) * plotH;
   const top = band.max != null ? yOf(band.max) : P.top;
@@ -100,7 +100,7 @@ export function trendSVG(trend, { width = 260, height = 120 } = {}) {
     style="width:100%;display:block">
     <text x="8" y="13" font-size="11" font-weight="700" fill="${TXT}">${esc(trend.analysis)}</text>
     <text x="${width - 8}" y="13" text-anchor="end" font-size="9" fill="${TXT3}">${esc(trend.unit || '')}</text>
-    ${bandRect(band, min, span, P, plotH, width)}
+    ${bandRect(band, { min, span, P, plotH, width })}
     <line x1="${P.left}" y1="${P.top + plotH}" x2="${width - P.right}" y2="${P.top + plotH}" stroke="${GRID}" stroke-width="1"/>
     <path d="${path}" fill="none" stroke="${LINE}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
     ${dots}

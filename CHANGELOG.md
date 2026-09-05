@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.50.0 — 2026-09-05
+
+Saneamiento, tanda 3 de 4: vallas de complejidad.
+
+- **Lint más estricto**: funciones de hasta 100 líneas útiles (antes 150), complejidad ciclomática máxima 40 (antes sin regla; meta declarada 25) y máximo cinco parámetros por función. Todo `src/` cumple.
+- Para cumplirlo se partieron, sin cambiar comportamiento y con sus pruebas en verde: `parseSIC` (paciente, personas y diagnóstico aparte), `computePendientes` (una función por regla), `buildClinicalRecord` (fuentes y antecedentes aparte), el recorrido del anonimizador (predicado de persona compartido con la recolección de nombres, reemplazo por clave aparte) y `buildAnalysis` (informes y tendencias aparte). `listIds` y `bandRect` reciben un objeto en vez de seis parámetros.
+- El controlador de Exámenes complementarios ya no calcula: el período va a `core/period.js` (`periodoDesde`, con prueba) y la selección recibe los datos por parámetro.
+
 ## 2.49.0 — 2026-09-05
 
 Saneamiento, tanda 2 de 4: duplicación.

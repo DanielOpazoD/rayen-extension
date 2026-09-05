@@ -1,4 +1,5 @@
 import { normalizeSexo } from '../../core/lab-parser.js';
+import { periodoDesde } from '../../core/period.js';
 import { formatRun } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
 import { esc, $ } from '../dom.js';
@@ -99,17 +100,9 @@ const sessions = createSessionMonitor({
 
 /** El selector rellena las fechas; editarlas a mano sigue mandando. */
 function applyPeriodo() {
-  const years = Number($('labPeriodo').value);
-  if (!years) {
-    $('labDesde').value = '';
-    $('labHasta').value = '';
-    return;
-  }
-  const desde = new Date();
-  if (years < 1) desde.setMonth(desde.getMonth() - Math.round(years * 12));
-  else desde.setFullYear(desde.getFullYear() - years);
-  $('labDesde').value = isoDate(desde);
-  $('labHasta').value = isoDate(new Date());
+  const desde = periodoDesde(Number($('labPeriodo').value));
+  $('labDesde').value = desde ? isoDate(desde) : '';
+  $('labHasta').value = desde ? isoDate(new Date()) : '';
 }
 
 /**
@@ -234,10 +227,10 @@ function updateSelectionUI() {
 
 // ── Análisis ──
 
-/** Une lo seleccionado de ambos hospitales en una sola lista analizable. */
-function selectedItems() {
+/** Une lo seleccionado de ambos hospitales en una sola lista analizable. Recibe los datos: no lee el estado del módulo. */
+function selectedItems(results, selected) {
   const items = [];
-  for (const o of search.results.hsr) {
+  for (const o of results.hsr) {
     if (selected.has(`hsr:${o.numero}`) && analysable('hsr', o)) {
       items.push({
         source: 'HSR',
@@ -250,7 +243,7 @@ function selectedItems() {
       });
     }
   }
-  for (const o of search.results.hhr) {
+  for (const o of results.hhr) {
     if (selected.has(`hhr:${o.id}`) && analysable('hhr', o)) {
       items.push({
         source: 'HHR',
@@ -267,7 +260,7 @@ function selectedItems() {
 }
 
 async function analyzeSelected() {
-  const items = selectedItems();
+  const items = selectedItems(search.results, selected);
   if (!items.length) return;
 
   const btn = $('labAnalyze');

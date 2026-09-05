@@ -10,7 +10,8 @@ const BASE = '/API/api/rayen/ReferenciaYContrarreferencia';
 
 // ── Fetching ───────────────────────────────────────────────────
 
-async function listIds(token, origen, from8, to8, estados, nodeKey) {
+/** Ids de solicitudes en una ventana, para un origen (SOLICITUD_INTERCONSULTA / RECEPCION_CONTRALOR) y lado del nodo. */
+async function listIds(token, { origen, from8, to8, estados, nodeKey }) {
   const q = rayenParams([
     ['ORIGEN', origen],
     ['BUSQUEDAINICIAL', false],
@@ -74,9 +75,9 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
   // (c) is speculative: SICs emitted by HHR but received elsewhere — if the API
   // rejects the state list for that origin the call is simply counted as failed.
   const [a, b, c] = await Promise.all([
-    listIds(token, 'SOLICITUD_INTERCONSULTA', from8, to8, SIC_ESTADOS_ORIGEN,  'IDNODOORIGEN'),
-    listIds(token, 'RECEPCION_CONTRALOR',     from8, to8, SIC_ESTADOS_DESTINO, 'IDNODODESTINO'),
-    listIds(token, 'SOLICITUD_INTERCONSULTA', from8, to8, SIC_ESTADOS_DESTINO, 'IDNODOORIGEN'),
+    listIds(token, { origen: 'SOLICITUD_INTERCONSULTA', from8, to8, estados: SIC_ESTADOS_ORIGEN,  nodeKey: 'IDNODOORIGEN' }),
+    listIds(token, { origen: 'RECEPCION_CONTRALOR',     from8, to8, estados: SIC_ESTADOS_DESTINO, nodeKey: 'IDNODODESTINO' }),
+    listIds(token, { origen: 'SOLICITUD_INTERCONSULTA', from8, to8, estados: SIC_ESTADOS_DESTINO, nodeKey: 'IDNODOORIGEN' }),
   ]);
   if (session.expired) throw new AuthError(401);
   let failed = (a === null) + (b === null) + (c === null);

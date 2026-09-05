@@ -50,6 +50,18 @@ export function resolveRange({ periodo = 'todo', desde = '', hasta = '' }, hoy =
 }
 
 /** Una fecha8 cae en [from8, to8]; sin fecha legible no se oculta. */
+/**
+ * Fecha de inicio del selector de período del laboratorio: `years` años hacia
+ * atrás (fracciones en meses); null cuando no hay período elegido.
+ */
+export function periodoDesde(years, hoy = new Date()) {
+  if (!years) return null;
+  const desde = new Date(hoy);
+  if (years < 1) desde.setMonth(desde.getMonth() - Math.round(years * 12));
+  else desde.setFullYear(desde.getFullYear() - years);
+  return desde;
+}
+
 export function inRange(fecha8, from8, to8) {
   if (!fecha8) return !from8 && !to8;
   return (!from8 || fecha8 >= from8) && (!to8 || fecha8 <= to8);
