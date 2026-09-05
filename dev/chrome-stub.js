@@ -31,9 +31,64 @@ globalThis.chrome = {
 mem.session.set('rayenToken', 'dev-token');
 
 const realFetch = globalThis.fetch.bind(globalThis);
+
+// ── Ficha clínica en el arnés ──
+// Por defecto se sirve una ficha sintética por paciente (dev/ficha-fixture.js).
+// Con `?ficha=off` todo lo de Eloisa responde 503, para probar el camino honesto
+// de la ficha caída. Si hay capturas anonimizadas reales en dev/fixtures/
+// (manifest.json), sustituyen a la sintética endpoint por endpoint.
+let ficha = null;            // { byRunBody, byId }
+const captures = {};         // { master, historial, antecedentes, programas, vigencias, riesgo, ram } → datos
+let fichaMode = 'synthetic'; // 'synthetic' | 'off'
+const DELAY_MS = 80;         // que se vea el esqueleto, como en la red real
+
+export function setFichaResponses(responses) { ficha = responses; }
+export function setFichaMode(mode) { fichaMode = mode; }
+export async function loadCaptures(base = new URL('./fixtures/', import.meta.url)) {
+  try {
+    const manifest = await (await realFetch(new URL('manifest.json', base))).json();
+    for (const [endpoint, file] of Object.entries(manifest)) {
+      const cap = await (await realFetch(new URL(file, base))).json();
+      if (cap && 'datos' in cap) captures[endpoint] = cap.datos;
+    }
+  } catch { /* sin capturas: sintético */ }
+  return Object.keys(captures);
+}
+
+const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+const later = res => new Promise(resolve => setTimeout(() => resolve(res), DELAY_MS));
+
+function routeEloisa(url, init) {
+  if (fichaMode === 'off' || !ficha) return json('dev: sin red', 503);
+  const path = new URL(url).pathname.toLowerCase();
+  const idDe = re => { const m = path.match(re); return m ? Number(m[1]) : null; };
+  const m = path.match(/\/inscripcion\/usuarioapsrut\/([0-9k]+)\//);
+  if (m) {
+    const body = m[1].replace(/[^0-9]/g, '').slice(0, -1);
+    const rec = captures.master ?? ficha.byRunBody.get(body);
+    return rec ? json([rec]) : json([], 200);
+  }
+  if (path.endsWith('/fichaclinica/historialatencion')) {
+    const id = (() => { try { return JSON.parse(init?.body ?? '{}').IdUsuario; } catch { return null; } })();
+    return json(captures.historial ?? ficha.byId.get(id)?.historial ?? []);
+  }
+  const rutas = [
+    [/\/fichaclinica\/recuperarantecedentes\/(\d+)/, 'antecedentes'],
+    [/\/historialusuarioapsenprogramasalud\/idusuarioaps=(\d+)/, 'programas'],
+    [/\/vigenciaexamenesusuario\/(\d+)/, 'vigencias'],
+    [/\/riesgomultimorbilidad\/idusuarioaps=(\d+)/, 'riesgo'],
+    [/\/eventoadverso\/alertaram\/(\d+)/, 'ram'],
+  ];
+  for (const [re, key] of rutas) {
+    const id = idDe(re);
+    if (id != null) return json(captures[key] ?? ficha.byId.get(id)?.[key] ?? (key === 'antecedentes' ? {} : []));
+  }
+  return json('dev: sin red', 503);
+}
+
 globalThis.fetch = (url, init) =>
   String(url).startsWith('https://clinicohangaroa.eloisa.cl')
-    ? Promise.resolve(new Response('dev: sin red', { status: 503 }))
+    ? later(routeEloisa(String(url), init))
     : realFetch(url, init);
 
 /** Pre-populates chrome.storage.local (call before app.js is imported). */

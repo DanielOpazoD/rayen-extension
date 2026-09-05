@@ -152,7 +152,7 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 | Anonimizador | `src/core/anonimizar.js`, `src/ui/tabs/explorador.js` | entradas adversariales; `verificado=false` ante un resto |
 | Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
 | Sistema visual y responsive | `styles/app.css`, `src/ui/ui.js`, `src/ui/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido; contraste ≥ 4,5:1 |
-| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
+| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos (agenda, SIC y ficha por paciente), `?ficha=off` para la ficha caída, capturas anonimizadas opcionales en `dev/fixtures/`, cero red externa, escritorio y ventana estrecha |
 | Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
 
 ## Mapa completo de módulos
@@ -278,7 +278,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `npm run docs:check`: cobertura del mapa arquitectónico, capa de cada módulo y rutas citadas.
 - `npm run release:check`: coherencia de versiones, permisos y archivos MV3.
 - `npm run check`: ejecuta todas las anteriores.
-- `npm run test:e2e`: recorridos sintéticos en Chromium a 1440×900 y 582×900, sin solicitudes externas: carga y filtros, teclado, panel, informe con IA, captura anonimizada, laboratorio, bloqueo y flujos (Lab, Escape, chip «+n», Detalle).
+- `npm run test:e2e`: recorridos sintéticos en Chromium a 1440×900 y 582×900, sin solicitudes externas: carga y filtros, teclado, panel con ficha sintética y con ficha caída, informe con IA, captura anonimizada, laboratorio, bloqueo y flujos (Lab, Escape, chip «+n», Detalle, flechas). El arnés (`dev/chrome-stub.js`) enruta los siete endpoints de la ficha a `dev/ficha-fixture.js`, o a capturas anonimizadas reales importadas con `scripts/import-capture.mjs`.
 - `npm run pack`: vuelve a validar y genera el ZIP instalable.
 
 El CI ejecuta `quality` y `browser-smoke` como trabajos independientes. Las pruebas reales deben registrarse por nivel: fuente local, arnés sintético, extensión cargada en Chrome y sesión autenticada de Eloisa. No se debe ascender evidencia de un nivel al siguiente.

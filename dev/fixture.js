@@ -9,11 +9,11 @@ import { aggregateTeam } from '../src/io/historial.js';
 import { CONFIG } from '../src/core/config.js';
 
 const MONTHS = 6;
-const OFFICER = { Id: CONFIG.officerId, NombreCompleto: 'Daniel Opazo Damiani', NombreInstrumento: 'Consulta Médica' };
-const KINE    = { Id: 439554, NombreCompleto: 'Carla Ejemplo Riroroko', NombreInstrumento: 'Kinesiología' };
-const MATRONA = { Id: 439560, NombreCompleto: 'Paula Ejemplo Tepano',   NombreInstrumento: 'Control Matrona' };
+export const OFFICER = { Id: CONFIG.officerId, NombreCompleto: 'Daniel Opazo Damiani', NombreInstrumento: 'Consulta Médica' };
+export const KINE    = { Id: 439554, NombreCompleto: 'Carla Ejemplo Riroroko', NombreInstrumento: 'Kinesiología' };
+export const MATRONA = { Id: 439560, NombreCompleto: 'Paula Ejemplo Tepano',   NombreInstrumento: 'Control Matrona' };
 
-const PATIENTS = [
+export const PATIENTS = [
   ['Gabriela', 'Ejemplo', 'Haoa',     '13754664', '19710305', 'Mujer',  'Fonasa B'],
   ['Luis',     'Ejemplo', 'Lagos',    '17752753', '19900812', 'Hombre', 'Fonasa D'],
   ['María',    'Ejemplo', 'Pakomio',  '9876543',  '19560120', 'Mujer',  'Fonasa A'],
@@ -31,7 +31,7 @@ const PATIENTS = [
   nombre: `${nom} ${ap} ${am}`,
 }));
 
-const DX = [
+export const DX = [
   ['Hipertensión esencial - (Confirmada)',        'Hipertensión arterial',      'I10',   true],
   ['Diabetes mellitus tipo 2 - (Confirmada)',     'Diabetes mellitus tipo 2',   'E11',   true],
   ['Lumbago - (Confirmada)',                      'Lumbago no especificado',    'M54.5', false],
@@ -45,12 +45,12 @@ const TIPOS   = ['Consulta Médica', 'Control Crónico', 'Consulta Morbilidad', 
 const ESTADOS = ['Completado', 'Completado', 'Completado', 'Completado', 'No se presentó a la cita', 'Confirmado'];
 
 // Deterministic PRNG (mulberry32) so the harness renders the same every time
-function rng(seed) {
+export function rng(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
-const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+export const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
 
-function edadExacta(dob8, d8) {
+export function edadExacta(dob8, d8) {
   const y = +d8.slice(0, 4) - +dob8.slice(0, 4) - (d8.slice(4) < dob8.slice(4) ? 1 : 0);
   return y * 1_000_000 + 3 * 10_000 + 12 * 100 + 10;
 }

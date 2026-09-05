@@ -5,9 +5,16 @@
 <script type="module">
   // Dev harness: real app.html + real app.js, fake chrome.* and synthetic data.
   // Open via `npm run dev` (or any static server at the repo root) → /dev/
-  import { seed } from './chrome-stub.js';
+  import { seed, setFichaResponses, setFichaMode, loadCaptures } from './chrome-stub.js';
   import { buildFixture } from './fixture.js';
+  import { buildFichaResponses } from './ficha-fixture.js';
   seed(buildFixture());
+  setFichaResponses(buildFichaResponses());
+  const params = new URLSearchParams(location.search);
+  if (params.get('ficha') === 'off') setFichaMode('off');
+  // Las capturas se cargan sólo si se piden (?ficha=capturas): así el arnés por
+  // defecto no pide un manifiesto que no existe y la consola queda limpia.
+  const capturas = params.get('ficha') === 'capturas' ? await loadCaptures() : [];
 
   const html = await (await fetch('../app.html')).text();
   const doc  = new DOMParser().parseFromString(html, 'text/html');
@@ -19,7 +26,7 @@
   document.title = `${doc.title} · dev`;
   document.head.append(...doc.head.querySelectorAll('style, link, meta[name=viewport]'));
   document.body.innerHTML = doc.body.innerHTML;
-  document.body.insertAdjacentHTML('beforeend', '<div id="devBadge">DEV · DATOS SINTÉTICOS</div>');
+  document.body.insertAdjacentHTML('beforeend', `<div id="devBadge">DEV · DATOS SINTÉTICOS${capturas.length ? ` · CAPTURAS: ${capturas.join(', ')}` : ''}${params.get('ficha') === 'off' ? ' · FICHA CAÍDA' : ''}</div>`);
 
   await import('../app.js');
   document.documentElement.dataset.devReady = 'true';
