@@ -199,3 +199,117 @@ test('loadHistorial resuelve la cita exacta de una atención mía sin cita ese d
   assert.equal(a.fechaCita8, '20260904');
   assert.equal(a.fecha8, '20260903', 'en el almacén sigue bajo su día de guardado');
 });
+
+// ── Bordes que la mutación mostró sin defender (Stryker, 05-09-2026: historial-merge.js 70 %) ──
+
+test('aggregateTeam: espontáneas, urgencias y las etiquetas «sin tipo» / «sin instrumento»', () => {
+  const agg = aggregateTeam([
+    atencion({ Id: 1, EsEspontanea: true, TipoDeAtencion: '', FuncionariosPrestadores: [{ Id: 5, NombreCompleto: 'Pérez Tuki Ana María', NombreInstrumento: '' }] }),
+    atencion({ Id: 2, EsEspontanea: false, EsUrgencia: true }),
+  ]);
+  assert.equal(agg.total, 2);
+  assert.equal(agg.espontaneas, 1);
+  assert.equal(agg.urgencias, 1);
+  assert.equal(agg.byTipo['(sin tipo)'], 1);
+  assert.equal(agg.byInstrumento['(sin instrumento)'], 1);
+});
+
+test('mergeHistorial: con dos atenciones mías el mismo día se cruza la más temprana; los otros profesionales quedan como pista sin repetirse', () => {
+  const tarde = atencion({ Id: 2, Fecha: '20260902 160000' }), temprano = atencion({ Id: 1, Fecha: '20260902 090000' });
+  const out = mergeHistorial([cita()], [tarde, temprano]);
+  assert.equal(out[0].atencionId, 1, 'la primera del día');
+  const otros = [1, 2].map(i => atencion({ Id: 10 + i, FuncionariosPrestadores: [{ Id: 7, NombreCompleto: 'Pakarati Hito Kine', NombreInstrumento: 'Kinesiología' }] }));
+  const pista = mergeHistorial([cita()], [...otros, atencion({ Id: 13, FuncionariosPrestadores: [{ Id: 8, NombreCompleto: 'Riroroko Haoa Luis', NombreInstrumento: 'Matrona' }] })]);
+  assert.equal(pista[0].otrosEseDia, 'Pakarati Hito Kine, Riroroko Haoa Luis', 'sin duplicados, separados por coma');
+  assert.equal(pista[0].atencionId, null);
+});
+
+test('mergeHistorial: la fila cruzada toma de la atención lo que la cita no trae, y nunca al revés', () => {
+  const dos = atencion({ Id: 1, FuncionariosPrestadores: [{ Id: OFFICER, NombreCompleto: 'Opazo Damiani Daniel' }, { Id: 9, NombreCompleto: 'Pérez Tuki Ana María' }] });
+  const [sinTipo] = mergeHistorial([cita({ tipoAtencion: '', sexo: '' })], [dos]);
+  assert.equal(sinTipo.prestador, 'Opazo Damiani Daniel, Pérez Tuki Ana María');
+  assert.equal(sinTipo.tipoAtencion, 'Morbilidad Medica', 'la cita sin tipo toma el de la atención');
+  assert.equal(sinTipo.sexo, 'Mujer');
+  assert.deepEqual(sinTipo.proximoControl, [], 'sin órdenes internas, lista vacía y no undefined');
+  const [conTipo] = mergeHistorial([cita({ tipoAtencion: 'Control Crónico', sexo: 'Hombre' })], [atencion({ Id: 1 })]);
+  assert.deepEqual([conTipo.tipoAtencion, conTipo.sexo], ['Control Crónico', 'Hombre'], 'lo que la agenda dice, se conserva');
+});
+
+test('mergeHistorial: la fila suelta declara su origen y no arrastra datos de agenda inventados', () => {
+  const [esp] = mergeHistorial([], [atencion({ Id: 7, EsEspontanea: true })]);
+  assert.equal(esp.estado, 'Espontánea');
+  assert.equal(esp.prestador, 'Opazo Damiani Daniel');
+  assert.deepEqual([esp.nombres, esp.ap, esp.am, esp.prevision, esp.sector, esp.razon, esp.telefono, esp.direccion, esp.esIC, esp.icCitadoPor, esp.icSIC], ['', '', '', '', '', '', '', '', false, '', '']);
+  assert.equal(mergeHistorial([], [atencion({ Id: 8, EsEspontanea: false })])[0].estado, 'Sin cita');
+});
+
+test('mergeHistorial: los estados que descartan una cita, con espacios dobles y acentos', () => {
+  for (const estado of ['No Atendido', 'No  atendido', 'No se presentó', 'no  se  presentó', 'Anulada', 'Cancelada', 'Suspendida']) {
+    assert.equal(mergeHistorial([cita({ estado })], [atencion({ Id: 9, Fecha: '20260904 174500' })]).length, 2, `«${estado}» no recibe ficha`);
+  }
+  for (const estado of ['Completado', 'Atendido', 'Confirmado', 'Agendado']) {
+    assert.equal(mergeHistorial([cita({ estado })], [atencion({ Id: 9, Fecha: '20260904 174500' })]).length, 1, `«${estado}» sí recibe ficha`);
+  }
+});
+
+test('mergeHistorial: los límites exactos de la ventana (14 días antes, 7 después) y el desempate hacia la cita anterior', () => {
+  const guardado = '20260915 120000';
+  const en = (d8, estado = 'Completado') => cita({ id: Number(d8), fecha8: d8, fechaAtencion: `${d8.slice(6)}-${d8.slice(4, 6)}-${d8.slice(0, 4)}`, estado });
+  assert.equal(mergeHistorial([en('20260901')], [atencion({ Id: 9, Fecha: guardado })])[0].atencionId, 9, '14 días antes: dentro');
+  assert.equal(mergeHistorial([en('20260831')], [atencion({ Id: 9, Fecha: guardado })])[0].atencionId, null, '15 días antes: fuera');
+  assert.equal(mergeHistorial([en('20260922', 'Confirmado')], [atencion({ Id: 9, Fecha: guardado })])[0].atencionId, 9, '7 días después: dentro');
+  assert.equal(mergeHistorial([en('20260923', 'Confirmado')], [atencion({ Id: 9, Fecha: guardado })])[0].atencionId, null, '8 días después: fuera');
+  const empate = mergeHistorial([en('20260913'), en('20260917', 'Confirmado')], [atencion({ Id: 9, Fecha: guardado })]);
+  assert.equal(empate.find(c => c.id === 20260913).atencionId, 9, 'a igual distancia gana la cita anterior: una ficha cerrada tarde es más frecuente que una abierta con dos días de anticipación');
+  assert.equal(empate.find(c => c.id === 20260917).atencionId, null);
+  assert.equal(empate.find(c => c.id === 20260913).cruceEstimado, true);
+});
+
+test('mergeHistorial: el cruce exacto cae a la fecha de la cita cuando el id no está, y nunca usa una atención ajena', () => {
+  const citas = [cita({ id: 1, fecha8: '20260902', fechaAtencion: '02-09-2026' }), cita({ id: 2, fecha8: '20260908', fechaAtencion: '08-09-2026', estado: 'Confirmado' })];
+  const porFecha = mergeHistorial(citas, [{ ...atencion({ Id: 9, Fecha: '20260903 213000' }), idCita: 999, fechaCita8: '20260908' }]);
+  assert.equal(porFecha.find(c => c.id === 2).atencionId, 9, 'id desconocido pero fecha de cita conocida');
+  const ajena = { ...atencion({ Id: 9, Fecha: '20260903 213000', FuncionariosPrestadores: [{ Id: 7, NombreCompleto: 'Pakarati Hito Kine' }] }), idCita: 2 };
+  const out = mergeHistorial(citas, [ajena]);
+  assert.equal(out.find(c => c.id === 2).atencionId, null, 'la atención de otro profesional no se cruza aunque declare la cita');
+  assert.equal(out.length, 2, 'ni aparece como fila suelta');
+});
+
+test('aggregateTeam no crea claves vacías, y otrosEseDia omite al prestador sin nombre', () => {
+  const agg = aggregateTeam([atencion({ Id: 1, FuncionariosPrestadores: [{ Id: 5, NombreCompleto: '', NombreInstrumento: 'Kinesiología' }] })]);
+  assert.equal(Object.keys(agg.byPrestador).includes(''), false);
+  const out = mergeHistorial([cita()], [atencion({ Id: 11, FuncionariosPrestadores: [{ Id: 7, NombreCompleto: '' }, { Id: 8, NombreCompleto: 'Riroroko Haoa Luis' }] })]);
+  assert.equal(out[0].otrosEseDia, 'Riroroko Haoa Luis');
+});
+
+test('mergeHistorial: el cruce tardío también toma tipo, sexo, prestadores y órdenes internas de la atención', () => {
+  const control = [{ id: 1, fecha8: '20261001', fecha: '01-10-2026', motivo: 'Control', descartada: false }];
+  const a = { ...atencion({ Id: 9, Fecha: '20260904 174500', FuncionariosPrestadores: [{ Id: OFFICER, NombreCompleto: 'Opazo Damiani Daniel' }, { Id: 9, NombreCompleto: 'Pérez Tuki Ana María' }] }), proximoControl: control };
+  const [fila] = mergeHistorial([cita({ tipoAtencion: '', sexo: '' })], [a]);
+  assert.deepEqual([fila.tipoAtencion, fila.sexo, fila.prestador, fila.proximoControl], ['Morbilidad Medica', 'Mujer', 'Opazo Damiani Daniel, Pérez Tuki Ana María', control]);
+  const [mismoDia] = mergeHistorial([cita()], [{ ...atencion({ Id: 1 }), proximoControl: control }]);
+  assert.deepEqual(mismoDia.proximoControl, control, 'el cruce del mismo día conserva las órdenes internas');
+  const [suelta] = mergeHistorial([], [atencion({ Id: 2, FuncionariosPrestadores: [{ Id: OFFICER, NombreCompleto: 'Opazo Damiani Daniel' }, { Id: 9, NombreCompleto: 'Pérez Tuki Ana María' }] })]);
+  assert.equal(suelta.prestador, 'Opazo Damiani Daniel, Pérez Tuki Ana María');
+});
+
+test('mergeHistorial: una cita que ya tiene su atención no recibe otra, ni por id ni por cercanía; el id manda sobre la fecha', () => {
+  const c = cita();
+  const conId = mergeHistorial([c], [atencion({ Id: 1 }), { ...atencion({ Id: 9, Fecha: '20260904 174500' }), idCita: 100 }]);
+  assert.equal(conId[0].atencionId, 1, 'la del mismo día se queda');
+  assert.equal(conId.length, 2, 'la tardía queda suelta aunque declare esa cita');
+  const cercana = mergeHistorial([c], [atencion({ Id: 1 }), atencion({ Id: 9, Fecha: '20260904 174500' })]);
+  assert.equal(cercana[0].atencionId, 1);
+  assert.equal(cercana.length, 2);
+  const citas = [cita({ id: 1, fecha8: '20260902', fechaAtencion: '02-09-2026' }), cita({ id: 2, fecha8: '20260908', fechaAtencion: '08-09-2026', estado: 'Confirmado' })];
+  const ambos = mergeHistorial(citas, [{ ...atencion({ Id: 9, Fecha: '20260903 213000' }), idCita: 1, fechaCita8: '20260908' }]);
+  assert.equal(ambos.find(x => x.id === 1).atencionId, 9, 'con id y fecha en desacuerdo, el id de la cita manda');
+  assert.equal(ambos.find(x => x.id === 2).atencionId, null);
+});
+
+test('mergeHistorial: el desempate hacia la cita anterior no depende del orden de la agenda', () => {
+  const en = (d8, estado = 'Completado') => cita({ id: Number(d8), fecha8: d8, fechaAtencion: `${d8.slice(6)}-${d8.slice(4, 6)}-${d8.slice(0, 4)}`, estado });
+  const out = mergeHistorial([en('20260917', 'Confirmado'), en('20260913')], [atencion({ Id: 9, Fecha: '20260915 120000' })]);
+  assert.equal(out.find(c => c.id === 20260913).atencionId, 9);
+  assert.equal(out.find(c => c.id === 20260917).atencionId, null);
+});

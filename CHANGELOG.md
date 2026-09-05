@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## 2.53.1 — 2026-09-05
+
+Pruebas guiadas por mutación (Stryker): de 74,6 % a 92,7 % de mutantes muertos.
+
+- Se leyeron los 161 sobrevivientes de la primera medición y se escribieron 22 pruebas que defienden los bordes que estaban sin vigilar: en el cruce agenda–historial, los límites exactos de la ventana (14 días antes, 7 después), el desempate hacia la cita anterior independiente del orden de la agenda, los estados que descartan una cita con espacios dobles, que una cita ya cruzada no reciba otra atención y que el id de la cita mande sobre su fecha; en recetas, los dos puntos pegados sin separador, «0» como texto en la suspensión, una no-fecha que no vence nada, los valores por defecto de cada campo; en pendientes, los umbrales inclusivos de cita pasada, rechazada y control, «solo mías» por regla, el control con atención el mismo día y el mismo control en dos filas.
+- Umbral de rotura en 85 %: una corrida de `npm run mutation` por debajo falla.
+
+| Módulo | Antes | Ahora |
+|---|---|---|
+| historial-merge | 70,2 % | 95,5 % |
+| receta | 69,3 % | 92,0 % |
+| pendientes | 76,1 % | 92,2 % |
+| Total | 74,6 % | 92,7 % |
+
 ## 2.53.0 — 2026-09-05
 
 Herramientas, segunda parte.
