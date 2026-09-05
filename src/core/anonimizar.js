@@ -149,9 +149,10 @@ export function anonimizar(data, opts = {}) {
     for (const re of tokenRes) { const r = out.replace(re, '<nombre>'); if (r !== out) { hit = true; out = r; } }
     const r0 = out.replace(CUE_RE, (m, nombre) => { hit = true; return m.slice(0, m.length - nombre.length) + '<nombre>'; }); out = r0;
     const r1 = out.replace(RUT_RE, '<rut>'); if (r1 !== out) { informe.ruts++; out = r1; }
+    // Las fechas van antes del RUN pegado: «20260904» suelto en un texto es una fecha, y 2026090-4 tiene verificador válido.
+    const r4 = out.replace(TEXT_DATE_RE, shiftTextDate); if (r4 !== out) { informe.fechas++; out = r4; }
     const r1b = out.replace(RUT_LOOSE_RE, (m, body, dv) => rutValido(body, dv) ? '<rut>' : m); if (r1b !== out) { informe.ruts++; out = r1b; }
     const r2 = out.replace(EMAIL_RE, '<email>'); if (r2 !== out) { informe.contactos++; out = r2; }
-    const r4 = out.replace(TEXT_DATE_RE, shiftTextDate); if (r4 !== out) { informe.fechas++; out = r4; }
     const r3 = out.replace(PHONE_RE, '<fono>').replace(PHONE_RE2, '<fono>'); if (r3 !== out) { informe.contactos++; out = r3; }
     if (hit) informe.textos++;
     return out.replace(/<nombre>(?:\s+<nombre>)+/g, '<nombre>'); // «Rosa Tuki» es una persona, no dos marcadores
