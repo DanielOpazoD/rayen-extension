@@ -142,3 +142,21 @@ test('mergeHistorial: el cruce tardío exige cita atendida, ≤ 14 días y sin a
   const urg = mergeHistorial([cita()], [atencion({ Id: 9, Fecha: '20260904 174500', EsUrgencia: true })]);
   assert.equal(urg.length, 2, 'una urgencia no se cuelga de una cita anterior');
 });
+
+test('mergeHistorial: la ficha abierta la víspera (jueves) se cruza con la cita del día siguiente (viernes)', () => {
+  // Cita del viernes 04-09 «Confirmado» (aún no marcada atendida); la ficha se abrió y guardó el jueves 03-09.
+  const out = mergeHistorial([cita({ fecha8: '20260904', fechaAtencion: '04-09-2026', estado: 'Confirmado' })], [atencion({ Id: 9, Fecha: '20260903 213000' })]);
+  assert.equal(out.length, 1, 'el jueves no aparece ninguna fila');
+  assert.equal(out[0].fecha8, '20260904');
+  assert.equal(out[0].atencionId, 9);
+  assert.equal(out[0].fechaRegistro, '03-09-2026');
+  // Más de 7 días antes de la cita no es «la víspera»: queda como fila suelta.
+  const lejos = mergeHistorial([cita({ fecha8: '20260915', fechaAtencion: '15-09-2026', estado: 'Confirmado' })], [atencion({ Id: 9, Fecha: '20260903 213000' })]);
+  assert.equal(lejos.length, 2);
+  // Con una cita antes y otra después, gana la más cercana.
+  const dos = mergeHistorial([cita({ id: 1, fecha8: '20260901', fechaAtencion: '01-09-2026' }), cita({ id: 2, fecha8: '20260904', fechaAtencion: '04-09-2026', estado: 'Confirmado' })], [atencion({ Id: 9, Fecha: '20260903 213000' })]);
+  assert.equal(dos.find(c => c.id === 2).atencionId, 9);
+  assert.equal(dos.find(c => c.id === 1).atencionId, null);
+  // Una cita anulada no recibe ficha.
+  assert.equal(mergeHistorial([cita({ fecha8: '20260904', fechaAtencion: '04-09-2026', estado: 'Anulada' })], [atencion({ Id: 9, Fecha: '20260903 213000' })]).length, 2);
+});

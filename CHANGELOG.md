@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.46.2 — 2026-09-04
+
+- **Ficha abierta la víspera.** Si abres la ficha el jueves para la cita del viernes, la atención queda guardada el jueves y aparecía como día de atención. El cruce con la agenda ahora mira también las citas de los 7 días siguientes (antes, sólo 14 días hacia atrás) y elige la más cercana; sólo se excluyen citas no atendidas, anuladas, canceladas o suspendidas. La fila cae en el día de la cita y el jueves queda limpio.
+
 ## 2.46.1 — 2026-09-04
 
 - El registro tardío de la ficha va detrás de un icono «i» discreto junto a la fecha; el texto completo está en el tooltip y en la historia imprimible.

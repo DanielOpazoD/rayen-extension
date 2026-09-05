@@ -146,8 +146,9 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
  * HistorialAtencion) and appends the officer's atenciones that have no cita
  * (espontáneas) as extra rows.
  */
-/** Estado de agenda que dice que la cita se atendió (no «No Atendido» ni «No se presentó»). */
-const citaAtendida = estado => /completad|atendid/i.test(String(estado)) && !/\bno\s+(atendid|se\s+present)/i.test(String(estado));
+/** Estado de agenda que descarta la cita: no vino, se anuló o se suspendió. Cualquier otro puede recibir una ficha. */
+const citaDescartada = estado => /\bno\s+(atendid|se\s+present)|anulad|cancelad|suspendid/i.test(String(estado));
+const ANTES_DIAS = 14, DESPUES_DIAS = 7;
 const aDate = d8 => new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8));
 const diasEntre = (d8a, d8b) => Math.round((aDate(d8b) - aDate(d8a)) / 86_400_000);
 
@@ -193,17 +194,20 @@ export function mergeHistorial(citas, atenciones) {
     };
   });
 
-  // Ficha cerrada otro día: la consulta por nodo no trae FechaCita, así que una
-  // atención mía sin cita ese día se cruza con la cita atendida más cercana del
-  // mismo paciente en los 14 días anteriores. La fecha que manda es la de la
-  // cita (decisión de Daniel, 04-09-2026); el guardado queda en `fechaRegistro`.
+  // Ficha guardada otro día: la consulta por nodo no trae FechaCita, así que una
+  // atención mía sin cita ese día se cruza con la cita más cercana del mismo
+  // paciente, hasta 14 días antes (ficha cerrada tarde) o 7 después (ficha
+  // abierta la víspera, como los jueves para las citas del viernes). La fecha
+  // que manda es la de la cita (decisión de Daniel, 04-09-2026); el guardado
+  // queda en `fechaRegistro`.
   const porRun = new Map();
-  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId && citaAtendida(c.estado)) { const k = matchKey({ ...c, fecha8: '' }); (porRun.get(k) ?? porRun.set(k, []).get(k)).push(i); } });
+  out.forEach((c, i) => { if (c.origen === 'cita' && !c.atencionId && !citaDescartada(c.estado)) { const k = matchKey({ ...c, fecha8: '' }); (porRun.get(k) ?? porRun.set(k, []).get(k)).push(i); } });
   for (const a of atenciones) {
     if (used.has(a.id) || !isOfficer(a) || a.esUrgencia) continue;
-    const cands = (porRun.get(matchKey({ ...a, fecha8: '' })) ?? []).filter(i => !out[i].atencionId && out[i].fecha8 < a.fecha8 && diasEntre(out[i].fecha8, a.fecha8) <= 14);
+    const dist = i => diasEntre(out[i].fecha8, a.fecha8); // > 0: cita antes del guardado; < 0: después
+    const cands = (porRun.get(matchKey({ ...a, fecha8: '' })) ?? []).filter(i => !out[i].atencionId && dist(i) !== 0 && dist(i) <= ANTES_DIAS && -dist(i) <= DESPUES_DIAS);
     if (!cands.length) continue;
-    const i = cands.sort((x, y) => out[y].fecha8.localeCompare(out[x].fecha8))[0];
+    const i = cands.sort((x, y) => Math.abs(dist(x)) - Math.abs(dist(y)) || dist(y) - dist(x))[0];
     used.add(a.id);
     out[i] = {
       ...out[i],
