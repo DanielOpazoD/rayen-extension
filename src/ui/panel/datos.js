@@ -48,7 +48,7 @@ export function renderDatos(cur) {
     (m ? `<div class="pp-datos-grp">${h4('Inscripción')}<div class="kv-grid">` +
       kv('Ficha', m.ficha) + kv('Familia', m.familia ? `${m.familia}${m.parentesco ? ` · ${m.parentesco}` : ''}` : '') +
       kv('Nacimiento', m.dob) + kv('Género', m.genero) + kv('Nombre social', m.nombreSocial) + kv('Responde a', m.apodo) +
-      kv('Previsión', m.prevision) + kv('Grupo sanguíneo', m.grupoSang) +
+      kv('Grupo sanguíneo', m.grupoSang) +
       kv('Sexo', m.sexo || record.sexo) + kv('Previsión', m.prevision || record.prevision || contact.prevision) +
       kv('Ocupación', m.ocupacion) + kv('Escolaridad', m.escolaridad) +
       kv('Nacionalidad', m.nacionalidad) + kv('Pueblo originario', m.etnia && m.etnia !== 'Ninguno' ? m.etnia : '') +
