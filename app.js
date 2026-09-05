@@ -67,6 +67,7 @@ initPanel({
     const next = list[i + dir];
     if (next) openPatient(next);
   },
+  labItems: run => laboratorio.labItemsForRun(run), // el informe con IA ve el laboratorio ya analizado
   onLabSearch(run, sexo) {                  // Lab button → switch tab and search
     showTab('laboratorio');
     laboratorio.searchFromPatient(run, sexo);

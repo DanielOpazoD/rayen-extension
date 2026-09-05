@@ -26,12 +26,12 @@ function preparar() {
     const ventana = Number($('iaVentana').value) || null;
     prep = prepararInforme({
       plantilla: $('iaPlantilla').value,
-      datos: { record: datos.record, ficha: datos.ficha, visits: datos.visits, sics: datos.sics, laboratorio: getLabItems(datos.record) ?? [], officerId: CONFIG.officerId },
+      datos: { record: datos.record, ficha: datos.ficha, visits: datos.visits, sics: datos.sics, laboratorio: getLabItems(datos.record.run) ?? [], officerId: CONFIG.officerId },
       opciones: { ventanaMeses: ventana, fechasReales: $('iaFechasReales').checked },
     });
     const c = prep.contexto;
     $('iaFuentes').innerHTML = prep.registro.fuentes.map(f => `<span class="ia-fuente ${f.estado}">${esc(f.id)} · ${esc(f.estado)}${f.n ? ` · ${f.n}` : ''}</span>`).join('');
-    meta.textContent = `${c.incluido.atenciones} atenciones, ${c.incluido.problemas} problemas, ${c.incluido.interconsultas} interconsultas · ≈ ${c.tokensAprox.toLocaleString('es-CL')} tokens${c.omitido.length ? ` · omitido: ${c.omitido.join('; ')}` : ''} · sin nombre ni RUN (comprobado)`;
+    meta.textContent = `${c.incluido.atenciones} atenciones, ${c.incluido.problemas} problemas, ${c.incluido.interconsultas} interconsultas, ${c.incluido.laboratorio} resultados de laboratorio · ≈ ${c.tokensAprox.toLocaleString('es-CL')} tokens${c.omitido.length ? ` · omitido: ${c.omitido.join('; ')}` : ''} · sin nombre ni RUN (comprobado)`;
     meta.className = 'ia-meta ok';
     $('iaContexto').value = c.texto;
     $('iaPrompt').value = `${prep.prompt.system}\n\n=====\n\n${prep.prompt.user}`;
