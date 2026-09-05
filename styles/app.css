@@ -793,8 +793,7 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 @media (prefers-color-scheme:dark){#lockScreen{background:rgba(19,22,23,.78)}}
 #lockScreen[hidden]{display:none}
 .lock-box{background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:var(--sp-6);max-width:360px;text-align:center}
-.lock-box .mark{width:32px;height:32px;margin:0 auto var(--sp-3)}
-.lock-box h2{font-size:var(--t-lg);font-weight:600;margin-bottom:6px}
+.lock-box h2{font-size:22px;font-weight:600;letter-spacing:-.015em;margin-bottom:6px}
 .lock-box p{font-size:var(--t-sm);color:var(--ink-3);margin-bottom:var(--sp-4)}
 
 /* Al final a propósito: los campos que apagan el outline nativo (`outline:none`
@@ -829,12 +828,31 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .pac-rech{display:inline-flex;align-items:center;font-size:var(--t-xs);color:var(--bad);font-weight:500}
 
 /* ── PIN (ADR 0001): misma caja que el bloqueo, con campos ── */
-#pinScreen{position:fixed;inset:0;z-index:3100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:var(--sp-4)}
+#pinScreen{position:fixed;inset:0;z-index:3100;background:radial-gradient(60% 50% at 50% 0,var(--brand-soft),transparent 70%),var(--bg);display:flex;align-items:center;justify-content:center;padding:var(--sp-4)}
 #pinScreen[hidden]{display:none}
-.pin-box{width:min(380px,100%)}
-.pin-field{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);font-size:var(--t-sm);color:var(--ink-2);margin:0 0 var(--sp-3)}
-.pin-field input{width:120px;height:var(--h-ctl);text-align:center;letter-spacing:.4em;font-size:var(--t-lg);border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card)}
-.pin-msg{min-height:18px;font-size:var(--t-xs);color:var(--bad);margin-bottom:var(--sp-3)}
+.pin-box{width:min(400px,100%);padding:var(--sp-6) var(--sp-6) var(--sp-5);max-width:none}
+.pin-emblem{width:52px;height:52px;margin:0 auto var(--sp-3);border-radius:50%;background:var(--brand-soft);color:var(--brand-2);display:flex;align-items:center;justify-content:center}
+.pin-emblem svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pin-emblem svg circle{fill:currentColor;stroke:none}
+.pin-brand{font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.pin-box h2{font-size:22px;letter-spacing:-.015em;margin-bottom:6px}
+.pin-box p{max-width:32ch;margin-left:auto;margin-right:auto;text-wrap:balance}
+.pin-field{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 var(--sp-3);cursor:text}
+.pin-label{font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pin-slots{position:relative;display:flex;gap:8px}
+.pin-slot{width:40px;height:48px;border-radius:var(--r-md);border:1px solid var(--rule);background:var(--surface-3);display:flex;align-items:center;justify-content:center;transition:border-color .12s,background .12s,box-shadow .12s}
+.pin-slot::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--ink);transform:scale(0);transition:transform .12s}
+.pin-slot.filled::after{transform:scale(1)}
+.pin-slot.active{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);background:var(--card)}
+.pin-slots input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:24px;letter-spacing:2em;caret-color:transparent}
+.pin-slots input:focus-visible{outline:none}
+.pin-msg{min-height:18px;font-size:var(--t-sm);color:var(--bad);margin-bottom:var(--sp-3)}
+.pin-msg.info{color:var(--ink-3)}
+.pin-btn{width:100%;height:42px;font-size:var(--t-base)}
+.pin-foot{margin-top:var(--sp-3);font-size:var(--t-xs);color:var(--ink-3)}
+.pin-box.shake{animation:pin-shake .35s}
+@keyframes pin-shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.pin-box.shake{animation:none}}
 .pin-change{display:flex;gap:6px;flex-wrap:wrap}
 .pin-change input{width:78px;height:var(--h-ctl-sm);border:1px solid var(--rule);border-radius:var(--r-sm);padding:0 6px;font-size:var(--t-sm);background:var(--card)}
 

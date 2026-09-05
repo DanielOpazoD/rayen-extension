@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 2.45.1 — 2026-09-04
+
+- **Pantalla de PIN rediseñada**: emblema de candado, nombre de la aplicación, seis casillas que se van llenando (el campo real queda invisible encima), botón a todo el ancho y pie con lo esencial. Al sexto dígito, desbloquea sola; al crear, pasa a la confirmación. Un PIN incorrecto sacude la tarjeta y vacía las casillas. Modo oscuro cuidado.
+- La pantalla de bloqueo por inactividad usa el mismo emblema: la marca en cruz se dibujaba encima del título.
+
 ## 2.45.0 — 2026-09-04
 
 Recetas con la autoridad de Rayen (HAR «ficha amb» del 04-09-2026).
