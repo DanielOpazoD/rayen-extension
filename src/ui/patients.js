@@ -1,3 +1,4 @@
+import { SIC_RECHAZADA_IDS } from '../core/config.js';
 import { esc, stateDot, sicTone, $ } from './dom.js';
 import { dateToInt } from '../core/parser.js';
 import { patientKey } from '../io/notes.js';
@@ -72,6 +73,7 @@ export function buildPatients(allData, sics = [], pendientes = []) {
       ges:      [...dx.values()].some(d => d.esAuge),
       sics:     misSics,
       abiertas: misSics.filter(s => OPEN.has(s.grupo)),
+      rechazadas: misSics.filter(s => SIC_RECHAZADA_IDS.has(s.estadoId)),
       pend,
       nota:     ref.note ?? '',
     });
@@ -132,6 +134,7 @@ function row(p) {
         `<span class="rol rol-${sicRole(s)}">${ROL[sicRole(s)]}</span><span class="ic-esp">${esc(s.especialidad)}</span>` +
         stateDot(s.estado, { tone: sicTone(s.grupo), small: true }) + `</span>`).join('') +
       (p.abiertas.length > 2 ? `<span class="pac-more">+${p.abiertas.length - 2}</span>` : '') + `</div>`
+    : p.rechazadas.length ? `<span class="pac-rech" data-tip="${esc(p.rechazadas.map(s => `${s.especialidad} · ${s.estado}`).join('\n'))}">${p.rechazadas.length} rechazada${p.rechazadas.length > 1 ? 's' : ''}</span>`
     : p.sics.length ? `<span class="pac-none">${p.sics.length} cerrada${p.sics.length > 1 ? 's' : ''}</span>`
     : `<span class="pac-none">—</span>`;
 

@@ -118,3 +118,12 @@ test('sin cambios reales no reporta nada', () => {
   const snap = computeCambios(s, ESP, {}).next;
   assert.deepEqual(computeCambios(s, ESP, snap).cambios, []);
 });
+
+test('una interconsulta rechazada es un pendiente con decisión, no una «cerrada» silenciosa', () => {
+  const sic = { id: 9, estadoId: 7, estado: 'Rechazada por est. destino', especialidad: 'Reumatología', fecha8: '20260801', antiguedadDias: 34,
+    paciente: { run: '1-9', nombre: 'X' }, registrador: { id: CONFIG.officerId }, ejecutor: { id: 0 } };
+  const out = computePendientes([], [sic], { hoy: new Date(2026, 8, 4) });
+  assert.equal(out.length, 1); assert.equal(out[0].tipo, 'sic-rechazada'); assert.equal(out[0].severidad, 2);
+  assert.match(out[0].titulo, /rechazada · Reumatología/); assert.match(out[0].detalle, /emitida por ti/);
+  assert.equal(computePendientes([], [{ ...sic, registrador: { id: 1 } }], { hoy: new Date(2026, 8, 4) }).length, 0, 'sólo las mías');
+});

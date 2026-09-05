@@ -1,17 +1,11 @@
 /** Menú «PDF ▾» del panel: la historia del paciente por alcance, en report.html. */
 import { $ } from '../dom.js';
+import { initMenu } from '../ui.js';
 import { buildPatientReport } from '../patient-report.js';
 import { openReport } from '../export.js';
 
 export function initPdfMenu({ getCur, onError }) {
-  $('ppPdfBtn').addEventListener('click', e => {
-    e.stopPropagation();
-    const open = $('ppPdfMenu').classList.toggle('open');
-    e.currentTarget.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#ppPdfWrap')) $('ppPdfMenu').classList.remove('open');
-  });
+  initMenu('ppPdfBtn', 'ppPdfMenu', 'ppPdfWrap'); // clic fuera, Escape y flechas, como los demás menús
   $('ppPdfMenu').addEventListener('click', async e => {
     const cur = getCur();
     const b = e.target.closest('button[data-scope]');

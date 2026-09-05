@@ -76,7 +76,9 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   // Tab y Shift+Tab dan la vuelta dentro del diálogo.
   panel.addEventListener('keydown', e => {
     if (e.key !== 'Tab') return;
-    const focusables = [...panel.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    // Con la hoja de informe abierta, el ciclo de Tab se queda dentro de ella.
+    const root = $('iaSheet').hidden ? panel : $('iaSheet');
+    const focusables = [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
       .filter(el => !el.disabled && el.offsetParent !== null);
     if (!focusables.length) return;
     const first = focusables[0], last = focusables[focusables.length - 1];
@@ -135,9 +137,9 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     // Se cierra antes de saltar: con el diálogo abierto el resto queda inerte y
     // la pestaña Laboratorio no se podría usar.
     if (!cur?.record?.run || !labSearch) return;
-    const run = cur.record.run;
+    const { run, sexo } = cur.record; // close() vacía `cur`: se lee todo antes
     close();
-    labSearch(run, cur.record.sexo);
+    labSearch(run, sexo);
   });
 
   // Tabs: click or ←/→; remembered across patients
@@ -188,7 +190,12 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     if (e.target.closest('#ppReload') && cur) loadAndRenderFicha(true);
   });
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  // Escape cierra lo más interno: un menú abierto o la hoja de informe antes que el panel.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.querySelector('.menu.open') || !$('iaSheet').hidden) return;
+    close();
+  });
 }
 
 let showTab = () => {}; // assigned in initPanel (WAI-ARIA tablist with roving tabindex)
