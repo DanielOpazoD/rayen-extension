@@ -122,6 +122,41 @@ export function init(prefs) {
   applyColumnVisibility($('mainTable'), hiddenCols);
   if (prefs.sortCol) { sortCol = prefs.sortCol; sortDir = prefs.sortDir === 1 ? 1 : -1; }
 
+  wireSorting();
+  wireFilters();
+  $('btnDensity').addEventListener('click', () => {
+    const dense = !document.body.classList.contains('dense');
+    applyDensity(dense);
+    savePrefs({ dense }).catch(prefsFailed);
+  });
+  initMenu('btnCols', 'colsMenu');
+  wireScroll();
+  wireRows();
+  wireExport();
+
+  // Closing the panel returns you to the row you came from, and says which one
+  document.addEventListener('rayen:panel-closed', e => {
+    if (e.detail?.id != null) revealRow(rowSelector(e.detail.id));
+  });
+
+  on('data', () => {
+    // Si hay una nota a medio escribir, no se repinta: el refresco de 15 min
+    // vaciaba el <tbody> con el textarea dentro y el texto se perdía sin aviso.
+    // El render que hace la propia nota al terminar ya lee el estado nuevo.
+    if (document.querySelector('.note-edit')) return;
+    const { tipos } = buildFilters(state.allData);
+    typeSelect.setOptions(tipos);
+    render();
+    if (state.allData.length) ['barEl', 'tblWrap', 'exportWrap'].forEach(id => { $(id).style.display = ''; });
+  });
+  on('notes', record => {
+    render();
+    revealRow(rowSelector(record.id), { scroll: false });
+  });
+}
+
+/** Orden por columna: clic en la cabecera, recordado en preferencias. */
+function wireSorting() {
   const headers = [...document.querySelectorAll('th[data-col]')];
   markSorted(headers, headers.find(t => t.dataset.col === sortCol), sortDir);
   headers.forEach(th => th.addEventListener('click', () => {
@@ -132,7 +167,10 @@ export function init(prefs) {
     savePrefs({ sortCol, sortDir }).catch(prefsFailed);
     render();
   }));
+}
 
+/** Chips de período, selector múltiple de tipo, pliegue de filtros y «Limpiar». */
+function wireFilters() {
   perChips = initChips('perChips', 'filtPer', render);
   typeSelect = initMultiSelect({
     inputId: 'filtTipo', buttonId: 'filtTipoButton', menuId: 'filtTipoMenu', onChange: render,
@@ -158,14 +196,10 @@ export function init(prefs) {
       render();
     } } });
   });
+}
 
-  $('btnDensity').addEventListener('click', () => {
-    const dense = !document.body.classList.contains('dense');
-    applyDensity(dense);
-    savePrefs({ dense }).catch(prefsFailed);
-  });
-  initMenu('btnCols', 'colsMenu');
-
+/** Filas por bloques al desplazar y pistas de desplazamiento horizontal. */
+function wireScroll() {
   // Stream the rest of the rows in as the user scrolls; also drive the sticky shadow
   // Pistas de desplazamiento horizontal: sombra a la izquierda cuando ya se
   // desplazó, y a la derecha mientras queden columnas fuera de la vista.
@@ -182,7 +216,10 @@ export function init(prefs) {
     scrollHints(w);
     if (hasMoreRows() && w.scrollTop + w.clientHeight > w.scrollHeight - 600) appendChunk();
   }, { passive: true });
+}
 
+/** Navegación por filas con teclado y acciones dentro de cada fila. */
+function wireRows() {
   // Navegación por filas: ↑/↓ mueven el foco, Enter abre al paciente. Antes
   // cada fila tenía tres paradas de tabulación (nombre, info, RUN): unas 360
   // por tabla. La fila enfocada es la única con tabindex 0.
@@ -225,7 +262,10 @@ export function init(prefs) {
     const noteCell = e.target.closest('.note-cell');
     if (noteCell && !noteCell.classList.contains('editing')) startNoteEdit(noteCell);
   });
+}
 
+/** Menú Exportar, con aviso de cuántos pacientes y qué campos salen. */
+function wireExport() {
   initMenu('btnExport', 'exportMenu', 'exportWrap');
   $('exportMenu').addEventListener('click', async e => {
     const b = e.target.closest('button[data-fmt]');
@@ -247,25 +287,5 @@ export function init(prefs) {
       setStatus(`No se pudo exportar. ${humanError(err, 'Chrome')}`, 'err');
       toast('No se pudo exportar', { tone: 'bad' });
     }
-  });
-
-  // Closing the panel returns you to the row you came from, and says which one
-  document.addEventListener('rayen:panel-closed', e => {
-    if (e.detail?.id != null) revealRow(rowSelector(e.detail.id));
-  });
-
-  on('data', () => {
-    // Si hay una nota a medio escribir, no se repinta: el refresco de 15 min
-    // vaciaba el <tbody> con el textarea dentro y el texto se perdía sin aviso.
-    // El render que hace la propia nota al terminar ya lee el estado nuevo.
-    if (document.querySelector('.note-edit')) return;
-    const { tipos } = buildFilters(state.allData);
-    typeSelect.setOptions(tipos);
-    render();
-    if (state.allData.length) ['barEl', 'tblWrap', 'exportWrap'].forEach(id => { $(id).style.display = ''; });
-  });
-  on('notes', record => {
-    render();
-    revealRow(rowSelector(record.id), { scroll: false });
   });
 }

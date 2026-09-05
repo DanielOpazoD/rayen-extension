@@ -18,7 +18,15 @@ export default [
       'prefer-const': 'error',
       eqeqeq: ['error', 'smart'],
       'no-console': 'off',
+      // Una función de más de 150 líneas útiles o un módulo de más de 500 ya no se leen de una vez: se parten.
+      'max-lines-per-function': ['error', { max: 150, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
     },
+  },
+  {
+    // Catálogos de datos, arnés, pruebas y scripts: largos por naturaleza, no por diseño.
+    files: ['src/core/*-catalog.js', 'dev/**', 'tests/**', 'scripts/**'],
+    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
   },
   // Capas: core no toca DOM, red ni Chrome y no importa io/ui; io no importa ui; ai no importa ui.
   // La valla la hace cumplir el lint, no la disciplina.

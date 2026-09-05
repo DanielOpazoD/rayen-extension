@@ -180,7 +180,17 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 - `src/ui/lock.js` — pantalla local de privacidad por inactividad.
 - `src/ui/multi-select.js` — selector múltiple accesible reutilizable.
 - `src/ui/palette.js` — buscador global de pacientes y ranking.
-- `src/ui/patient-panel.js` — interacción y renderizado del panel lateral del paciente.
+- `src/ui/patient-panel.js` — controlador del panel del paciente: paciente abierto y filtros, diálogo modal, cableado y reparto del pintado entre `panel/`.
+- `src/ui/panel/helpers.js` — piezas de HTML y DOM que comparten las pestañas del panel (`kv`, `h4`, `segGroup`, `setTabCount`, `isMineVisit`).
+- `src/ui/panel/datos.js` — cabecera del panel y datos administrativos.
+- `src/ui/panel/resumen.js` — portada clínica del panel.
+- `src/ui/panel/problemas.js` — pestaña Problemas.
+- `src/ui/panel/atenciones.js` — pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o agenda.
+- `src/ui/panel/interconsultas.js` — pestaña Interconsultas (Mías / De otros) y derivaciones.
+- `src/ui/panel/recetas.js` — pestaña Recetas (activas / vencidas).
+- `src/ui/panel/notas.js` — diario de notas del paciente y su cableado.
+- `src/ui/panel/pdf-menu.js` — menú «PDF ▾» de la historia del paciente.
+- `src/ui/panel/ficha-status.js` — estado de la ficha tras el botón «Ficha» y su texto.
 - `src/ui/patient-report.js` — modelo de historia clínica imprimible.
 - `src/ui/patients.js` — agregación pura de atenciones por paciente.
 - `src/ui/pdf-merge.js` — fusión de informes en un PDF único, con pdf-lib cargado bajo demanda.
@@ -192,7 +202,11 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 - `src/ui/tabs/explorador.js` — controlador del Explorador API: consultas, capturas de la sesión (ficha del último paciente, citas) y descarga de la copia anonimizada.
 - `src/ui/tabs/hoy.js` — controlador de fecha y jornada de Hoy.
 - `src/ui/tabs/interconsultas.js` — carga bajo demanda y eventos de SIC.
-- `src/ui/tabs/laboratorio.js` — controlador de la pestaña Laboratorio: Hospital Salvador (ProactiveLIS) y HHR (SysLab), análisis y solicitud de exámenes.
+- `src/ui/tabs/laboratorio.js` — controlador de la pestaña Exámenes complementarios: sesiones, búsqueda, selección y orquestación del análisis; lo demás en `ui/lab/`.
+- `src/ui/lab/results.js` — tablas de órdenes HSR y HHR con PDF y casilla de selección.
+- `src/ui/lab/analysis-views.js` — vistas del análisis: matriz de comparación, informes, tendencias y microbiología.
+- `src/ui/lab/request.js` — solicitud de exámenes: formulario de casillas que se imprime.
+- `src/ui/lab/pdf-all.js` — «Todos los PDF»: un archivo con los informes imprimibles de ambos hospitales.
 - `src/ui/tabs/pacientes.js` — controlador de agregación, filtros y tabla de pacientes.
 - `src/ui/toast.js` — confirmaciones transitorias y acciones de deshacer.
 - `src/ui/today.js` — novedades y agenda diaria con antecedentes.
