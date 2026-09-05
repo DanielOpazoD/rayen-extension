@@ -49,6 +49,7 @@ export function resolveRange({ periodo = 'todo', desde = '', hasta = '' }, hoy =
   return periodRange(periodo, hoy);
 }
 
+/** Una fecha8 cae en [from8, to8]; sin fecha legible no se oculta. */
 export function inRange(fecha8, from8, to8) {
   if (!fecha8) return !from8 && !to8;
   return (!from8 || fecha8 >= from8) && (!to8 || fecha8 <= to8);

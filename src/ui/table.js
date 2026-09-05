@@ -1,6 +1,5 @@
 import { esc, stateDot, stateTone, sicTone } from './dom.js';
-import { dateToInt } from '../core/parser.js';
-import { CONFIG } from '../core/config.js';
+import { whenLabel, sexLetter, sicRole, ROLE_LABEL, atencionLabel } from '../core/labels.js';
 
 /** Column ids in display order. Fecha and Nombre are sticky and always visible. */
 // Ocho columnas. Razón y Tipo van juntas («Consulta Médica · Morbilidad») y el
@@ -14,60 +13,11 @@ export const COLUMNS = [
 const COLUMN_COUNT = COLUMNS.length;
 export const ALWAYS_VISIBLE = new Set(['fechaAtencion', 'nombre']);
 
-const DOW_LONG = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-/** "Martes · 09:30" from fecha8 + hora */
-export function whenLabel(p) {
-  const f = p.fecha8 ?? '';
-  const dow = f.length === 8 ? DOW_LONG[new Date(+f.slice(0, 4), +f.slice(4, 6) - 1, +f.slice(6, 8)).getDay()] : '';
-  return [dow, p.hora].filter(Boolean).join(' · ');
-}
-
-/** "Mujer" → "M", "Hombre" → "H" */
-export function sexLetter(s = '') {
-  if (/^m/i.test(s)) return 'M';
-  if (/^h/i.test(s)) return 'H';
-  return s ? s[0].toUpperCase() : '';
-}
-
-/**
- * The officer's role in a SIC:
- *   out   – he wrote it (registrador)           → "Emití"
- *   in    – he is the executor / it generated a cita in his agenda → "Recibí"
- *   other – another professional's SIC on the same patient → "Otra"
- */
-export function sicRole(s, isOrigin = false) {
-  if (s.registrador.id === CONFIG.officerId) return 'out';
-  if (s.ejecutor.id === CONFIG.officerId || isOrigin) return 'in';
-  return 'other';
-}
-const ROLE_LABEL = { out: 'Emití', in: 'Recibí', other: 'Otra' };
-
-function sortValue(p, col) {
-  if (col === 'fechaAtencion') return dateToInt(p.fechaAtencion) * 10000 + (parseInt(String(p.hora).replace(':', '')) || 0);
-  if (col === 'edad')        return Number(p[col]) || 0;
-  if (col === 'diagnostico') return (p.diagnosticos?.[0]?.nombre ?? '').toLowerCase();
-  return String(p[col] ?? '').toLowerCase();
-}
-
-export function sortRecords(data, sortCol, sortDir) {
-  return data.slice().sort((a, b) => {
-    const va = sortValue(a, sortCol), vb = sortValue(b, sortCol);
-    return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir || String(a.hora).localeCompare(String(b.hora));
-  });
-}
-
-/** «Consulta Médica · Morbilidad»; si la razón ya está dentro del tipo («Control Crónico» / «Control»), sólo el tipo. */
-export function atencionLabel(p) {
-  const tipo = String(p.tipoAtencion || '').trim(), razon = String(p.razon || '').trim();
-  if (!tipo) return razon;
-  if (!razon || tipo.toLowerCase().includes(razon.toLowerCase())) return tipo;
-  return `${tipo} · ${razon}`;
-}
+/** Como atencionLabel, pero la razón va atenuada. */
 function atencionCell(p) {
   const tipo = String(p.tipoAtencion || '').trim(), razon = String(p.razon || '').trim();
-  if (!tipo) return esc(razon);
-  if (!razon || tipo.toLowerCase().includes(razon.toLowerCase())) return esc(tipo);
+  const label = atencionLabel(p);
+  if (!tipo || label === tipo || label === razon) return esc(label);
   return `${esc(tipo)}<span class="sec"> · ${esc(razon)}</span>`;
 }
 

@@ -8,6 +8,11 @@ import { CONFIG } from './config.js';
 export function isMine(sic, officerId = CONFIG.officerId) {
   return sic.registrador?.id === officerId || sic.ejecutor?.id === officerId;
 }
+
+/** Una atención (o visita de la ficha) es mía si estoy entre sus prestadores. Única definición: antes había cuatro copias. */
+export function esMiaAtencion(a, officerId = CONFIG.officerId) {
+  return (a?.prestadores ?? []).some(p => p.id === officerId);
+}
 /** Contact/demographic info per RUN, harvested from SIC patient payloads. */
 export function contactsFromSICs(sics) {
   const map = new Map();

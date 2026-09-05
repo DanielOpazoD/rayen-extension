@@ -1,4 +1,6 @@
 import { CONFIG, SIC_RECHAZADA_IDS } from './config.js';
+import { diasEntre, date8FromDMY } from './dates.js';
+import { isMine } from './sic-rules.js';
 import { dateToInt, localDateStr } from './parser.js';
 
 /**
@@ -10,22 +12,10 @@ import { dateToInt, localDateStr } from './parser.js';
  * both node 5576): the specialist is in the same building.
  */
 
-const DAY = 86_400_000;
+const daysSince = (fecha8, hoy8) => (String(fecha8 ?? '').length === 8 ? diasEntre(fecha8, hoy8) : null);
+const toDate8 = date8FromDMY;
 
-function daysSince(fecha8, hoy8) {
-  if (!fecha8 || fecha8.length !== 8) return null;
-  const a = new Date(+fecha8.slice(0, 4), +fecha8.slice(4, 6) - 1, +fecha8.slice(6, 8));
-  const b = new Date(+hoy8.slice(0, 4), +hoy8.slice(4, 6) - 1, +hoy8.slice(6, 8));
-  return Math.round((b - a) / DAY);
-}
-
-/** "DD-MM-YYYY" or "DD-MM-YYYY HH:mm" → YYYYMMDD */
-function toDate8(s = '') {
-  const m = String(s).match(/^(\d{2})-(\d{2})-(\d{4})/);
-  return m ? `${m[3]}${m[2]}${m[1]}` : '';
-}
-
-const mine = s => s.registrador.id === CONFIG.officerId || s.ejecutor.id === CONFIG.officerId;
+const mine = s => isMine(s);
 const rol  = s => s.registrador.id === CONFIG.officerId ? 'emitida por ti' : 'a resolver por ti';
 
 /**

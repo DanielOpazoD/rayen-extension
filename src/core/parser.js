@@ -1,5 +1,6 @@
 import { nameOf } from './text.js';
 import { DOW_LABEL, SEXO_BY_ID } from './config.js';
+import { toDate8, fromDate8 } from './dates.js';
 
 // ── Date helpers ──────────────────────────────────────────────
 
@@ -16,13 +17,9 @@ export function fmtHora(raw = '') {
   return `${raw.slice(9, 11)}:${raw.slice(11, 13)}`;
 }
 
-/** "YYYYMMDD" from a local Date (avoids UTC offset issues) */
+/** "YYYYMMDD" from a local Date (avoids UTC offset issues). Alias histórico de `dates.toDate8`. */
 export function localDateStr(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('');
+  return toDate8(d);
 }
 
 /** Builds an array of YYYYMMDD strings from `from` to `to` (inclusive) */
@@ -38,9 +35,8 @@ export function dateRange(from, to) {
 
 /** Calculates age in years from a Rayen DOB string */
 function calcAge(dob = '') {
-  const d = String(dob).replace(/\s.*/, '');
-  if (d.length < 8 || d === '00010101') return null;
-  const bd = new Date(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8));
+  const bd = fromDate8(String(dob).replace(/\s.*/, ''));
+  if (!bd) return null;
   const now = new Date();
   let age = now.getFullYear() - bd.getFullYear();
   if (now < new Date(now.getFullYear(), bd.getMonth(), bd.getDate())) age--;
@@ -55,8 +51,8 @@ export function dateToInt(d = '') {
 
 /** "YYYYMMDD…" → weekday label */
 function dowFromRaw(raw = '') {
-  if (raw.length < 8) return '';
-  return DOW_LABEL[new Date(+raw.slice(0, 4), +raw.slice(4, 6) - 1, +raw.slice(6, 8)).getDay()];
+  const d = fromDate8(raw);
+  return d ? DOW_LABEL[d.getDay()] : '';
 }
 
 // ── RUN helpers ───────────────────────────────────────────────
@@ -106,6 +102,10 @@ export function humanCase(s = '', { siglas = false } = {}) {
   });
 }
 
+/**
+ * Normaliza un RUN como lo escribe Rayen (dígitos + verificador pegado, K en cualquier caja).
+ * @returns {{ run: string|null, runStr: string }} `run` canónico sin puntos («25106217K») y `runStr` con puntos y guion
+ */
 export function formatRun(raw) {
   if (raw == null) return { run: null, runStr: '', dvOk: false };
   const s = String(raw).replace(/[.\-\s]/g, '').toUpperCase();
@@ -222,6 +222,7 @@ function splitClasificacion(text = '') {
   return { clasificacion: (m?.[1] ?? text).trim(), certeza: m?.[2]?.trim() ?? '' };
 }
 
+/** Un diagnóstico de HistorialAtencion → { nombre, clasificacion, certeza, codigo, esAuge }. */
 export function parseDiagnostico(d) {
   const { clasificacion, certeza } = splitClasificacion(d.DescripcionClasificacion ?? '');
   const nombre = (d.DescripcionDiagnostico ?? '').replace(/\s+/g, ' ').trim();

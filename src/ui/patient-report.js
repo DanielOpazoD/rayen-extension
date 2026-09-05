@@ -1,7 +1,8 @@
 import { esc } from '../core/text.js';
+import { esMiaAtencion } from '../core/sic-rules.js';
 import { CONFIG } from '../core/config.js';
 import { SECTION_LABELS } from '../core/ficha.js';
-import { whenLabel } from './table.js';
+import { whenLabel } from '../core/labels.js';
 
 /**
  * Printable clinical history for one patient, built from the same data the
@@ -37,7 +38,6 @@ export function isMedicalVisit(v) {
   if (NON_MEDICAL_TYPE.test(tipo)) return false;
   return MEDICAL_TYPE.test(tipo);
 }
-const isMine   = (v, officerId) => (v.prestadores ?? []).some(p => p.id === officerId);
 
 /**
  * @param {object[]} visits   ficha visits (with prestadores) or agenda records
@@ -50,7 +50,7 @@ export function filterVisitsByScope(visits, scope, officerId = CONFIG.officerId)
     const pres = v.prestadores ?? [];
     // Agenda-only rows carry no prestadores: they are the officer's own agenda
     if (!pres.length) return scope === 'yo' || scope === 'medicos';
-    return scope === 'yo' ? isMine(v, officerId) : pres.some(isMedico);
+    return scope === 'yo' ? esMiaAtencion(v, officerId) : pres.some(isMedico);
   });
 }
 
@@ -80,7 +80,7 @@ const REPORT_CSS = `
 `;
 
 function visitHTML(v, officerId) {
-  const mine = isMine(v, officerId);
+  const mine = esMiaAtencion(v, officerId);
   const who  = (v.prestadores ?? []).map(p => `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections ?? {});
   return `<div class="visit ${mine ? 'mine' : ''}">

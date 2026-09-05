@@ -2,14 +2,15 @@ import { normalizeSexo } from '../../core/lab-parser.js';
 import { formatRun } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
 import { esc, $ } from '../dom.js';
-import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN, fmtDate as isoDate } from '../../io/lab-api.js';
+import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN } from '../../io/lab-api.js';
 import { checkSyslabSession, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
 import { createSessionMonitor } from '../../core/lab-session.js';
 import { createLabSearch } from '../../io/lab-search.js';
 import { buildDetails } from '../../io/lab-report.js';
 import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../../core/lab-analytics.js';
 import { buildAnalysisSummary } from '../../core/lab-summary.js';
-import { renderHsrResults, renderHhrResults, analysable, fmtFecha } from '../lab/results.js';
+import { renderHsrResults, renderHhrResults, analysable } from '../lab/results.js';
+import { fmtDMY, fmtIso as isoDate } from '../../core/dates.js';
 import { renderComparison, renderReports, renderFilteredTrends, renderMicrobiology } from '../lab/analysis-views.js';
 import { initRequest } from '../lab/request.js';
 import { downloadAllPdfs } from '../lab/pdf-all.js';
@@ -54,7 +55,7 @@ export function init() {
   // a buscar imprimía un par cruzado en un papel que viaja al laboratorio.
   initRequest({ getPaciente: () => ({
     nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
-    run: search.rut.display, fecha: fmtFecha(new Date()), procedencia: '',
+    run: search.rut.display, fecha: fmtDMY(new Date()), procedencia: '',
   }) });
   $('labPickAllHsr').addEventListener('change', e => pickAll('hsr', e.target.checked));
   $('labPickAllHhr').addEventListener('change', e => pickAll('hhr', e.target.checked));
@@ -240,7 +241,7 @@ function selectedItems() {
     if (selected.has(`hsr:${o.numero}`) && analysable('hsr', o)) {
       items.push({
         source: 'HSR',
-        date: o.fecha ? fmtFecha(o.fecha) : '',
+        date: o.fecha ? fmtDMY(o.fecha) : '',
         time: '',
         patientName: o.nombrePaciente,
         origin: o.procedencia,

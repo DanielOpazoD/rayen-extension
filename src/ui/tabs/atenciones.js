@@ -1,5 +1,6 @@
 import { humanError } from '../../core/errors.js';
-import { renderTable, sortRecords, appendChunk, hasMoreRows, rowSelector, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from '../table.js';
+import { renderTable, appendChunk, hasMoreRows, rowSelector, COLUMNS, ALWAYS_VISIBLE, applyColumnVisibility } from '../table.js';
+import { sortRecords } from '../../core/sort.js';
 import { buildFilters, filterRecords } from '../stats.js';
 import { exportCSV, exportXLS, exportHTML, exportJSON, exportPDF, exportNotas } from '../export.js';
 import { certificadoPath, openPDF } from '../../io/pdf.js';

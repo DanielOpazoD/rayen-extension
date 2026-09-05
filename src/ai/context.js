@@ -12,6 +12,7 @@
  *  - Presupuesto: las atenciones más antiguas se recortan primero y se dice
  *    cuántas quedaron fuera.
  */
+import { minusMonths8 } from '../core/dates.js';
 import { anonimizar } from '../core/anonimizar.js';
 
 const MESES = 30.44;
@@ -30,11 +31,7 @@ export function fechaRelativa(ddmmyyyy, hoy = new Date()) {
 }
 
 const dentro = (fecha8, desde8) => !desde8 || !fecha8 || fecha8 >= desde8;
-const desde8DeMeses = (meses, hoy) => {
-  if (!meses) return null;
-  const d = new Date(hoy); d.setMonth(d.getMonth() - meses);
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-};
+const desde8DeMeses = (meses, hoy) => (meses ? minusMonths8(meses, hoy) : null);
 const lista = (arr, f = x => x) => arr.length ? arr.map(x => `- ${f(x)}`).join('\n') : '- Sin datos';
 const quien = p => p.esMio ? 'médico tratante' : `otro profesional${p.instrumento ? ` (${p.instrumento})` : ''}`;
 

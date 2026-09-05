@@ -4,10 +4,10 @@
  * atenciones tiene, y si es hoy o el día elegido.
  */
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+/** Iniciales de lunes a domingo para la cabecera del calendario. */
 export const DIAS_CORTOS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-const pad = n => String(n).padStart(2, '0');
-export const toDate8 = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+import { toDate8 } from './dates.js';
 
 /** «septiembre 2026» */
 export function monthLabel(year, month) {

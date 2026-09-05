@@ -1,3 +1,7 @@
+/**
+ * Configuración de negocio y catálogos: nodo y oficial de Rayen, tiempos, retención, estados de interconsulta y etiquetas.
+ * Todo lo que aquí vive es dato, no comportamiento.
+ */
 export const CONFIG = Object.freeze({
   nodeId:    5576,
   officerId: 439550,
@@ -47,6 +51,7 @@ export const CONFIG = Object.freeze({
   },
 });
 
+/** Día de la semana abreviado, índice de `Date#getDay()`. */
 export const DOW_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 /** HistorialAtencion.IdSexo → label (verified against UsuarioAps.Sexo.Id in the HAR). */
@@ -88,13 +93,15 @@ export const SIC_GRUPO = Object.freeze({
 /** Rechazada por el destino, por el paciente o por el sistema: hay que decidir si re-emitir. */
 export const SIC_RECHAZADA_IDS = Object.freeze(new Set([7, 27, 30]));
 
+/** Grupo de trabajo de una SIC por su estado: 'pendiente' | 'enviada' | 'atendida' | 'rechazada' | 'otra'. */
 export function sicGrupo(estadoId) {
   for (const [k, g] of Object.entries(SIC_GRUPO)) if (g.ids.includes(estadoId)) return k;
   return 'otro';
 }
 
-/** States used when listing SICs. Origin-side (pre-envío) and destination-side (post-envío). */
+/** States used when listing SICs. Origin-side (pre-envío). */
 export const SIC_ESTADOS_ORIGEN  = [13, 25, 26, 28, 30, 32];
+/** Destination-side states (post-envío). */
 export const SIC_ESTADOS_DESTINO = [2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 19, 20, 27, 28, 29, 30, 31, 32];
 
 /**

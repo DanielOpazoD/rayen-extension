@@ -2,7 +2,9 @@ import { state } from './state.js';
 import { CONFIG } from '../core/config.js';
 import { apiPost, chunk, session, run } from './http.js';
 import { parseAtencion, matchKey, localDateStr, fmtDate } from '../core/parser.js';
-import { isOfficer, aggregateTeam } from '../core/historial-merge.js';
+import { aggregateTeam } from '../core/historial-merge.js';
+import { esMiaAtencion } from '../core/sic-rules.js';
+import { retentionMin8 } from '../core/sync-plan.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 
 const PATH = '/API/api/rayen/FichaClinica/HistorialAtencion';
@@ -52,7 +54,7 @@ async function fetchHistorialDay(token, date8) {
  * @returns {Promise<number>} cuántas atenciones quedaron resueltas
  */
 async function resolverCitas(token, parsed, citaKeys, { signal = run.controller.signal } = {}) {
-  const pendientes = parsed.filter(a => isOfficer(a) && !a.esUrgencia && !a.idCita && !a.fechaCita8 && a.idUsp && a.fecha8 && !citaKeys.has(matchKey(a)));
+  const pendientes = parsed.filter(a => esMiaAtencion(a) && !a.esUrgencia && !a.idCita && !a.fechaCita8 && a.idUsp && a.fecha8 && !citaKeys.has(matchKey(a)));
   let resueltas = 0;
   await Promise.all(pendientes.map(async a => {
     try {
@@ -88,13 +90,12 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   const store = await loadStore(CONFIG.historialKey);
   store.extra.team ??= {};
 
-  const min = new Date();
-  min.setMonth(min.getMonth() - (state.prefs?.retentionMonths ?? CONFIG.retentionMonths));
-  pruneStore(store, localDateStr(min));
+  const min8 = retentionMin8(state.prefs?.retentionMonths ?? CONFIG.retentionMonths);
+  pruneStore(store, min8);
 
   const todayStr = localDateStr(new Date());
   const toFetch  = onlyDates
-    ? [...onlyDates].filter(d => /^\d{8}$/.test(d) && d >= localDateStr(min) && d <= todayStr)
+    ? [...onlyDates].filter(d => /^\d{8}$/.test(d) && d >= min8 && d <= todayStr)
     : dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr || refreshDates.has(d));
   let done = 0, failed = 0;
   const failedDates = [], cancelledDates = [];
@@ -125,7 +126,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
       const parsed = raw.map(parseAtencion).filter(a => a.fecha8 === d8 || !a.fecha8);
       store.extra.team[d8] = aggregateTeam(parsed);
       await resolverCitas(token, parsed, citaKeys);
-      keep.push(...parsed.filter(a => isOfficer(a) || citaKeys.has(matchKey(a))));
+      keep.push(...parsed.filter(a => esMiaAtencion(a) || citaKeys.has(matchKey(a))));
     }
 
     if (okDates.length || retryMarkerChanged) await saveStore(store, okDates, keep);

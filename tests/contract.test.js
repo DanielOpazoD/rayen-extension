@@ -4,10 +4,13 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * Two contracts nothing else checks:
+ * Three contracts nothing else checks:
  *  1. every element id the JS asks for exists (in app.html or created by JS);
- *  2. every export is imported somewhere (app, src, dev or a test).
- * The first would have caught v2.0.0, which crashed on a removed button.
+ *  2. every export is imported somewhere (app, src, dev or a test);
+ *  3. every named import resolves to an export of its module (the browser
+ *     refuses to boot on a missing one, and node --test never loads the UI).
+ * The first would have caught v2.0.0, which crashed on a removed button; the
+ * third, v2.49.0, which moved `fmtFecha` and left one importer behind.
  */
 const read = f => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 function jsFiles(dir) {
@@ -62,4 +65,31 @@ test('every export in src/ is imported somewhere', () => {
     }
   }
   assert.deepEqual(dead, [], 'exports nobody imports — delete them or un-export them');
+});
+
+test('every named import resolves to an export of its module', () => {
+  const exportsOf = new Map();
+  const exportNames = f => {
+    if (exportsOf.has(f)) return exportsOf.get(f);
+    const names = new Set();
+    const js = read(f);
+    for (const m of js.matchAll(/^export\s+(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm)) names.add(m[1]);
+    for (const m of js.matchAll(/^export\s+\{([^}]+)\}/gm)) for (const n of m[1].split(',')) names.add(n.trim().split(/\s+as\s+/).pop());
+    exportsOf.set(f, names);
+    return names;
+  };
+  const broken = [];
+  for (const f of [...consumers, ...jsFiles('dev')]) {
+    for (const m of read(f).matchAll(/import\s+\{([^}]+)\}\s+from\s+['"](\.[^'"]+\.js)['"]/g)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(f), m[2]));
+      if (!target.startsWith('src/') && !target.startsWith('dev/')) continue;
+      let names;
+      try { names = exportNames(target); } catch { broken.push(`${f}: módulo inexistente ${target}`); continue; }
+      for (const raw of m[1].split(',')) {
+        const name = raw.trim().split(/\s+as\s+/)[0];
+        if (name && !names.has(name)) broken.push(`${f}: '${name}' no lo exporta ${target}`);
+      }
+    }
+  }
+  assert.deepEqual(broken, [], 'imports que el navegador rechazaría al arrancar');
 });

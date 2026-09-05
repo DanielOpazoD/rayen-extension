@@ -1,4 +1,5 @@
 /** Tablas de órdenes del Hospital Salvador (HSR) y de SysLab (HHR), con PDF y casilla de selección. */
+import { fmtDMY } from '../../core/dates.js';
 import { humanCase } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
 import { esc, $ } from '../dom.js';
@@ -8,11 +9,6 @@ import { syslabPdfUrl } from '../../io/syslab-api.js';
 /** Sólo se puede analizar una orden de la que se pueda obtener el informe. */
 export const analysable = (source, o) => source === 'hsr' ? Boolean(o.ordenEncryptada) : Boolean(o.link);
 
-export function fmtFecha(d) {
-  return String(d.getDate()).padStart(2, '0') + '/' +
-    String(d.getMonth() + 1).padStart(2, '0') + '/' +
-    d.getFullYear();
-}
 
 /**
  * Sólo se ofrece marcar lo que se puede analizar. Una casilla sobre una orden
@@ -33,7 +29,7 @@ export function renderHsrResults(ordenes, deps) {
     const tienePrest = o.prestaciones && o.prestaciones.length > 0;
     return `<tr>
       ${pickCell('hsr', o.numero, analysable('hsr', o))}
-      <td>${esc(o.fecha ? fmtFecha(o.fecha) : '')}</td>
+      <td>${esc(o.fecha ? fmtDMY(o.fecha) : '')}</td>
       <td>${esc(o.numero)}</td>
       <td class="lab-nombre">${esc(humanCase(o.nombrePaciente))}</td>
       <td class="lab-progreso">${tienePrest
