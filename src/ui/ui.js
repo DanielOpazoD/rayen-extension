@@ -79,8 +79,9 @@ export function initMenu(btnId, menuId, wrapId, onOpen = null) {
   });
   m.menu.addEventListener('click', e => e.stopPropagation());
   // ↓/↑/Inicio/Fin recorren las opciones; ↓ sobre el botón abre y entra.
-  const items = () => [...m.menu.querySelectorAll('button:not([disabled]),[role="menuitem"]:not([disabled])')];
+  const items = () => [...m.menu.querySelectorAll('button:not([disabled]),[role="menuitem"]:not([disabled]),input:not([disabled]),select:not([disabled])')];
   m.menu.addEventListener('keydown', e => {
+    if (e.target.closest('.menu') !== m.menu) return; // un menú anidado (Preferencias dentro de «⋯») ya lo atendió
     const list = items(); if (!list.length) return;
     const i = list.indexOf(document.activeElement);
     const go = j => { e.preventDefault(); list[(j + list.length) % list.length].focus(); };
@@ -104,6 +105,11 @@ export function initMenu(btnId, menuId, wrapId, onOpen = null) {
     const inner = open.find(o => !open.some(p => p !== o && o.menu.contains(p.menu))) ?? open[open.length - 1];
     closeMenu(inner);
     inner.btn.focus();
+    e.stopImmediatePropagation(); // el panel del paciente también escucha Escape en document: un Escape, una cosa
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    void e;
   });
 }
 

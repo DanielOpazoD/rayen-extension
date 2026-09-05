@@ -49,7 +49,7 @@ El mapa completo de endpoints, formas de datos y rarezas de la API está en [`MA
 - **Clic en el RUN** lo copia al portapapeles — en la tabla y en el panel.
 - **‹ ›** en el panel recorre los pacientes en el orden en que los muestra la tabla; también con ←/→.
 - **Clic en una barra** de Estadísticas filtra la tabla por ese valor y salta a la pestaña correspondiente.
-- **Cancelar** detiene una carga larga sin perder lo ya descargado: aborta las peticiones en vuelo y no encola más. Cada petición a Eloisa tiene un tiempo límite de 20 s, así que una red muda nunca deja la carga colgada.
+- **Cancelar** detiene una carga larga sin perder lo ya descargado: aborta las peticiones de la carga en vuelo y no encola más; los días interrumpidos quedan pendientes, no «fallidos». Cada petición a Eloisa tiene un tiempo límite (20 s por defecto, ajustable en Preferencias; la ficha completa de un paciente espera el triple), así que una red muda nunca deja la carga colgada.
 - **Actualizar estados históricos**: los días que todavía contienen citas iniciadas, confirmadas, agendadas o en espera se vuelven a consultar. Si una atención se completa posteriormente en Eloisa, la extensión actualiza tanto su estado como su ficha clínica sin borrar todo el caché.
 - **Sincronización verificable y compacta**: junto al total aparece únicamente el estado global (`Al día`, `Pendiente` o `Error`). Al abrirlo se muestran Agenda, Ficha clínica e Interconsultas, con último intento, último éxito completo y fechas pendientes; «Reintentar» vuelve a pedir solo esas fechas y nunca presenta una carga parcial como completa.
 - **Exportar → Mis notas** vuelca una fila por paciente con nota. Cada exportación confirma con un aviso.
@@ -71,7 +71,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 | Regla | Dato | Umbral |
 |---|---|---|
 | Interconsulta sin cursar | SIC en estado «Nueva» (13) | 21 días |
-| Interconsulta rechazada | SIC rechazada por destino, paciente o sistema (7, 27, 30) | siempre: hay que decidir si re-emitir |
+| Interconsulta rechazada | SIC rechazada por destino, paciente o sistema (7, 27, 30) | hasta 90 días: después es historia |
 | Cita pasada sin resolver | `fechaCita` anterior a hoy y estado agendada/confirmada | 7 días |
 | Control vencido sin agendar | `OrdenAtencionInterna.FechaSugerida` pasada, sin atención posterior del paciente | 1 día |
 

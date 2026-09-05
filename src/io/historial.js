@@ -35,10 +35,10 @@ async function fetchHistorialDay(token, date8) {
       FechaInicio:  `${date8} 000000`,
       FechaTermino: `${date8} 235959`,
       ...FLAGS,
-    });
+    }, { signal: run.controller.signal });
     return Array.isArray(data) ? data : null;
-  } catch {
-    return null;
+  } catch (err) {
+    return err?.name === 'CancelledError' ? undefined : null; // cancelado: pendiente, no fallido
   }
 }
 
@@ -92,7 +92,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
     ? [...onlyDates].filter(d => /^\d{8}$/.test(d) && d >= localDateStr(min) && d <= todayStr)
     : dates8.filter(d => !store.fetchedDates.has(d) || d === todayStr || refreshDates.has(d));
   let done = 0, failed = 0;
-  const failedDates = [];
+  const failedDates = [], cancelledDates = [];
   onProgress(toFetch.length ? 0 : 100);
 
   for (const batch of chunk(toFetch, CONFIG.historialBatch)) {
@@ -103,6 +103,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
 
     responses.forEach((raw, i) => {
       const d8 = batch[i];
+      if (raw === undefined) { cancelledDates.push(d8); return; }
       if (raw === null) {
         failed++;
         failedDates.push(d8);
@@ -128,7 +129,7 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = () => 
   }
 
   const wanted = new Set(dates8);
-  const pendingDates = [...new Set([...failedDates, ...toFetch.slice(done)])];
+  const pendingDates = [...new Set([...failedDates, ...cancelledDates, ...toFetch.slice(done)])];
   return {
     atenciones: [...store.records.values()].filter(a => wanted.has(a.fecha8)),
     team:       Object.fromEntries(Object.entries(store.extra.team).filter(([d]) => wanted.has(d))),

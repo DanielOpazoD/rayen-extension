@@ -2,28 +2,23 @@ import { state } from './state.js';
 import { CONFIG } from '../core/config.js';
 import { getToken } from './auth.js';
 import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from './http.js';
-import { parseCita, dateRange, localDateStr, matchKey } from '../core/parser.js';
+import { parseCita, matchKey } from '../core/parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 import { loadHistorial, mergeHistorial } from './historial.js';
 import { beginSyncSource, finishSyncSource, loadSyncHealth, pendingSyncItems } from './sync-health.js';
+import { planSync, retentionMin8, isMutableAppointmentStatus } from './sync-plan.js';
+
+export { isMutableAppointmentStatus };
 
 /** Raw citas from the last network fetches (for the API explorer's field discovery). */
 const rawSamples = [];
 export function getRawSamples() { return rawSamples; }
 
 /**
- * A historical appointment is not immutable while Eloisa still shows it in an
- * open workflow state. Re-fetching these dates keeps later closures visible
- * without downloading the entire configured period on every refresh.
- */
-export function isMutableAppointmentStatus(status = '') {
-  return /(iniciad|agendad|confirmad|citad|espera|pendiente|en curso)/i.test(String(status));
-}
-
-/**
  * Fetches all appointments for a single YYYYMMDD date.
- * @returns {Promise<object[]|null>} null on failure — never an empty array,
- *   so a failed day is not mistaken for a day without appointments.
+ * @returns {Promise<object[]|null|undefined>} null on failure (never an empty
+ *   array, so a failed day is not mistaken for a day without appointments);
+ *   undefined when the person cancelled: it is not a failure and is not counted as one.
  */
 async function fetchDay(token, dateStr) {
   const params = rayenParams([
@@ -36,12 +31,28 @@ async function fetchDay(token, dateStr) {
     ['TraerTeleconsulta',     true],
   ]);
   try {
-    const data = await apiGet(token, `/API/api/rayen/Citas/ListaPacientesCitados/${CONFIG.nodeId}/${params}`);
+    const data = await apiGet(token, `/API/api/rayen/Citas/ListaPacientesCitados/${CONFIG.nodeId}/${params}`, { signal: run.controller.signal });
     return Array.isArray(data) ? data : null;
-  } catch {
-    return null; // AuthError already flagged session.expired
+  } catch (err) {
+    return err?.name === 'CancelledError' ? undefined : null; // AuthError already flagged session.expired
   }
 }
+
+/**
+ * Una carga completa. `SyncRun` es el único objeto que viaja entre los pasos:
+ * se construye aquí, se documenta aquí y no crece por el camino.
+ *
+ * @typedef {object} SyncRun
+ * @property {string} token
+ * @property {boolean} historial        si se concilia la ficha del período
+ * @property {boolean} retryOnly        sólo lo pendiente de una carga anterior
+ * @property {string|null} operationId
+ * @property {(pct:number, phase:string) => void} onProgress
+ * @property {import('./sync-plan.js').SyncPlan} plan
+ * @property {object} store             caché de agenda (loadStore)
+ * @property {object} previousSync      salud de sincronización previa
+ * @property {{ records: object[], succeededDates: string[], failedDays: number, attemptedAt: number }|null} agenda  resultado del paso de agenda
+ */
 
 /**
  * Loads appointment data for the last `months`, cache-first, then (optionally)
@@ -59,119 +70,69 @@ async function fetchDay(token, dateStr) {
 export async function loadData(months, onProgress = () => {}, {
   historial = true, retryOnly = false, operationId = null,
 } = {}) {
+  resetSession(); // antes del token: una carga nueva vuelve a dar una oportunidad al token de la pestaña
+  resetRun();
   const token = await getToken();
   if (!token) return null;
-  resetSession();
-  resetRun();
 
-  const today = new Date();
-  const from  = new Date(today);
-  from.setMonth(from.getMonth() - months);
-
-  const allDates = dateRange(from, today);
-  const wanted   = new Set(allDates);
-  const todayStr = localDateStr(today);
-  const store    = await loadStore(CONFIG.cacheKey);
+  const store = await loadStore(CONFIG.cacheKey);
   const previousSync = await loadSyncHealth();
-
-  const min = new Date(today);
-  min.setMonth(min.getMonth() - (state.prefs?.retentionMonths ?? CONFIG.retentionMonths));
-  const minDate8 = localDateStr(min);
-  pruneStore(store, minDate8);
-
-  // Today always changes. Historical dates must also be refreshed while they
-  // contain an appointment that Eloisa can still close or otherwise update.
-  const refreshDates = new Set([todayStr]);
-  for (const record of store.records.values()) {
-    if (wanted.has(record.fecha8) && isMutableAppointmentStatus(record.estado)) refreshDates.add(record.fecha8);
-  }
+  const retentionMonths = state.prefs?.retentionMonths ?? CONFIG.retentionMonths;
+  pruneStore(store, retentionMin8(retentionMonths));
+  const plan = planSync({ months, retentionMonths, retryOnly, records: store.records.values(), fetchedDates: store.fetchedDates, previousSync });
 
   // Persist the need for a matching history refresh before the agenda request
   // can turn the appointment terminal. This survives cancellation, expiry and
   // runs made with the Ficha clínica option temporarily disabled.
-  const historicalRefreshDates = [...refreshDates].filter(d => d !== todayStr);
-  const coupledHistoryDates = retryOnly
-    ? historicalRefreshDates.filter(date => pendingSyncItems(previousSync, 'agenda').has(date))
-    : historicalRefreshDates;
-  if (coupledHistoryDates.length) {
+  if (plan.coupledHistoryDates.length) {
     const historyStore = await loadStore(CONFIG.historialKey);
     let changed = false;
-    for (const date of coupledHistoryDates) {
-      changed = historyStore.fetchedDates.delete(date) || changed;
-    }
+    for (const date of plan.coupledHistoryDates) changed = historyStore.fetchedDates.delete(date) || changed;
     if (changed) await saveStore(historyStore);
   }
-  const retryAgendaDates = retryOnly ? pendingSyncItems(previousSync, 'agenda') : null;
-  const toFetch = retryOnly
-    ? [...retryAgendaDates].filter(d => /^\d{8}$/.test(d) && d >= minDate8 && d <= todayStr)
-    : allDates.filter(d => !store.fetchedDates.has(d) || refreshDates.has(d));
-  const citasShare = historial ? 50 : 100;
 
-  const agendaAttemptedAt = Date.now();
-  const trackAgenda = !retryOnly || retryAgendaDates.size > 0;
-  if (trackAgenda) await beginSyncSource('agenda', agendaAttemptedAt, toFetch, operationId);
-  onProgress(toFetch.length ? 0 : citasShare, 'citas');
-
-  const { done, failedDays, agendaSucceeded, agendaFailedDates, agendaSucceededDates } =
-    await fetchAgendaBatches(token, toFetch, store, citasShare, onProgress);
-
-  let records  = [...store.records.values()].filter(r => wanted.has(r.fecha8));
-  const agendaPendingDates = [...new Set([...agendaFailedDates, ...toFetch.slice(done)])];
-  for (const date of pendingSyncItems(previousSync, 'agenda')) {
-    if (!toFetch.includes(date) && /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr) agendaPendingDates.push(date);
-  }
-  if (trackAgenda) {
-    await finishSyncSource('agenda', {
-      attemptedAt: agendaAttemptedAt,
-      failedItems: agendaPendingDates,
-      networkCount: agendaSucceeded,
-      cacheCount: allDates.length - toFetch.length,
-      hasData: records.length > 0,
+  /** @type {SyncRun} */
+  const sync = { token, historial, retryOnly, operationId, onProgress, plan, store, previousSync, agenda: null };
+  try {
+    sync.agenda = await syncAgenda(sync);
+    const hist = await syncHistorial(sync);
+    return {
+      records: hist.records,
+      fromCache:   Math.max(0, plan.allDates.length - plan.toFetch.length),
+      fromNetwork: plan.toFetch.length,
+      failedDays: sync.agenda.failedDays,
+      historialFailed: hist.historialFailed,
+      team: hist.team,
+      sessionExpired: session.expired,
       cancelled: run.cancelled,
-      error: session.expired || agendaPendingDates.length > 0,
-      operationId,
-    });
+      sync: await loadSyncHealth(),
+    };
+  } finally {
+    // «Cancelar» sólo afecta a esta carga: la bandera no se queda puesta para
+    // las interconsultas ni para nada que se cargue después.
+    if (run.cancelled) resetRun();
   }
-
-  const hist = await syncHistorial(token, {
-    historial, retryOnly, operationId, onProgress, previousSync, coupledHistoryDates, agendaSucceededDates,
-    allDates, wanted, minDate8, todayStr, refreshDates, agendaAttemptedAt, store, records,
-  });
-  records = hist.records;
-  const { team, historialFailed } = hist;
-
-  return {
-    records,
-    fromCache:   Math.max(0, allDates.length - toFetch.length),
-    fromNetwork: toFetch.length,
-    failedDays,
-    historialFailed,
-    team,
-    sessionExpired: session.expired,
-    cancelled: run.cancelled,
-    sync: await loadSyncHealth(),
-  };
 }
-
 
 /**
  * Descarga la agenda por lotes, guardando cada lote en la caché al llegar.
  * Se detiene si la sesión murió o la persona canceló; lo que ya llegó, queda.
+ * Un día cancelado no es un día fallido: queda pendiente, sin contar como error.
  */
 async function fetchAgendaBatches(token, toFetch, store, citasShare, onProgress) {
-  let done = 0, failedDays = 0, agendaSucceeded = 0;
-  const agendaFailedDates = [];
-  const agendaSucceededDates = [];
+  let done = 0, failedDays = 0, succeeded = 0;
+  const failedDates = [], cancelledDates = [], succeededDates = [];
   for (const batch of chunk(toFetch, CONFIG.batchSize)) {
     if (session.expired || run.cancelled) break;
     const responses = await Promise.all(batch.map(d => fetchDay(token, d)));
     const okDates = [], newRecords = [];
 
     responses.forEach((day, i) => {
-      if (day === null) { failedDays++; agendaFailedDates.push(batch[i]); return; }
+      if (day === undefined) { cancelledDates.push(batch[i]); return; }
+      if (day === null) { failedDays++; failedDates.push(batch[i]); return; }
       okDates.push(batch[i]);
-      agendaSucceeded++;
-      agendaSucceededDates.push(batch[i]);
+      succeeded++;
+      succeededDates.push(batch[i]);
       dropDay(store, batch[i]);
       for (const c of day) {
         if (rawSamples.length < 30) rawSamples.push(c);
@@ -185,79 +146,99 @@ async function fetchAgendaBatches(token, toFetch, store, citasShare, onProgress)
     onProgress(Math.round((done / toFetch.length) * citasShare), 'citas');
     if (session.expired || run.cancelled) break;
   }
-  return { done, failedDays, agendaSucceeded, agendaFailedDates, agendaSucceededDates };
+  return { done, failedDays, succeeded, failedDates, cancelledDates, succeededDates };
+}
+
+/** Paso 1: la agenda. Escribe el estado de sincronización de «agenda». */
+async function syncAgenda({ token, historial, retryOnly, operationId, onProgress, plan, store, previousSync }) {
+  const citasShare = historial ? 50 : 100;
+  const attemptedAt = Date.now();
+  const track = !retryOnly || plan.retryAgendaDates.size > 0;
+  if (track) await beginSyncSource('agenda', attemptedAt, plan.toFetch, operationId);
+  onProgress(plan.toFetch.length ? 0 : citasShare, 'citas');
+
+  const r = await fetchAgendaBatches(token, plan.toFetch, store, citasShare, onProgress);
+  const records = [...store.records.values()].filter(x => plan.wanted.has(x.fecha8));
+  const pending = [...new Set([...r.failedDates, ...r.cancelledDates, ...plan.toFetch.slice(r.done)])];
+  for (const date of pendingSyncItems(previousSync, 'agenda')) {
+    if (!plan.toFetch.includes(date) && plan.inWindow(date)) pending.push(date);
+  }
+  if (track) {
+    await finishSyncSource('agenda', {
+      attemptedAt, failedItems: pending, networkCount: r.succeeded,
+      cacheCount: plan.allDates.length - plan.toFetch.length,
+      hasData: records.length > 0, cancelled: run.cancelled,
+      error: session.expired || r.failedDates.length > 0, // cancelar no es un error
+      operationId,
+    });
+  }
+  return { records, succeededDates: r.succeededDates, failedDays: r.failedDays, attemptedAt };
 }
 
 /**
- * Segunda mitad de la carga: la ficha clínica del período. Recibe todo lo que
- * decidió la agenda (fechas, caché, pendientes) y devuelve registros con la
- * ficha fusionada, el equipo y cuántas fechas fallaron. Deja el estado de
+ * Paso 2: la ficha clínica del período. Devuelve registros con la ficha
+ * fusionada, el equipo y cuántas fechas fallaron, y deja el estado de
  * sincronización de «historial» escrito en todos los caminos.
  */
-async function syncHistorial(token, ctx) {
-  const { historial, retryOnly, operationId, onProgress, previousSync, coupledHistoryDates, agendaSucceededDates,
-    allDates, wanted, minDate8, todayStr, refreshDates, agendaAttemptedAt, store } = ctx;
-  let { records } = ctx;
+async function syncHistorial(sync) {
+  const { token, historial, retryOnly, operationId, onProgress, plan, store, previousSync, agenda } = sync;
+  let records = agenda.records;
   let team = {}, historialFailed = 0;
+
   if (historial && !session.expired && !run.cancelled) {
     const retryHistoryDates = retryOnly
-      ? new Set([...pendingSyncItems(previousSync, 'historial'), ...coupledHistoryDates, ...agendaSucceededDates])
+      ? new Set([...pendingSyncItems(previousSync, 'historial'), ...plan.coupledHistoryDates, ...agenda.succeededDates])
       : null;
-    const priorHistoryDates = [...pendingSyncItems(previousSync, 'historial')].filter(date =>
-      /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr);
-    const historyRefreshDates = retryOnly ? refreshDates : new Set([...refreshDates, ...priorHistoryDates]);
-    const historialAttemptedAt = Date.now();
-    const trackHistorial = !retryOnly || retryHistoryDates.size > 0;
-    if (trackHistorial) await beginSyncSource('historial', historialAttemptedAt, retryHistoryDates ?? allDates, operationId);
+    const attemptedAt = Date.now();
+    const track = !retryOnly || retryHistoryDates.size > 0;
+    if (track) await beginSyncSource('historial', attemptedAt, retryHistoryDates ?? plan.allDates, operationId);
     const matchingRecords = retryOnly
-      ? [...store.records.values()].filter(record => wanted.has(record.fecha8) || retryHistoryDates.has(record.fecha8))
+      ? [...store.records.values()].filter(record => plan.wanted.has(record.fecha8) || retryHistoryDates.has(record.fecha8))
       : records;
     const citaKeys = new Set(matchingRecords.map(matchKey));
-    const res = await loadHistorial(token, allDates, citaKeys,
+    const res = await loadHistorial(token, plan.allDates, citaKeys,
       pct => onProgress(50 + Math.round(pct / 2), 'ficha'), {
-        refreshDates: historyRefreshDates,
+        refreshDates: plan.historyRefreshDates,
         onlyDates: retryHistoryDates,
       });
     records = mergeHistorial(records, res.atenciones);
     team = res.team;
     historialFailed = res.failed;
-    if (trackHistorial) {
+    if (track) {
       await finishSyncSource('historial', {
-        attemptedAt: historialAttemptedAt,
+        attemptedAt,
         failedItems: [...new Set([
           ...res.pendingDates,
-          ...[...pendingSyncItems(previousSync, 'historial')].filter(date =>
-            !retryOnly && !allDates.includes(date) && /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr),
+          ...[...pendingSyncItems(previousSync, 'historial')].filter(date => !retryOnly && !plan.allDates.includes(date) && plan.inWindow(date)),
         ])],
         networkCount: Math.max(0, res.attemptedCount - res.failedDates.length),
-        cacheCount: allDates.length - res.attemptedCount,
+        cacheCount: plan.allDates.length - res.attemptedCount,
         hasData: res.atenciones.length > 0 || Object.keys(res.team).length > 0,
         cancelled: run.cancelled,
-        error: session.expired || res.pendingDates.length > 0,
+        error: session.expired || res.failedDates.length > 0,
         operationId,
       });
     }
   } else if (historial && (session.expired || run.cancelled)) {
     const historyStore = await loadStore(CONFIG.historialKey);
-    const previousPending = pendingSyncItems(previousSync, 'historial');
     const pendingDates = new Set([
-      ...previousPending,
-      ...allDates.filter(d => !historyStore.fetchedDates.has(d) || d === todayStr || refreshDates.has(d)),
+      ...pendingSyncItems(previousSync, 'historial'),
+      ...plan.allDates.filter(d => !historyStore.fetchedDates.has(d) || d === plan.todayStr || plan.refreshDates.has(d)),
     ]);
     await finishSyncSource('historial', {
-      attemptedAt: agendaAttemptedAt,
-      failedItems: [...pendingDates].filter(d => /^\d{8}$/.test(d) && d >= minDate8 && d <= todayStr),
+      attemptedAt: agenda.attemptedAt,
+      failedItems: [...pendingDates].filter(plan.inWindow),
       cacheCount: historyStore.fetchedDates.size,
       hasData: historyStore.records.size > 0 || Object.keys(historyStore.extra.team ?? {}).length > 0,
       cancelled: run.cancelled,
-      error: true,
+      error: session.expired, // cancelar deja pendientes, no un error
       operationId,
     });
-  } else if (!historial && retryOnly && (coupledHistoryDates.length || agendaSucceededDates.length)) {
+  } else if (!historial && retryOnly && (plan.coupledHistoryDates.length || agenda.succeededDates.length)) {
     const historyStore = await loadStore(CONFIG.historialKey);
     await finishSyncSource('historial', {
-      attemptedAt: agendaAttemptedAt,
-      failedItems: [...new Set([...pendingSyncItems(previousSync, 'historial'), ...coupledHistoryDates, ...agendaSucceededDates])],
+      attemptedAt: agenda.attemptedAt,
+      failedItems: [...new Set([...pendingSyncItems(previousSync, 'historial'), ...plan.coupledHistoryDates, ...agenda.succeededDates])],
       cacheCount: historyStore.fetchedDates.size,
       hasData: historyStore.records.size > 0 || Object.keys(historyStore.extra.team ?? {}).length > 0,
       error: true,
@@ -266,8 +247,7 @@ async function syncHistorial(token, ctx) {
   } else if (!historial && !retryOnly) {
     await finishSyncSource('historial', {
       disabled: true,
-      failedItems: [...pendingSyncItems(previousSync, 'historial')].filter(date =>
-        /^\d{8}$/.test(date) && date >= minDate8 && date <= todayStr),
+      failedItems: [...pendingSyncItems(previousSync, 'historial')].filter(plan.inWindow),
       operationId,
     });
   }

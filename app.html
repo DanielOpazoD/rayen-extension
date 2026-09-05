@@ -56,6 +56,8 @@
               <select id="setStartTab"><option value="hoy">Hoy</option><option value="atenciones">Atenciones</option><option value="interconsultas">Interconsultas</option><option value="estadisticas">Estadísticas</option><option value="laboratorio">Exámenes complementarios</option></select></label>
             <label>Conservar datos locales
               <select id="setRetention" data-tip="Agenda, ficha e interconsultas más antiguas que esto se borran en la siguiente carga"><option value="3">3 meses</option><option value="6">6 meses</option><option value="13">13 meses</option></select></label>
+            <label>Espera máxima por petición
+              <select id="setNetTimeout" data-tip="Si Eloisa no responde en este tiempo, la petición se aborta y se reintenta en la próxima carga. La ficha completa de un paciente espera el triple. Súbelo en una red lenta."><option value="20">20 s</option><option value="40">40 s</option><option value="60">60 s</option><option value="90">90 s</option></select></label>
           </div>
           <div class="set-h">Umbrales de pendientes <small>días</small></div>
           <div class="set-grid set-4">

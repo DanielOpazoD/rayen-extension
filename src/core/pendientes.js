@@ -60,6 +60,7 @@ export function computePendientes(allData, sics = [], opts = {}) {
     if (!SIC_RECHAZADA_IDS.has(s.estadoId)) continue;
     if (soloMias && !mine(s)) continue;
     const dias = s.antiguedadDias ?? daysSince(s.fecha8, hoy8) ?? 0;
+    if (dias > (U.rechazadaDias ?? 90)) continue;   // pasada esa ventana ya no es una decisión pendiente, es historia
     out.push({
       tipo: 'sic-rechazada', severidad: 2, dias, sicId: s.id, run: s.paciente.run,
       paciente: s.paciente.nombre,

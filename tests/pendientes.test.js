@@ -126,4 +126,5 @@ test('una interconsulta rechazada es un pendiente con decisión, no una «cerrad
   assert.equal(out.length, 1); assert.equal(out[0].tipo, 'sic-rechazada'); assert.equal(out[0].severidad, 2);
   assert.match(out[0].titulo, /rechazada · Reumatología/); assert.match(out[0].detalle, /emitida por ti/);
   assert.equal(computePendientes([], [{ ...sic, registrador: { id: 1 } }], { hoy: new Date(2026, 8, 4) }).length, 0, 'sólo las mías');
+  assert.equal(computePendientes([], [{ ...sic, antiguedadDias: 300 }], { hoy: new Date(2026, 8, 4) }).length, 0, 'a los 300 días ya no es una decisión pendiente');
 });

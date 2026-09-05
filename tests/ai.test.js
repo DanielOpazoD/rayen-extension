@@ -198,3 +198,10 @@ test('labItemsFromAnalysis sólo entrega resultados del mismo RUN y marca las al
   assert.deepEqual(labItemsFromAnalysis(analysis, '6543210', '11.111.111-1'), [], 'otro paciente: nada');
   assert.deepEqual(labItemsFromAnalysis(null, '6543210', '6.543.210-2'), []);
 });
+
+test('«Pendientes: ninguno» en una línea es la sección con su cuerpo, y «Problemas:» dentro de un párrafo no abre otra', () => {
+  const p = getPlantilla('resumen-clinico');
+  const r = parsearRespuesta('## Problemas activos\n- DM2\n## Antecedentes relevantes\nHTA\n## Evolución reciente\nProblemas: ninguno nuevo.\n**Tratamiento actual:** Metformina.\nPendientes: ninguno', p);
+  assert.equal(r.secciones.evolucion, 'Problemas: ninguno nuevo.'); assert.equal(r.secciones.tratamiento, 'Metformina.'); assert.equal(r.secciones.pendientes, 'ninguno');
+  assert.deepEqual(r.faltantes, []); assert.deepEqual(r.repetidas, []);
+});

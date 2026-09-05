@@ -42,7 +42,7 @@ flowchart LR
 3. **Estado.** Sólo `src/io/state.js` muta el estado global; las vistas lo cambian con sus funciones (`setData`, `setPrefs`, `setNote`, `setLoadedMonths`, `setRendered`) y se enteran por los eventos `data` y `notes`.
 4. **Errores.** Los transportes lanzan clases con nombre (`AuthError`, `TimeoutError`, `CancelledError`, `LabAuthError`, `SyslabAuthError`). Lo que ve la persona pasa por `core/errors.js → humanError`. Un `catch` vacío lleva siempre un comentario con el porqué.
 5. **HTML.** Todo texto de la API que entra en `innerHTML` pasa por `esc()`. Nunca `display:flex` sobre un `td`. Un solo nivel de énfasis, el contrato de tres niveles al inicio de `styles/app.css`.
-6. **Idioma.** El dominio se nombra en español (ficha, atención, interconsulta, receta, pendiente, plantilla); los verbos técnicos genéricos pueden ir en inglés (`render`, `build`, `parse`, `load`). Comentarios, mensajes, pruebas y documentación en español. Un identificador nuevo no mezcla los dos idiomas.
+6. **Idioma.** El dominio se nombra en español (ficha, atención, interconsulta, receta, pendiente, plantilla) y los verbos técnicos genéricos en inglés (`render`, `build`, `parse`, `load`, `sync`), también combinados en un mismo identificador (`renderResumen`, `syncHistorial`, `fichaStatusHtml`). Lo que no se hace es traducir el dominio al inglés (`appointment`, `prescription`). Comentarios, mensajes, pruebas y documentación en español.
 7. **Pruebas.** Prueban comportamiento observable, no implementación. Cada garantía de seguridad u honestidad que la interfaz afirme tiene su prueba negativa (el token no sale del origen; el anonimizador devuelve `verificado=false` con un resto; la marca del laboratorio fuerza la alerta). Los recorridos de Playwright pulsan el elemento real que pulsa la persona, en dos anchos, sin red. Los datos sintéticos tienen la forma real: nombres de varias palabras, estados negados, fechas de Rayen.
 8. **Honestidad.** Un estado vacío distingue «no hay» de «no se pudo consultar». Una carga parcial nunca se presenta como completa. Lo que la interfaz llama «comprobado» tiene detrás un ataque adversarial propio antes de escribirlo.
 9. **Documentación.** Cada módulo nuevo entra en el mapa de abajo (`docs:check` lo exige y verifica que toda ruta citada exista). Cada cambio visible entra en `CHANGELOG.md` con el porqué. Los comentarios explican por qué, no qué.
@@ -67,7 +67,7 @@ flowchart LR
 ### Panel del paciente
 
 1. `ui/patient-panel.js → openPanel` arma `cur` (agenda del paciente, sus SIC, contacto) y pinta al instante con `ui/panel/*`.
-2. `io/ficha-load.js → loadFicha` pide seis fuentes en paralelo con memoización por paciente; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran.
+2. `io/ficha-load.js → loadFicha` pide la ficha administrativa y luego seis fuentes en paralelo, con memoización por paciente sólo cuando todas respondieron; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran; una sesión vencida se lee del transporte y avisa como la carga principal.
 3. El panel es un diálogo modal real: fondo inerte, trampa de Tab, foco devuelto a la fila. Escape cierra lo más interno: menú, hoja de informe, panel.
 4. La portada (`panel/resumen.js`) ordena problemas por peso (`core/ficha-rank.js`) y muestra interconsultas abiertas o rechazadas y el próximo control no descartado.
 
@@ -98,7 +98,7 @@ flowchart LR
 
 ## Red: tiempo límite y cancelación
 
-Cada petición a Eloisa (`src/io/http.js`) lleva `AbortSignal.timeout(CONFIG.httpTimeoutMs)` y la señal de la carga en curso: `cancelRun()` aborta lo que está en vuelo y los cargadores no encolan más lotes. Un 401/403 marca la sesión como vencida e invalida la copia del token en `storage.session`. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`.
+Cada petición a Eloisa (`src/io/http.js`) lleva un tiempo límite: `net.timeoutMs` (20 s, Preferencias → «Espera máxima por petición») para la agenda y la ficha diaria, y `net.longTimeoutMs` (60 s o el triple del anterior) para la ficha completa de un paciente, que va en una sola llamada de diez años. Sólo la carga de la agenda es cancelable: sus peticiones llevan `run.controller.signal` y `cancelRun()` las aborta en vuelo; las llamadas del panel, de interconsultas y de PDF no llevan señal y no se ven afectadas. Un día cancelado queda pendiente, no fallido. Un 401/403 marca la sesión como vencida, invalida la copia del token y recuerda el token rechazado para no volver a entregarlo aunque la pestaña de Eloisa siga mostrándolo. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`. El plan de cada carga (fechas, refrescos, reintentos) lo calcula `src/io/sync-plan.js`, puro y con pruebas; `src/io/api.js` sólo ejecuta el plan en dos pasos, agenda y ficha, sobre un único objeto `SyncRun` documentado.
 
 ## Flujo con IA
 
@@ -203,6 +203,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/pdf.js` — obtención y presentación segura de documentos PDF.
 - `src/io/sic.js` — carga y normalización de interconsultas.
 - `src/io/state.js` — fuente única de verdad y eventos de la aplicación.
+- `src/io/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
 - `src/io/sync-health.js` — persistencia técnica de intentos, éxitos y pendientes por fuente.
 - `src/io/syslab-api.js` — servicio SysLab HHR: búsqueda por RUT y verificación de identidad del lote.
 - `src/io/syslab-http.js` — conducción de la pestaña SysLab (navegación por estado) y lectura de su DOM.
