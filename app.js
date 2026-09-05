@@ -31,6 +31,7 @@ setPrefs({
   refreshMin: Number.isFinite(+prefs.refreshMin) ? +prefs.refreshMin : 15,
   watchEsp:   Array.isArray(prefs.watchEsp) && prefs.watchEsp.length ? prefs.watchEsp : [...CONFIG.watchEspecialidades],
   umbrales:   prefs.umbrales && typeof prefs.umbrales === 'object' ? { ...CONFIG.pendientes, ...prefs.umbrales } : { ...CONFIG.pendientes },
+  autoLoad: prefs.autoLoad !== false,
   netTimeoutSec: Number.isFinite(+prefs.netTimeoutSec) && +prefs.netTimeoutSec >= 5 ? +prefs.netTimeoutSec : 20,
   retentionMonths: Number.isFinite(+prefs.retentionMonths) && +prefs.retentionMonths > 0 ? +prefs.retentionMonths : CONFIG.retentionMonths,
 });
@@ -86,3 +87,5 @@ activateOnKey($('pacBody'));      // Enter/Space on a patient row or its RUN
 activateOnKey($('sicBody'));      // Enter/Space expands a SIC row
 activateOnKey($('todayContent')); // Enter/Space opens a patient from Hoy
 if (prefs.startTab && prefs.startTab !== 'hoy') showTab(prefs.startTab);
+// Al abrir, la agenda se carga sola (caché primero, red después): antes había que pulsar «Actualizar».
+if (prefs.autoLoad !== false) loader.handleFetch();
