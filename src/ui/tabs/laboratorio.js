@@ -1,25 +1,24 @@
 import { normalizeSexo } from '../../core/lab-parser.js';
-import { humanCase, formatRun } from '../../core/parser.js';
+import { formatRun } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
 import { esc, $ } from '../dom.js';
 import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN, fmtDate as isoDate } from '../../io/lab-api.js';
-import { checkSyslabSession, syslabPdfUrl, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
+import { checkSyslabSession, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
 import { createSessionMonitor } from '../../io/lab-session.js';
 import { createLabSearch } from '../../io/lab-search.js';
-import { mergePdfs } from '../pdf-merge.js';
 import { buildDetails } from '../../io/lab-report.js';
 import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../../core/lab-analytics.js';
-import { renderTrendGroups } from '../lab-charts.js';
-import {
-  buildTrendGroups, filterTrendGroups, latestTrendTimestamp, countTrendVariables,
-} from '../lab-trends.js';
 import { buildAnalysisSummary } from '../../core/lab-summary.js';
-import { toggleExamSelection } from '../../core/exam-request.js';
-import {
-  renderExamRequestForm, buildExamRequestPrintFragment, EXAM_REQUEST_PRINT_CSS,
-} from '../exam-request-view.js';
-import { openReport } from '../export.js';
+import { renderHsrResults, renderHhrResults, analysable, fmtFecha } from '../lab/results.js';
+import { renderComparison, renderReports, renderFilteredTrends, renderMicrobiology } from '../lab/analysis-views.js';
+import { initRequest } from '../lab/request.js';
+import { downloadAllPdfs } from '../lab/pdf-all.js';
 
+/**
+ * Pestaña Exámenes complementarios: el controlador. Sesiones, búsqueda,
+ * selección y orquestación del análisis viven aquí; las tablas, las vistas
+ * del análisis, la solicitud impresa y el PDF único en `ui/lab/`.
+ */
 let initialized = false;
 /** Claves «hsr:id» / «hhr:id» de las órdenes marcadas para analizar. */
 const selected = new Set();
@@ -27,16 +26,11 @@ const selected = new Set();
 // Salvador si respondió, si no el de la ficha desde donde se abrió el laboratorio.
 let patientSexo = '';
 const sexoPaciente = () => normalizeSexo(search.results.hsr[0]?.sexo) || normalizeSexo(patientSexo);
-/**
- * Identidad de la búsqueda vigente.
- *
- * Cada búsqueda toma un número y el cuerpo del RUT que la originó. Una respuesta
- * que llega cuando ya empezó otra búsqueda se descarta: sin esto, abrir el
- * laboratorio de un paciente y pasar al siguiente antes de que respondiera
- * pintaba las órdenes del primero bajo el RUT del segundo.
- */
 let analysis = null;
 let analysisView = 'comparacion';
+
+const showError = (texto, tone = 'error') => { $('labError').textContent = texto; $('labError').className = `lab-msg ${tone}`; };
+const tableDeps = { selected, onSelectionChange: () => updateSelectionUI(), onError: showError };
 
 export function init() {
   if (initialized) return;
@@ -50,22 +44,17 @@ export function init() {
   $('labClear').addEventListener('click', clearResults);
   $('labCheckHsr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHsr(); });
   $('labCheckHhr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHhr(); });
-  $('labDownloadAll').addEventListener('click', () => downloadAllPdfs());
+  $('labDownloadAll').addEventListener('click', () => downloadAllPdfs(search));
   $('labAnalyze').addEventListener('click', () => analyzeSelected());
   $('labCloseAnalysis').addEventListener('click', closeAnalysis);
   $('labCopyTable').addEventListener('click', copyComparison);
   $('labCopySummary').addEventListener('click', copySummary);
-  $('labRequestOpen').addEventListener('click', openRequest);
-  $('labRequestClose').addEventListener('click', () => { $('labRequest').hidden = true; });
-  $('labRequestClear').addEventListener('click', () => { requestSelected = new Set(); renderRequest(); });
-  $('labRequestPrint').addEventListener('click', printRequest);
-  // Delegación: son 67 casillas y un solo escucha basta.
-  $('labRequestBody').addEventListener('change', e => {
-    const key = e.target.dataset?.key;
-    if (!key) return;
-    requestSelected = toggleExamSelection(requestSelected, key);
-    updateRequestCount();
-  });
+  // Nombre y RUN salen los dos de la misma búsqueda: editar el campo sin volver
+  // a buscar imprimía un par cruzado en un papel que viaja al laboratorio.
+  initRequest({ getPaciente: () => ({
+    nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
+    run: search.rut.display, fecha: fmtFecha(new Date()), procedencia: '',
+  }) });
   $('labPickAllHsr').addEventListener('change', e => pickAll('hsr', e.target.checked));
   $('labPickAllHhr').addEventListener('change', e => pickAll('hhr', e.target.checked));
   $('labPeriodo').addEventListener('change', applyPeriodo);
@@ -77,7 +66,6 @@ export function init() {
     const view = e.target.closest('[data-view]')?.dataset.view;
     if (view) showView(view);
   });
-
 }
 
 export async function onShow() {
@@ -151,9 +139,9 @@ const search = createLabSearch({
     else if (r.status === 'auth') { el.textContent = 'HSR: sin sesión en el portal del Hospital Salvador. Ábrelo e inicia sesión.'; sessions.refreshHsr(); }
     else if (r.status === 'error') el.textContent = `HSR: ${humanError(r.error, 'el portal del Hospital Salvador')}`;
     else {
-      if (r.message) { $('labError').textContent = r.message; $('labError').className = 'lab-msg info'; }
+      if (r.message) showError(r.message, 'info');
       el.textContent = `HSR: ${search.results.hsr.length} ${search.results.hsr.length === 1 ? 'orden' : 'órdenes'} de ${search.rut.display}`;
-      renderHsrResults(search.results.hsr);
+      renderHsrResults(search.results.hsr, tableDeps);
     }
   },
   onHhr(r) {
@@ -164,7 +152,7 @@ const search = createLabSearch({
     else {
       el.textContent = `HHR: ${search.results.hhr.length} ${search.results.hhr.length === 1 ? 'orden' : 'órdenes'} de ${search.rut.display}` +
         (r.ocultas ? ` · ${r.ocultas} fuera del período` : '');
-      renderHhrResults(search.results.hhr);
+      renderHhrResults(search.results.hhr, tableDeps);
     }
   },
 });
@@ -212,117 +200,6 @@ async function doSearch() {
   updateSelectionUI();
 }
 
-// ── Tablas ──
-
-/**
- * Sólo se ofrece marcar lo que se puede analizar. Una casilla sobre una orden
- * sin informe descargable haría que el contador prometiera más informes de los
- * que el análisis puede incluir.
- */
-const pickCell = (source, id, enabled) => enabled
-  ? `<td class="lab-pick"><input type="checkbox" class="lab-check" data-source="${source}" data-id="${esc(String(id))}" aria-label="Seleccionar orden ${esc(String(id))}"></td>`
-  : '<td class="lab-pick"></td>';
-
-function renderHsrResults(ordenes) {
-  const tbody = $('labHsrBody');
-  tbody.innerHTML = ordenes.map((o, i) => {
-    const pdfBtn = o.puedeImprimir
-      ? `<button class="btn-mini lab-pdf" data-source="hsr" data-enc="${esc(o.ordenEncryptada)}" title="Descargar PDF">PDF</button>`
-      : '<span class="muted">—</span>';
-    const progreso = `${o.validadas}/${o.totalPrestaciones}`;
-    const tienePrest = o.prestaciones && o.prestaciones.length > 0;
-    return `<tr>
-      ${pickCell('hsr', o.numero, analysable('hsr', o))}
-      <td>${esc(o.fecha ? fmtFecha(o.fecha) : '')}</td>
-      <td>${esc(o.numero)}</td>
-      <td class="lab-nombre">${esc(humanCase(o.nombrePaciente))}</td>
-      <td class="lab-progreso">${tienePrest
-        ? `<button type="button" class="lab-expand" data-row="${i}" aria-expanded="false" title="Ver prestaciones">${esc(progreso)}</button>`
-        : `<span>${esc(progreso)}</span>`}</td>
-      <td>${o.rechazadas > 0 ? `<strong class="lab-rech">${o.rechazadas}</strong>` : '0'}</td>
-      <td>${esc(humanCase(o.procedencia))}</td>
-      <td>${esc(humanCase(o.areas, { siglas: true }))}</td>
-      <td>${pdfBtn}</td>
-    </tr>
-    ${tienePrest ? `<tr class="lab-detail" id="labPrest${i}" hidden><td colspan="9">
-      ${renderPrestaciones(o.prestaciones)}
-    </td></tr>` : ''}`;
-  }).join('');
-  wireRows(tbody, 'hsr');
-  tbody.querySelectorAll('.lab-expand').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const row = $(`labPrest${btn.dataset.row}`);
-      const abierto = !row.hidden;
-      row.hidden = abierto;
-      btn.setAttribute('aria-expanded', String(!abierto));
-    });
-  });
-}
-
-/** Detalle de prestaciones de una orden: qué se pidió y en qué estado está. */
-function renderPrestaciones(prestaciones) {
-  return `<table class="lab-table lab-prest-table">
-    <thead><tr><th>Prestación</th><th>Estado</th><th>Validación</th><th>Derivación</th></tr></thead>
-    <tbody>${prestaciones.map(p => `<tr>
-      <td>${esc(humanCase(p.nombre, { siglas: true }))}</td>
-      <td class="${/rechaz/i.test(p.estado) ? 'lab-out' : ''}">${esc(humanCase(p.estado))}</td>
-      <td>${esc(p.fechaValidacion)}</td>
-      <td>${esc(p.derivacion)}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-}
-
-function renderHhrResults(ordenes) {
-  const tbody = $('labHhrBody');
-  tbody.innerHTML = ordenes.map(o => {
-    const examList = o.examenes.map(x => humanCase(x, { siglas: true })).join(', ');
-    const pdfBtn = o.puedeImprimir
-      ? `<button class="btn-mini lab-pdf" data-source="hhr" data-link="${esc(o.link)}" title="Ver informe">PDF</button>`
-      : '<span class="muted">—</span>';
-    return `<tr>
-      ${pickCell('hhr', o.id, analysable('hhr', o))}
-      <td>${esc(o.fecha)}</td>
-      <td>${esc(o.id)}</td>
-      <td class="lab-nombre">${esc(humanCase(o.nombrePaciente))}</td>
-      <td>${esc(o.hora)}</td>
-      <td>${esc(humanCase(o.procedencia))}</td>
-      <td class="lab-exams" title="${esc(examList)}">${esc(examList.length > 60 ? examList.slice(0, 57) + '…' : examList)}</td>
-      <td>${pdfBtn}</td>
-    </tr>`;
-  }).join('');
-  wireRows(tbody, 'hhr');
-}
-
-function wireRows(tbody, source) {
-  tbody.querySelectorAll('.lab-pdf').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      btn.textContent = '…';
-      try {
-        if (source === 'hsr') {
-          const blob = await informeResultado(btn.dataset.enc);
-          window.open(URL.createObjectURL(blob), '_blank');
-        } else {
-          window.open(syslabPdfUrl(btn.dataset.link), '_blank');
-        }
-      } catch (err) {
-        $('labError').textContent = `No se pudo obtener el PDF. ${humanError(err, 'el laboratorio')}`;
-        $('labError').className = 'lab-msg error';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'PDF';
-      }
-    });
-  });
-  tbody.querySelectorAll('.lab-check').forEach(box => {
-    box.addEventListener('change', () => {
-      const key = `${box.dataset.source}:${box.dataset.id}`;
-      if (box.checked) selected.add(key); else selected.delete(key);
-      updateSelectionUI();
-    });
-  });
-}
-
 // ── Selección ──
 
 function pickAll(source, checked) {
@@ -337,9 +214,6 @@ function pickAll(source, checked) {
   });
   updateSelectionUI();
 }
-
-/** Sólo se puede analizar una orden de la que se pueda obtener el informe. */
-const analysable = (source, o) => source === 'hsr' ? Boolean(o.ordenEncryptada) : Boolean(o.link);
 
 function updateSelectionUI() {
   const btn = $('labAnalyze');
@@ -466,90 +340,10 @@ function showView(view) {
     `${s.reportCount} informes · ${s.findingCount} resultados · ${s.alertCount} fuera de rango`;
 
   $('labTrendBar').hidden = view !== 'tendencias';
-  if (view === 'tendencias') body.innerHTML = renderFilteredTrends();
+  if (view === 'tendencias') body.innerHTML = renderFilteredTrends(analysis);
   else if (view === 'microbiologia') body.innerHTML = renderMicrobiology(analysis);
   else if (view === 'informes') body.innerHTML = renderReports(analysis);
   else body.innerHTML = renderComparison(analysis);
-}
-
-function renderComparison(a) {
-  if (!a.comparison.length) return '<p class="muted">Sin resultados interpretables.</p>';
-  const head = a.columns.map(c =>
-    `<th title="${esc(c.examNames.join(', '))}">${esc(c.label)}<br><span class="muted">${esc(a.sourceByExamId?.[c.key] || '')}</span></th>`
-  ).join('');
-  const rows = a.comparison.map(row => `<tr>
-    <th scope="row" class="lab-var">${esc(row.analysis)}
-      <span class="muted">${esc([row.section, row.unit].filter(Boolean).join(' · '))}</span></th>
-    ${a.columns.map(c => {
-      const f = row.values[c.key];
-      if (!f) return '<td class="lab-gap">—</td>';
-      const ref = f.refValue ? `Referencia ${f.refValue}${f.refGroup ? ` (${f.refGroup})` : ''}${f.refUncertain ? ' · sexo no informado, sin alerta' : ''}${f.flag ? ` · marcado ${f.flag} por el laboratorio` : ''}` : 'Sin referencia';
-      return `<td class="${f.alert ? 'lab-out' : ''}" title="${esc(ref)}">${esc(f.result)}</td>`;
-    }).join('')}
-  </tr>`).join('');
-  return `<div class="tbl-wrap"><table class="lab-table lab-matrix">
-    <thead><tr><th>Variable</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-
-function renderReports(a) {
-  return a.reports.map(r => {
-    const alertas = r.findings.filter(f => f.alert);
-    return `<details class="lab-report"${alertas.length ? ' open' : ''}>
-      <summary><strong>${esc(r.label)}</strong>
-        <span class="muted">${esc(a.sourceByExamId?.[r.examId] || '')} · ${r.findings.length} resultados${alertas.length ? ` · ${alertas.length} fuera de rango` : ''}</span>
-      </summary>
-      <div class="tbl-wrap"><table class="lab-table">
-        <thead><tr><th>Sección</th><th>Analito</th><th>Resultado</th><th>Unidad</th><th>Referencia</th></tr></thead>
-        <tbody>${r.findings.map(f => `<tr class="${f.alert ? 'lab-out-row' : ''}">
-          <td>${esc(f.section)}</td><td>${esc(f.analysis)}</td>
-          <td class="${f.alert ? 'lab-out' : ''}">${esc(f.result)}</td>
-          <td>${esc(f.unit)}</td><td>${esc(f.refValue)}${f.refGroup ? ` <span class="muted">${esc(f.refGroup)}</span>` : ''}${f.flag ? ` <span class="lab-out">${esc(f.flag)}</span>` : ''}</td></tr>`).join('')}</tbody>
-      </table></div>
-    </details>`;
-  }).join('');
-}
-
-/**
- * Tarjetas de cultivo, antibiograma y PCR viral.
- *
- * Se muestra la tarjeta aunque venga sin hallazgos: el texto del cultivo suele
- * llegar sólo dentro del PDF, y esconderla haría desaparecer de la vista un
- * hemocultivo que sí se pidió.
- */
-/**
- * Tendencias agrupadas por familia clínica y acotadas por la barra de filtros.
- *
- * La ventana temporal se ancla en el examen más reciente del paciente, no en la
- * fecha de hoy: alguien sin exámenes de esta semana vería la vista vacía.
- */
-function renderFilteredTrends() {
-  const grupos = buildTrendGroups(analysis.trends);
-  const visibles = filterTrendGroups(grupos, {
-    range: $('labTrendRange').value,
-    search: $('labTrendSearch').value,
-    onlyAltered: $('labTrendAltered').checked,
-    anchor: latestTrendTimestamp(grupos),
-  });
-  const total = countTrendVariables(grupos);
-  const vistas = countTrendVariables(visibles);
-  $('labTrendCount').textContent = vistas === total
-    ? `${total} variable${total !== 1 ? 's' : ''}`
-    : `${vistas} de ${total} variables`;
-  return renderTrendGroups(visibles);
-}
-
-function renderMicrobiology(a) {
-  if (!a.microbiology || !a.microbiology.length) {
-    return '<p class="muted">Ningún examen microbiológico en los informes seleccionados.</p>';
-  }
-  return `<div class="lab-micro-grid">${a.microbiology.map(e => `
-    <article class="lab-micro${e.hasAlertFinding ? ' alerta' : ''}">
-      <header><strong>${esc(e.examLabel)}</strong><span class="muted">${esc(e.date)}</span></header>
-      ${e.findings.length
-        ? `<dl>${e.findings.map(f =>
-            `<dt>${esc(f.analysis)}</dt><dd>${esc(f.result)}</dd>`).join('')}</dl>`
-        : '<p class="muted">Sin resultado legible en el informe: ábrelo en PDF.</p>'}
-    </article>`).join('')}</div>`;
 }
 
 async function copySummary() {
@@ -587,99 +381,6 @@ function closeAnalysis() {
   $('labAnalysis').hidden = true;
   $('labAnalysisBody').innerHTML = '';
   $('labAnalysisWarn').textContent = '';
-}
-
-// ── Solicitud de exámenes ──
-
-/** Exámenes marcados en el formulario de solicitud. */
-let requestSelected = new Set();
-
-function openRequest() {
-  $('labRequest').hidden = false;
-  renderRequest();
-  $('labRequest').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function renderRequest() {
-  $('labRequestBody').innerHTML = renderExamRequestForm(requestSelected);
-  updateRequestCount();
-}
-
-function updateRequestCount() {
-  const n = requestSelected.size;
-  $('labRequestCount').textContent = `${n} examen${n !== 1 ? 'es' : ''}`;
-  $('labRequestPrint').disabled = n === 0;
-}
-
-/**
- * La solicitud se imprime; no se envía a ningún sistema. Se reutiliza el mismo
- * camino que el resto de los impresos: el fragmento se guarda, `report.html` lo
- * dibuja, lo borra del almacenamiento y abre el diálogo de impresión.
- */
-async function printRequest() {
-  if (!requestSelected.size) return;
-  const fragment = buildExamRequestPrintFragment({
-    selected: requestSelected,
-    // Nombre y RUN salen los dos de la misma búsqueda. Antes el nombre venía de
-    // la tabla y el RUN del buscador, así que editar el campo sin volver a
-    // buscar imprimía un par cruzado en un papel que viaja al laboratorio.
-    paciente: {
-      nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
-      run: search.rut.display,
-      fecha: fmtFecha(new Date()),
-      procedencia: '',
-    },
-    prevision: $('labRequestPrev').value,
-  });
-  await openReport(fragment, EXAM_REQUEST_PRINT_CSS);
-}
-
-// ── PDF único ──
-
-async function downloadAllPdfs() {
-  const btn = $('labDownloadAll');
-  const msg = $('labError');
-  btn.disabled = true;
-  msg.textContent = '';
-
-  const loaders = [
-    ...search.results.hsr.filter(o => o.puedeImprimir).map(o => async () =>
-      new Uint8Array(await (await informeResultado(o.ordenEncryptada)).arrayBuffer())),
-    ...search.results.hhr.filter(o => o.puedeImprimir).map(o => () => syslabReportBytes(o.link)),
-  ];
-
-  btn.textContent = `0/${loaders.length}…`;
-  try {
-    const { bytes, merged, failed, pages } = await mergePdfs(loaders, (done, total) => {
-      btn.textContent = `${done}/${total}…`;
-    });
-    if (!bytes) throw new Error('Ningún informe se pudo incluir.');
-
-    // El nombre lleva el RUT que se buscó, no lo que haya en el campo: editarlo
-    // sin volver a buscar guardaba los informes de A como «laboratorio-<RUT de B>».
-    savePdf(bytes, `laboratorio-${search.rut.display.replace(/[^0-9kK-]/g, '') || 'informes'}.pdf`);
-    msg.textContent = failed === 0
-      ? `PDF único con ${merged} informe${merged !== 1 ? 's' : ''} (${pages} pág.).`
-      : `PDF con ${merged} de ${merged + failed} informes (${pages} pág.). ${failed} no se pudo incluir.`;
-    msg.className = failed === 0 ? 'lab-msg info' : 'lab-msg error';
-  } catch (err) {
-    msg.textContent = `No se pudo generar el PDF único. ${humanError(err, 'el laboratorio')}`;
-    msg.className = 'lab-msg error';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Todos los PDF';
-  }
-}
-
-function savePdf(bytes, filename) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 // ── Limpiar ──
@@ -721,10 +422,4 @@ export async function searchFromPatient(run, sexo = '') {
     return;
   }
   await doSearch();
-}
-
-function fmtFecha(d) {
-  return String(d.getDate()).padStart(2, '0') + '/' +
-    String(d.getMonth() + 1).padStart(2, '0') + '/' +
-    d.getFullYear();
 }

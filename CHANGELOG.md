@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.35.0 — 2026-09-04
+
+Modularidad, segunda tanda del saneamiento. Sin cambios de comportamiento.
+
+- **Panel del paciente en once módulos** (`src/ui/panel/`): cabecera y datos, portada, problemas, atenciones, interconsultas, recetas, diario de notas, menú PDF, estado de la ficha y piezas compartidas. `patient-panel.js` queda como controlador de 280 líneas (antes 650) y cada pestaña recibe el paciente y su filtro como parámetros en vez de leer variables del módulo.
+- **Exámenes complementarios en cinco módulos** (`src/ui/lab/`): tablas de órdenes, vistas del análisis, solicitud impresa y PDF único; el controlador pasa de 730 a 425 líneas.
+- **Carga de la agenda en pasos con nombre** (`io/api.js`): `fetchAgendaBatches` y `syncHistorial` sustituyen una función de 187 líneas; la pestaña Atenciones cablea orden, filtros, desplazamiento, filas y exportación en funciones separadas.
+- **Límites en el lint**: ninguna función de más de 150 líneas útiles ni módulo de más de 500 (catálogos, arnés, pruebas y scripts exentos). El código actual cumple sin excepciones.
+
 ## 2.34.0 — 2026-09-04
 
 Cimientos, primera tanda tras el balance 6 (ingeniería 5,0 · clínico 4,6 · seguridad 4,0).
