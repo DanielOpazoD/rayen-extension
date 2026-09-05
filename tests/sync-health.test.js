@@ -2,9 +2,10 @@ import { beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
 import {
-  beginSyncSource, failRunningSyncSources, finishSyncSource, hasRetryableSync, loadSyncHealth,
-  pendingSyncItems, recoverStaleSyncSources,
+  beginSyncSource, failRunningSyncSources, finishSyncSource, loadSyncHealth,
+  recoverStaleSyncSources,
 } from '../src/io/sync-health.js';
+import { hasRetryableSync, pendingSyncItems } from '../src/core/sync-rules.js';
 import { syncOverview } from '../src/ui/sync-status.js';
 
 beforeEach(() => installFakeChrome());

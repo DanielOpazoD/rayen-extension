@@ -1,5 +1,6 @@
 import { $, esc } from './dom.js';
-import { hasRetryableSync, loadSyncHealth, recoverStaleSyncSources, SYNC_SOURCES } from '../io/sync-health.js';
+import { loadSyncHealth, recoverStaleSyncSources } from '../io/sync-health.js';
+import { hasRetryableSync, SYNC_SOURCES } from '../core/sync-rules.js';
 
 const LABELS = Object.freeze({ agenda: 'Agenda', historial: 'Ficha clínica', sics: 'Interconsultas' });
 const STATUS = Object.freeze({

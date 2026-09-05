@@ -2,7 +2,7 @@
 
 Extensión Chrome (Manifest V3) de uso personal para ver, cruzar y exportar la información clínica del Dr. Daniel Opazo Damiani registrada en Eloisa/Rayen (`clinicohangaroa.eloisa.cl`): agenda, ficha clínica, interconsultas (SIC) y recetas.
 
-No usa librerías ni servicios externos. Todo el código corre en el navegador y habla únicamente con la API de Eloisa usando la sesión ya iniciada.
+Sin servicios externos ni build: todo corre en el navegador con la sesión ya iniciada. Habla con la API de Eloisa (token) y, sólo desde Exámenes complementarios, con los laboratorios HSR y SysLab (cookies de sus propias sesiones). Las dos únicas librerías (pdf.js y pdf-lib) van empaquetadas en `vendor/` y se cargan bajo demanda.
 
 Para continuar el desarrollo, comienza por el [`mapa de documentación`](DOCUMENTATION_MAP.md) y la [`arquitectura canónica`](ARCHITECTURE.md). Ahí están los flujos, invariantes, responsables y puertas de calidad vigentes.
 
@@ -83,7 +83,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 |---|---|
 | `tabs`, `scripting` | Leer el `accessToken` desde `localStorage` de la pestaña de Eloisa (mundo aislado: la página no puede interceptar la lectura). No se inyecta nada en la página. |
 | `storage`, `unlimitedStorage` | Caché local de agenda, ficha y SIC (6–12 meses superan los 10 MB por defecto). |
-| `host_permissions: clinicohangaroa.eloisa.cl` | Único origen al que se envía el token (`src/io/http.js → resolveUrl` lo garantiza). |
+| `host_permissions` | Tres orígenes: `clinicohangaroa.eloisa.cl` (el único que recibe el token: `src/io/http.js → resolveUrl` lo garantiza), `examenesusuarios.hsalvador.cl` y `10.4.69.90` (laboratorios, con sus propias cookies; nunca el token). |
 
 ## Privacidad
 

@@ -4,8 +4,8 @@
  * Every name, RUN and phone here is invented.
  */
 import { parseCita, parseAtencion, dateRange, localDateStr, computeDv } from '../src/core/parser.js';
-import { parseSIC } from '../src/io/sic.js';
-import { aggregateTeam } from '../src/io/historial.js';
+import { parseSIC } from '../src/core/sic-parse.js';
+import { aggregateTeam } from '../src/core/historial-merge.js';
 import { CONFIG } from '../src/core/config.js';
 
 const MONTHS = 6;

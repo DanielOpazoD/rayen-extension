@@ -4,9 +4,11 @@ import { getToken } from './auth.js';
 import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from './http.js';
 import { parseCita, matchKey } from '../core/parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
-import { loadHistorial, mergeHistorial } from './historial.js';
-import { beginSyncSource, finishSyncSource, loadSyncHealth, pendingSyncItems } from './sync-health.js';
-import { planSync, retentionMin8, isMutableAppointmentStatus } from './sync-plan.js';
+import { loadHistorial } from './historial.js';
+import { mergeHistorial } from '../core/historial-merge.js';
+import { beginSyncSource, finishSyncSource, loadSyncHealth } from './sync-health.js';
+import { pendingSyncItems } from '../core/sync-rules.js';
+import { planSync, retentionMin8, isMutableAppointmentStatus } from '../core/sync-plan.js';
 
 export { isMutableAppointmentStatus };
 

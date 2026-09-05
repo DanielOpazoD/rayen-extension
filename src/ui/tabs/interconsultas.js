@@ -12,7 +12,8 @@ import { state, setData, on } from '../../io/state.js';
 import { initChips, initFilterFold, markSorted, remeasure } from '../ui.js';
 import { openPatientByRun } from '../actions.js';
 import { showExpired } from '../loader.js';
-import { beginSyncSource, finishSyncSource, loadSyncHealth, pendingSyncItems } from '../../io/sync-health.js';
+import { beginSyncSource, finishSyncSource, loadSyncHealth } from '../../io/sync-health.js';
+import { pendingSyncItems } from '../../core/sync-rules.js';
 import { renderSyncStatus } from '../sync-status.js';
 
 /** Interconsultas: loading (cache-first, 30 min TTL), filters, sort, detail rows. */

@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSIC } from '../src/io/sic.js';
+import { parseSIC } from '../src/core/sic-parse.js';
 import { computePendientes } from '../src/core/pendientes.js';
 import { applyFilters } from '../src/ui/stats.js';
-import { mergeHistorial } from '../src/io/historial.js';
+import { mergeHistorial } from '../src/core/historial-merge.js';
 import { parseAtencion } from '../src/core/parser.js';
 import { clearAllCaches, storageSet, storageGet } from '../src/io/cache.js';
 import { installFakeChrome } from './helpers/fake-chrome.js';

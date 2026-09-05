@@ -24,7 +24,10 @@ test('con la ficha sintética el panel muestra problemas, atenciones con cuerpo,
   await conCuerpo.first().locator('.pp-vhead').click();
   await expect(conCuerpo.first()).toHaveClass(/expanded/);
   await expect(conCuerpo.first().locator('.pp-sec-l').first()).toHaveText(/Motivo de consulta|Evolución/);
-  await expect(page.locator('#ppPaneAt .pp-print').first()).toBeVisible(); // la impresora de la receta, dentro de la atención
+  // La impresora de la receta vive dentro de la atención: se ve al desplegar la primera que tenga receta.
+  const conReceta = page.locator('#ppPaneAt .pp-visit.has-body').filter({ has: page.locator('.pp-print') }).first();
+  if (!/expanded/.test(await conReceta.getAttribute('class'))) await conReceta.locator('.pp-vhead').click();
+  await expect(conReceta.locator('.pp-print').first()).toBeVisible();
   await page.locator('.pp-tab[data-pt="rx"]').click();
   await expect(page.locator('#ppPaneRx')).toContainText(/Recetas por atención|Sin recetas/);
   // Cada receta dice quién afirma su estado y se despliega con su vigencia y despacho (consulta bajo demanda).

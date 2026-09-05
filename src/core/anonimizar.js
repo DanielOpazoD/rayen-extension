@@ -40,7 +40,10 @@ const CUES = ['dr', 'dra', 'sr', 'sra', 'srta', 'don', 'doña', 'paciente', 'hij
 const cueAlt = CUES.map(w => `[${w[0].toUpperCase()}${w[0]}]${w.slice(1)}`).join('|');
 const CUE_RE = new RegExp(`\\b(?:${cueAlt})\\.?\\s+((?:(?:de|del|la|las|los|y)\\s+)?\\p{Lu}\\p{Ll}{2,}(?:[\\s-]+(?:(?:de|del|la|las|los|y)\\s+)?\\p{Lu}\\p{Ll}{2,}){0,3})`, 'gu');
 // RUN pegado como lo escribe Rayen: 7–8 dígitos y verificador válido (módulo 11); así una fecha o un id no pasan por RUN.
-const RUT_LOOSE_RE = /(?<![\d.-])(\d{7,8})[-\s]?([\dkK])(?![\d-])/g;
+// Una fecha-hora de Rayen («20260815 080000») se leía como RUN de 7 dígitos + verificador cuando el octavo dígito
+// resultaba válido (p. ej. 2026081-5): con el desplazamiento aleatorio de fechas, una de cada tantas descargas
+// se rechazaba por «RUT pegado». Lo que va seguido de un espacio y seis dígitos es una hora, no un verificador.
+const RUT_LOOSE_RE = /(?<![\d.-])(\d{7,8})[-\s]?([\dkK])(?![\d-])(?!\s\d{6}\b)/g;
 // El fijo exige separador tras el prefijo: sin él, «20260901» (una fecha) parecía un fijo de Santiago.
 const PHONE_RE2 = /(?:\(?\+?56\)?[\s.-]?)?(?:9[\s.-]?\d{4}[\s.-]?\d{4}|(?:32|2)[\s.-]\d{3}[\s.-]?\d{4})\b|\b56\d{9}\b/g;
 const TEXT_DATE_RE = /\b(\d{1,2})([/-])(\d{1,2})\2(\d{4})\b|\b((?:19|20)\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\b/g;

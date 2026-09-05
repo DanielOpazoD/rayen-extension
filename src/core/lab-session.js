@@ -6,7 +6,7 @@
  * función que pinta. Así la política —ventana de caché, qué error es de
  * sesión y cuál de red— se prueba en node, y la pestaña sólo escribe texto.
  */
-import { humanError } from '../core/errors.js';
+import { humanError } from './errors.js';
 
 /** Texto y tono para un origen a partir del resultado de su comprobación. */
 export function sessionState(source, outcome) {
