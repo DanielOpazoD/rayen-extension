@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.45.0 — 2026-09-04
+
+Recetas con la autoridad de Rayen (HAR «ficha amb» del 04-09-2026).
+
+- **«Activa» lo dice Rayen**: la lista de fármacos en uso (la que trae `RecuperarAntecedentes`, idéntica a `FichaClinica/FarmacoEnUso`) decide qué recetas y prescripciones están activas, con el estado de la receta («Por Despachar»). La duración escrita queda de respaldo para lo que no aparece ahí, y cada fila dice quién afirma su estado. Si la lista no llegó, la pestaña lo avisa.
+- **Detalle de la receta al desplegarla**: botón circular en cada receta; la primera vez consulta `Farmacia/Receta/id=…` y muestra vigencia (o «vencida el»), próximo despacho, periodicidad y, por prescripción, despachado de total, suspensión con fecha y observación. Una consulta por receta; recargar la ficha la repite.
+- Arnés: detalle sintético por receta (cada tercera con una prescripción suspendida y despacho parcial) y fármacos en uso que citan recetas reales del historial.
+
 ## 2.44.1 — 2026-09-04
 
 - Datos del paciente mostraba «Previsión» dos veces.

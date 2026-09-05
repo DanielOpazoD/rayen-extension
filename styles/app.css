@@ -547,6 +547,13 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-rx-h{display:flex;justify-content:space-between;gap:var(--sp-2);font-size:var(--t-sm);margin-bottom:3px}
 .pp-rx-r{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--t-sm);padding:2px 0}
 .pp-rx-r small{color:var(--ink-3);font-size:var(--t-xs);flex:1}
+.pp-rx-r .pp-expand{width:22px;height:22px;padding:0;cursor:pointer}
+.pp-rx-r .pp-expand:hover,.pp-rx-r .pp-expand:focus-visible{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-2)}
+.pp-rx-r.expanded .pp-expand{transform:rotate(180deg)}
+.pp-rx-det{margin:2px 0 8px 30px}
+.pp-rx-det .pp-empty,.pp-rx-det .muted{font-size:var(--t-xs)}
+.pp-rx-cab{font-size:var(--t-xs);color:var(--ink-2);margin-bottom:3px}
+.pp-rx-cab.vencida{color:var(--warn)}
 .pp-note{padding:var(--sp-3) var(--sp-4);border-top:1px solid var(--rule);background:var(--surface-3)}
 .pp-note label{display:block;font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 /* Diario: una tarjeta por nota, la más nueva arriba; editar en el sitio. */
