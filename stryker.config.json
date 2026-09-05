@@ -6,17 +6,20 @@
     "src/core/historial-merge.js",
     "src/core/pendientes.js",
     "src/core/sic-rules.js",
-    "src/core/receta.js"
+    "src/core/receta.js",
+    "src/core/anonimizar.js",
+    "src/core/ficha-rank.js",
+    "src/core/parser.js"
   ],
   "testRunner": "command",
   "commandRunner": {
-    "command": "node --test tests/dates.test.js tests/historial.test.js tests/pendientes.test.js tests/sic-rules.test.js tests/receta.test.js tests/property.test.js tests/fixtures.test.js"
+    "command": "node --test tests/dates.test.js tests/historial.test.js tests/pendientes.test.js tests/sic-rules.test.js tests/receta.test.js tests/property.test.js tests/fixtures.test.js tests/anonimizar.test.js tests/ficha-rank.test.js tests/parser.test.js tests/ai.test.js tests/etapa0.test.js"
   },
   "reporters": [
     "clear-text",
     "progress"
   ],
-  "concurrency": 4,
+  "concurrency": 6,
   "timeoutMS": 60000,
   "incremental": true,
   "incrementalFile": ".stryker-tmp/incremental.json",

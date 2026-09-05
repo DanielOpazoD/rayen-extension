@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## 2.54.0 — 2026-09-05
+
+Mutación, segunda ronda: `anonimizar`, `ficha-rank` y `parser` entran a Stryker; 2073 mutantes en total, 85,8 % muertos (umbral 85).
+
+- **Anonimizador: una fecha de ocho dígitos suelta en el texto ya no se convierte en `<rut>`.** El paso de RUN pegado corría antes que el de fechas, y «20260904» tiene verificador válido para 2026090-4. Las fechas se desplazan primero. Regresión añadida.
+- 54 pruebas nuevas, en tablas: cada clave que el anonimizador reconoce (RUT, contacto, dirección, secreto, identificador, nombre, hermano de persona, rol) y las parecidas que no debe tocar; cada formato de RUN, teléfono, correo y fecha; el cruce del mes y el año al desplazar; cada prefijo CIE-10 y cada palabra del catálogo de crónicos con sus vecinos; cada forma de negación; cada unidad de duración de una receta con su último día; y en el parser los valores por defecto de citas, diagnósticos, actividades y órdenes internas.
+
+| Módulo | Antes | Ahora |
+|---|---|---|
+| anonimizar | 59,9 % | 80,7 % |
+| ficha-rank | 63,2 % | 90,5 % |
+| parser | 57,2 % | 82,1 % |
+| Total (8 módulos) | 69,6 % | 85,8 % |
+
 ## 2.53.1 — 2026-09-05
 
 Pruebas guiadas por mutación (Stryker): de 74,6 % a 92,7 % de mutantes muertos.
