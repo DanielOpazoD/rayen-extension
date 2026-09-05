@@ -8,6 +8,7 @@ Ruta corta para continuar el proyecto sin depender del contexto de una conversac
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md): límites, flujos, invariantes y mapa completo de módulos.
 3. [`MAPA_API.html`](MAPA_API.html): endpoints y formas de datos observadas en Eloisa.
 4. [`CHANGELOG.md`](CHANGELOG.md): decisiones visibles entregadas por versión.
+5. [`docs/adr/`](docs/adr/): decisiones de arquitectura pendientes o tomadas, una por archivo (la primera: persistencia cifrada).
 
 ## Flujo de contribución
 
