@@ -1,4 +1,5 @@
 import { loadPrefs, DEFAULT_PREFS } from './src/io/cache.js';
+import { ensurePin } from './src/ui/pin-screen.js';
 import { applyNetPrefs } from './src/io/http.js';
 import { initPanel, syncNote } from './src/ui/patient-panel.js';
 import { initPalette } from './src/ui/palette.js';
@@ -24,6 +25,7 @@ import * as explorador from './src/ui/tabs/explorador.js';
  * subscribes to 'data' / 'notes'. Nothing here knows how a tab renders.
  */
 
+await ensurePin(); // nada se lee del disco antes de tener la clave (ADR 0001)
 const prefs = await loadPrefs().catch(() => ({ ...DEFAULT_PREFS }));
 setPrefs({
   refreshMin: Number.isFinite(+prefs.refreshMin) ? +prefs.refreshMin : 15,

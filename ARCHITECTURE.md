@@ -9,7 +9,7 @@ Antes de cambiar código, lee también [`DOCUMENTATION_MAP.md`](DOCUMENTATION_MA
 - Extensión Chrome Manifest V3, formada por módulos ES nativos y sin paso de compilación.
 - No tiene backend propio. Las únicas dependencias de ejecución son dos librerías empaquetadas en `vendor/` (pdf.js para leer informes, pdf-lib para unirlos), cargadas bajo demanda desde `io/`. Utiliza las sesiones que el usuario ya tiene abiertas en Eloisa, en el portal del Hospital Salvador y en SysLab.
 - Tres transportes, cada uno con guardia de origen: `src/io/http.js` sólo habla con `https://clinicohangaroa.eloisa.cl`; `src/io/lab-http.js` sólo con `https://examenesusuarios.hsalvador.cl`; `src/io/syslab-http.js` sólo conduce pestañas de `http://10.4.69.90` (red interna del HHR). Son exactamente los tres `host_permissions` del manifest.
-- Agenda, ficha, SIC, preferencias y notas se conservan localmente en el perfil de Chrome. El token solo vive en `chrome.storage.session`.
+- Agenda, ficha, SIC, preferencias y notas se conservan en el perfil de Chrome **cifradas** con una clave derivada de un PIN de seis dígitos (ADR 0001); la clave vive sólo en memoria de la pestaña y el bloqueo por inactividad la descarta. El token y el informe imprimible viven en `chrome.storage.session` (memoria).
 - La aplicación completa se compone en `app.js`; `popup-init.js` solo abre la experiencia completa y `report.js` prepara el reporte imprimible.
 
 ## Capas
@@ -95,6 +95,10 @@ flowchart LR
 - Los filtros viven en los controladores de Atenciones e Interconsultas. `ui/multi-select.js` aporta el selector accesible de selección múltiple.
 - `state.rendered` conserva el mismo orden visible que utilizan navegación y exportación.
 - `ui/export.js`, `ui/patient-report.js` y `io/pdf.js` generan salidas a partir de la selección actual; no escriben de vuelta en Eloisa. Exportar una tabla avisa cuántos pacientes y qué campos salen.
+
+## Cifrado en reposo
+
+Todo lo que se guarda pasa por `storageGet`/`storageSet` de `src/io/cache.js`; con clave en memoria (`src/io/crypto-store.js`) se cifra con AES-GCM 256 y una clave derivada del PIN (PBKDF2, 300 000 iteraciones, sal por instalación). Al arrancar, `src/ui/pin-screen.js` crea el PIN la primera vez (y cifra lo que había en claro) o lo pide; el bloqueo por inactividad descarta la clave y «Continuar» vuelve a pedirlo. Sin PIN creado (pruebas y arnés) el almacenamiento queda en claro; la aplicación real no arranca sin PIN. Olvidar el PIN equivale a «Eliminar todo». Decisión y alternativas en `docs/adr/0001-persistencia-cifrada.md`.
 
 ## Red: tiempo límite y cancelación
 
@@ -191,6 +195,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/io/auth.js` — recuperación segura de la sesión activa de Eloisa.
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
+- `src/io/crypto-store.js` — cifrado en reposo (ADR 0001): AES-GCM con clave derivada del PIN por PBKDF2, creación y cambio de PIN, migración de lo que estaba en claro; la clave sólo en memoria.
 - `src/io/explorer.js` — consultas controladas del Explorador API.
 - `src/io/ficha-load.js` — carga de la ficha desde Eloisa: seis fuentes en paralelo, memoización y respuestas crudas para el Explorador.
 - `src/io/historial.js` — historial diario y cruce con la agenda.
@@ -224,6 +229,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/loader.js` — orquestación de carga, progreso, reintento y sesión vencida.
 - `src/ui/lock.js` — pantalla local de privacidad por inactividad.
 - `src/ui/multi-select.js` — selector múltiple accesible reutilizable.
+- `src/ui/pin-screen.js` — pantalla de PIN al arrancar (crear o pedir) y tras el bloqueo por inactividad.
 - `src/ui/palette.js` — buscador global de pacientes y ranking.
 - `src/ui/patient-panel.js` — controlador del panel del paciente: paciente abierto y filtros, diálogo modal, cableado y reparto del pintado entre `panel/`.
 - `src/ui/panel/helpers.js` — piezas de HTML y DOM que comparten las pestañas del panel (`kv`, `h4`, `segGroup`, `setTabCount`, `isMineVisit`).

@@ -1,4 +1,5 @@
 import { CONFIG } from '../core/config.js';
+import { hasKey, clearKey, isEncrypted, encryptValue, decryptValue, LockedError } from './crypto-store.js';
 
 // ── chrome.storage.local wrappers that surface runtime.lastError ─
 
@@ -7,7 +8,7 @@ function lastErr() {
   return e ? new Error(e.message) : null;
 }
 
-export function storageGet(key) {
+function rawGet(key) {
   return new Promise((resolve, reject) =>
     chrome.storage.local.get(key, data => {
       const err = lastErr();
@@ -16,13 +17,27 @@ export function storageGet(key) {
   );
 }
 
-export function storageSet(key, value) {
+function rawSet(key, value) {
   return new Promise((resolve, reject) =>
     chrome.storage.local.set({ [key]: value }, () => {
       const err = lastErr();
       err ? reject(err) : resolve();
     })
   );
+}
+
+// Único punto por donde pasa lo que se guarda: con clave en memoria se cifra
+// (ADR 0001); sin PIN creado (pruebas, arnés) queda en claro. Un valor cifrado
+// sin clave no se lee: se lanza LockedError, nunca se devuelve a medias.
+export async function storageGet(key) {
+  const raw = await rawGet(key);
+  if (!isEncrypted(raw)) return raw;
+  if (!hasKey()) throw new LockedError();
+  return decryptValue(raw);
+}
+
+export async function storageSet(key, value) {
+  return rawSet(key, hasKey() ? await encryptValue(value) : value);
 }
 
 function storageRemove(keys) {
@@ -89,7 +104,8 @@ export function dropDay(store, date8) {
  * que sólo se borraba si la pestaña de impresión llegaba a abrirse.
  */
 export async function clearAllCaches() {
-  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys), 'rayen_report']);
+  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys), 'rayen_report']); // 'rayen_report' en local: restos de versiones anteriores
+  try { await chrome.storage.session.remove('rayen_report'); } catch { /* sin session storage */ }
 }
 
 /** Wipes everything the extension stored: caches, notes, prefs, pending report and the session token. */
@@ -98,12 +114,13 @@ export async function clearEverything() {
     chrome.storage.local.clear(() => { const err = lastErr(); err ? reject(err) : resolve(); })
   );
   try { await chrome.storage.session.clear(); } catch { /* session storage may be unavailable */ }
+  clearKey(); // el PIN se creará de nuevo en el próximo arranque
 }
 
 // ── Prefs ──────────────────────────────────────────────────────
 
 export const DEFAULT_PREFS = Object.freeze({
-  historial: true, months: 6, dense: false, hiddenCols: [], retentionMonths: 13,
+  historial: true, months: 6, dense: false, hiddenCols: [], retentionMonths: 3, // tres meses por defecto: menos datos en reposo (ADR 0001)
   refreshMin: 15, lockMin: 15, startTab: 'hoy',
   netTimeoutSec: 20,   // espera máxima por petición; la ficha completa espera el triple
   watchEsp: null,      // null = CONFIG.watchEspecialidades

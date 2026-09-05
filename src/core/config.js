@@ -27,7 +27,7 @@ export const CONFIG = Object.freeze({
   httpTimeoutMs: 20 * 1000,        // agenda y ficha diaria: si Eloisa no responde en 20 s, se aborta; el resto sigue
   fichaTimeoutMs: 60 * 1000,       // la ficha de 10 años de un paciente va en una sola llamada y en una red lenta tarda más
   // Cached days older than this are pruned on load
-  retentionMonths: 13,
+  retentionMonths: 3,
   // Per-patient ficha window (years back). The API accepts any range.
   fichaYears: 10,
 

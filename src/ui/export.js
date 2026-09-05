@@ -1,5 +1,4 @@
 import { esc } from './dom.js';
-import { storageSet } from '../io/cache.js';
 
 // ── Shared ─────────────────────────────────────────────────────
 
@@ -185,7 +184,8 @@ export function exportHTML(records) {
  * @param {string} [extraCss]  appended to the base report stylesheet
  */
 export async function openReport(fragment, extraCss = '') {
-  await storageSet('rayen_report', { fragment, css: REPORT_CSS + extraCss, at: Date.now() });
+  // En memoria (storage.session), nunca en disco: report.html lo lee y lo borra al abrir.
+  await chrome.storage.session.set({ rayen_report: { fragment, css: REPORT_CSS + extraCss, at: Date.now() } });
   const url = chrome.runtime.getURL('report.html?print=1');
   try { await chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
 }

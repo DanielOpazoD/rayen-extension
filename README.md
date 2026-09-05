@@ -87,13 +87,13 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 
 ## Privacidad
 
-- Los datos clínicos descargados se guardan **en claro** en `chrome.storage.local` del perfil de Chrome (hasta 13 meses; se podan solos). Úsala solo en un equipo propio con disco cifrado.
+- Los datos clínicos descargados se guardan en `chrome.storage.local` del perfil de Chrome **cifrados** con una clave derivada de un PIN de seis dígitos que se crea la primera vez (AES-GCM, PBKDF2 con 300 000 iteraciones). El PIN se pide al abrir y tras el bloqueo por inactividad; cambiarlo (Preferencias) vuelve a cifrar todo. **Si lo olvidas, se pierden la caché y tus notas: no hay recuperación.** Retención por defecto de 3 meses, ajustable. Protege el perfil copiado o abierto por otra persona, no la pantalla desbloqueada; un adversario con el disco y tiempo puede probar el millón de PIN posibles, a segundos por intento.
 - El token de sesión vive en `chrome.storage.session` (memoria): no se escribe en disco.
 - **Preferencias → Datos locales → Vaciar caché** elimina agenda, ficha y SIC; las notas propias (`rayen_notes_v1`) se conservan. **Eliminar todo** vacía todo el almacenamiento de la extensión (notas, preferencias y token incluidos) tras doble confirmación.
-- El reporte que se abre para imprimir/PDF se borra del almacenamiento en cuanto se muestra.
+- El reporte que se abre para imprimir/PDF viaja por `chrome.storage.session` (memoria) y se borra en cuanto se muestra.
 - Si la sesión de Eloisa vence (HTTP 401/403), la carga se detiene en la primera llamada fallida y la barra de estado ofrece **Abrir Eloisa**; al volver a esta pestaña con sesión nueva, se recarga sola.
 - Los archivos exportados contienen datos de pacientes: trátalos como tal.
-- **Bloqueo por inactividad**: a los 15 minutos sin uso la pantalla se difumina tras un aviso y hay que pulsar «Continuar». Es una pantalla de privacidad frente a quien pase por el lado, no autenticación: la protección real sigue siendo la sesión del sistema operativo.
+- **Bloqueo por inactividad**: a los 15 minutos sin uso la pantalla se difumina tras un aviso, la clave de cifrado se descarta y «Continuar» pide el PIN. Lo ya pintado queda bajo el velo inerte; la protección de la pantalla desbloqueada sigue siendo la sesión del sistema operativo.
 
 ## Desarrollo
 

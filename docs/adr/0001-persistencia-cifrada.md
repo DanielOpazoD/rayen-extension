@@ -1,6 +1,6 @@
 # ADR 0001 · Persistencia cifrada de los datos clínicos
 
-Estado: **propuesto** (04-09-2026). Decide Daniel.
+Estado: **aceptado** (04-09-2026, opción B elegida por Daniel; implementada en 2.43.0).
 
 ## Contexto
 

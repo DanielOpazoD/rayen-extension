@@ -29,6 +29,8 @@ globalThis.chrome = {
   action:  { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
 };
 mem.session.set('rayenToken', 'dev-token');
+// El arnés guarda en claro (datos sintéticos); con ?pin=1 se prueba la pantalla de PIN y el cifrado.
+globalThis.__RAYEN_DEV_PLAIN = !new URLSearchParams(globalThis.location?.search ?? '').has('pin');
 
 const realFetch = globalThis.fetch.bind(globalThis);
 

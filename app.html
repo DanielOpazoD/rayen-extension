@@ -75,6 +75,15 @@
               <button type="button" data-clear="all" class="danger">Eliminar todo</button>
             </div>
           </div>
+          <div class="settings-data" id="pinWrap">
+            <div class="settings-data-copy"><strong>PIN de cifrado</strong><small>Los datos se guardan cifrados con tu PIN. Cambiarlo vuelve a cifrar todo.</small></div>
+            <form class="settings-data-actions pin-change" id="pinChangeForm" autocomplete="off">
+              <input id="pinOld" type="password" inputmode="numeric" maxlength="6" placeholder="PIN actual" aria-label="PIN actual">
+              <input id="pinNew" type="password" inputmode="numeric" maxlength="6" placeholder="Nuevo" aria-label="PIN nuevo">
+              <input id="pinNew2" type="password" inputmode="numeric" maxlength="6" placeholder="Repetir" aria-label="Repetir PIN nuevo">
+              <button type="submit" class="btn-mini">Cambiar PIN</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

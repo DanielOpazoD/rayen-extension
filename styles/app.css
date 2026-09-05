@@ -821,3 +821,13 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .ia-informe ul,.ia-informe ol{padding-left:18px}
 .ia-informe hr{border:0;border-top:1px solid var(--rule);margin:var(--sp-3) 0}
 .pac-rech{display:inline-flex;align-items:center;font-size:var(--t-xs);color:var(--bad);font-weight:500}
+
+/* ── PIN (ADR 0001): misma caja que el bloqueo, con campos ── */
+#pinScreen{position:fixed;inset:0;z-index:3100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:var(--sp-4)}
+#pinScreen[hidden]{display:none}
+.pin-box{width:min(380px,100%)}
+.pin-field{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);font-size:var(--t-sm);color:var(--ink-2);margin:0 0 var(--sp-3)}
+.pin-field input{width:120px;height:var(--h-ctl);text-align:center;letter-spacing:.4em;font-size:var(--t-lg);border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card)}
+.pin-msg{min-height:18px;font-size:var(--t-xs);color:var(--bad);margin-bottom:var(--sp-3)}
+.pin-change{display:flex;gap:6px;flex-wrap:wrap}
+.pin-change input{width:78px;height:var(--h-ctl-sm);border:1px solid var(--rule);border-radius:var(--r-sm);padding:0 6px;font-size:var(--t-sm);background:var(--card)}

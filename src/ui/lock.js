@@ -3,9 +3,13 @@
  * the machine is shared in practice, so after a few idle minutes the content is
  * blurred behind an overlay until the user comes back.
  *
- * It is a privacy screen, not authentication: it hides the data from whoever
- * walks past, and the real protection remains the OS session.
+ * Con cifrado activo (ADR 0001) el bloqueo descarta la clave de memoria y
+ * «Continuar» pide el PIN: sin él no se vuelve a leer nada del disco. Lo que
+ * ya está pintado sigue bajo el velo inerte; no es un cierre de sesión.
  */
+import { clearKey, readMeta } from '../io/crypto-store.js';
+import { askPin } from './pin-screen.js';
+
 const EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
 export function initLock({ minutes = 15 } = {}) {
@@ -35,6 +39,7 @@ export function initLock({ minutes = 15 } = {}) {
     el.hidden = false;
     for (const node of shielded()) node.inert = true;
     el.querySelector('#lockBtn').focus();
+    readMeta().then(meta => { if (meta) clearKey(); }); // con PIN creado, el disco queda ilegible hasta escribirlo
   };
 
   const arm = () => {
@@ -48,7 +53,7 @@ export function initLock({ minutes = 15 } = {}) {
     arm();
   };
 
-  el.querySelector('#lockBtn').addEventListener('click', unlock);
+  el.querySelector('#lockBtn').addEventListener('click', async () => { await askPin(); unlock(); });
   // While locked, interaction must go through the button — do not re-arm on it
   for (const ev of EVENTS) {
     document.addEventListener(ev, () => { if (!locked()) arm(); }, { capture: true, passive: true });
