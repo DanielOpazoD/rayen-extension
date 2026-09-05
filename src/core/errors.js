@@ -22,6 +22,10 @@ function frase(texto) {
  * @param {unknown} err       lo que se atrapó (Error, string, nada…)
  * @param {string}  origen    con quién se hablaba: «Eloisa», «SysLab», «el portal del Hospital Salvador»
  */
+/**
+ * @param {any} err  Error, cadena o cualquier cosa que haya llegado a un catch
+ * @param {string} [origen]  con quién no se pudo hablar
+ */
 export function humanError(err, origen = 'el servidor') {
   if (err == null) return GENERIC;
   const msg = typeof err === 'string' ? err : String(err.message ?? '');

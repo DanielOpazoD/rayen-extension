@@ -53,7 +53,8 @@ function storageRemove(keys) {
 // Shape on disk: { fetchedDates: string[], records: object[], extra: object, savedAt: number }
 
 /**
- * @returns {Promise<{ key, fetchedDates: Set<string>, records: Map<id, record>, extra: object, savedAt: number }>}
+ * @param {string} key  clave de chrome.storage
+ * @returns {Promise<{ key: string, fetchedDates: Set<string>, records: Map<string|number, object>, extra: object, savedAt: number }>}
  */
 export async function loadStore(key) {
   const raw = (await storageGet(key)) ?? {};

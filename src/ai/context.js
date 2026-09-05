@@ -51,12 +51,12 @@ function seccionAtencion(a, fecha) {
 }
 
 /**
- * @param {object} rec — buildClinicalRecord()
+ * @param {object} rec  buildClinicalRecord()
  * @param {object} [o]
- * @param {number|null} [o.ventanaMeses=12] — atenciones y exámenes dentro de la ventana; null = todo
+ * @param {number|null} [o.ventanaMeses=12]  atenciones y exámenes dentro de la ventana; null = todo
  * @param {boolean} [o.fechasReales=false]
- * @param {number} [o.maxChars=60000] — presupuesto aproximado (≈ 4 caracteres por token)
- * @param {string[]} [o.secciones] — subconjunto de: problemas, antecedentes, atenciones, interconsultas, laboratorio, imagenologia, biopsias, notas
+ * @param {number} [o.maxChars=60000]  presupuesto aproximado (≈ 4 caracteres por token)
+ * @param {string[]} [o.secciones]  subconjunto de: problemas, antecedentes, atenciones, interconsultas, laboratorio, imagenologia, biopsias, notas
  * @param {Date} [o.hoy]
  */
 export function buildContext(rec, o = {}) {

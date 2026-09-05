@@ -20,7 +20,7 @@ export function fromDate8(d8) {
 /** Días de `a` a `b` (positivo si `b` es posterior); null si alguna fecha no es válida. */
 export function diasEntre(d8a, d8b) {
   const a = fromDate8(d8a), b = fromDate8(d8b);
-  return a && b ? Math.round((b - a) / DAY_MS) : null;
+  return a && b ? Math.round((b.getTime() - a.getTime()) / DAY_MS) : null;
 }
 
 /** «DD-MM-YYYY» o «DD-MM-YYYY HH:mm» → «YYYYMMDD»; '' si no tiene esa forma. */

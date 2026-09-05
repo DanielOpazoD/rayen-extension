@@ -58,12 +58,12 @@ function interconsulta(s) {
 /**
  * @param {object} p
  * @param {object} p.record   — fila de la agenda (paciente + cita): nombre, run, edad, sexo, prevision, idUsp, notas
- * @param {object} [p.ficha]  — resultado de loadFicha: visits, antecedentes, programas, vigencia, riesgo, ram, errors, master
- * @param {Array}  [p.visits] — atenciones de la agenda cuando no hay ficha
+ * @param {object} [p.ficha]  resultado de loadFicha: visits, antecedentes, programas, vigencia, riesgo, ram, errors, master
+ * @param {Array}  [p.visits]  atenciones de la agenda cuando no hay ficha
  * @param {Array}  [p.sics]
- * @param {Array}  [p.laboratorio] [p.imagenologia] [p.biopsias] — ya normalizados (ver cabecera)
+ * @param {Array}  [p.laboratorio] [p.imagenologia] [p.biopsias]  ya normalizados (ver cabecera)
  * @param {number} p.officerId
- * @param {string} [p.generado] — ISO; sólo para pruebas
+ * @param {string} [p.generado]  ISO; sólo para pruebas
  */
 /** Estado de cada fuente: el informe dice con qué se armó y qué faltó. */
 function fuentesDe({ ficha, visits, sics, laboratorio, imagenologia, biopsias }) {

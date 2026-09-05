@@ -67,11 +67,23 @@ export async function recoverStaleSyncSources(now = Date.now(), maxAgeMs = 60 * 
 /**
  * Completes one source without erasing its last fully successful network sync.
  * failedItems are date strings or generic call labels, never patient identifiers.
+ * @param {string} source
+ * @param {object} [outcome]
+ * @param {number} [outcome.attemptedAt]
+ * @param {number} [outcome.completedAt]
+ * @param {string[]} [outcome.failedItems]
+ * @param {number} [outcome.networkCount]
+ * @param {number} [outcome.cacheCount]
+ * @param {boolean} [outcome.hasData]
+ * @param {boolean} [outcome.disabled]
+ * @param {boolean} [outcome.error]
+ * @param {boolean} [outcome.cancelled]  la corrida se cortó a mano: lo que faltó queda pendiente, no fallido
+ * @param {string|null} [outcome.operationId]
  */
 export async function finishSyncSource(source, {
   attemptedAt = Date.now(), completedAt = Date.now(), failedItems = [],
   networkCount = 0, cacheCount = 0, hasData = false,
-  disabled = false, error = false, operationId = null,
+  disabled = false, error = false, cancelled = false, operationId = null,
 } = {}) {
   assertSource(source);
   const previous = (await storageGet(CONFIG.syncKeys[source])) ?? {};
@@ -86,6 +98,7 @@ export async function finishSyncSource(source, {
 
   const next = {
     source,
+    cancelled, // la persona cortó la corrida: lo pendiente no es un fallo
     status,
     attemptedAt,
     completedAt,

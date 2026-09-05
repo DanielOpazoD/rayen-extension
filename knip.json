@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app.js",
+    "popup-init.js",
+    "report.js",
+    "dev/**/*.js",
+    "scripts/*.mjs",
+    "tests/**/*.test.js",
+    "tests/helpers/*.js",
+    "e2e/**/*.js",
+    "playwright.config.*"
+  ],
+  "project": [
+    "src/**/*.js",
+    "dev/**/*.js",
+    "scripts/**/*.mjs"
+  ],
+  "ignoreBinaries": [
+    "tail",
+    "report"
+  ]
+}

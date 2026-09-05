@@ -80,7 +80,18 @@ export function validarPlantilla(p) {
   return e;
 }
 
-/** Crea una plantilla personalizada a partir de otra, con un id propio. */
+/**
+ * Crea una plantilla personalizada a partir de otra, con un id propio.
+ * @param {object} base
+ * @param {object} [cambios]
+ * @param {string} [cambios.id]
+ * @param {string} [cambios.nombre]
+ * @param {string} [cambios.descripcion]
+ * @param {string[]} [cambios.secciones]
+ * @param {number|null} [cambios.ventanaMeses]
+ * @param {boolean} [cambios.fechasReales]
+ * @param {'breve'|'media'|'extensa'} [cambios.longitud]
+ */
 export function crearPlantilla(base, { id, nombre, descripcion = '', secciones, ventanaMeses, fechasReales, longitud } = {}) {
   const p = { ...(base ?? {}), id, nombre, descripcion, secciones: secciones ?? base?.secciones ?? [], personalizada: true };
   if (ventanaMeses !== undefined) p.ventanaMeses = ventanaMeses;

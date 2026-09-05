@@ -10,12 +10,10 @@ import { buildPrompt, getPlantilla, validarPlantilla } from './templates.js';
 import { parsearRespuesta } from './provider.js';
 import { armarInforme } from './report.js';
 
-export { buildClinicalRecord } from './record.js';
-export { buildContext, fechaRelativa } from './context.js';
-export { PLANTILLAS, getPlantilla, validarPlantilla, crearPlantilla, buildPrompt } from './templates.js';
-export { createManualProvider, createApiProvider, parsearRespuesta } from './provider.js';
-export { armarInforme, markdownAHtml } from './report.js';
-export { registerSource, listSources, fetchAll } from './sources.js';
+// La fachada expone sólo lo que la interfaz consume; cada pieza se prueba e
+// importa desde su propio módulo (knip señala las reexportaciones sin uso).
+export { PLANTILLAS } from './templates.js';
+export { markdownAHtml } from './report.js';
 
 /**
  * Todo lo que ocurre en la máquina: registro, contexto y prompt. Falla si el

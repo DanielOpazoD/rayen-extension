@@ -104,7 +104,7 @@ export function humanCase(s = '', { siglas = false } = {}) {
 
 /**
  * Normaliza un RUN como lo escribe Rayen (dígitos + verificador pegado, K en cualquier caja).
- * @returns {{ run: string|null, runStr: string }} `run` canónico sin puntos («25106217K») y `runStr` con puntos y guion
+ * @returns {{ run: string|null, runStr: string, dvOk: boolean }} `run` canónico sin puntos («25106217K»), `runStr` con puntos y guion, `dvOk` si el verificador cuadra
  */
 export function formatRun(raw) {
   if (raw == null) return { run: null, runStr: '', dvOk: false };

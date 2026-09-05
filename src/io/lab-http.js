@@ -1,13 +1,13 @@
 const LAB_ORIGIN = 'https://examenesusuarios.hsalvador.cl';
 
-export class LabAuthError extends Error {
+class LabAuthError extends Error {
   constructor() {
     super('Sesión de ProactiveLIS no encontrada');
     this.name = 'LabAuthError';
   }
 }
 
-export const labSession = { expired: false };
+const labSession = { expired: false };
 export function resetLabSession() { labSession.expired = false; }
 
 function resolveLabUrl(path) {

@@ -126,7 +126,7 @@ function collectNameTokens(node, tokens, key = '', parent = null) {
 
 /**
  * @param {any} data
- * @param {{ desplazamientoDias?: number }} [opts] — sólo para pruebas; por defecto el desplazamiento es aleatorio y no se informa.
+ * @param {{ desplazamientoDias?: number }} [opts] sólo para pruebas; por defecto el desplazamiento es aleatorio y no se informa.
  * @returns {{ data: any, informe: { nombres, ruts, contactos, direcciones, identificadores, fechas, textos, secretos }, verificado: boolean, restos: string[] }}
  */
 export function anonimizar(data, opts = {}) {

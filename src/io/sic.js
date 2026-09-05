@@ -58,7 +58,7 @@ export function pruneByRetention(records, now = new Date()) {
   return records.filter(r => !r.fecha8 || r.fecha8 >= min8);
 }
 
-export async function loadSICs(token, months, onProgress = () => {}, { force = false } = {}) {
+export async function loadSICs(token, months, onProgress = (/** @type {number} */ _pct) => {}, { force = false } = {}) {
   const cached = (await storageGet(CONFIG.sicKey)) ?? null;
   if (cached?.records) cached.records = pruneByRetention(cached.records);
   if (!force && cached && cached.months >= months && Date.now() - cached.savedAt < CONFIG.sicTtlMs) {
@@ -80,7 +80,7 @@ export async function loadSICs(token, months, onProgress = () => {}, { force = f
     listIds(token, { origen: 'SOLICITUD_INTERCONSULTA', from8, to8, estados: SIC_ESTADOS_DESTINO, nodeKey: 'IDNODOORIGEN' }),
   ]);
   if (session.expired) throw new AuthError(401);
-  let failed = (a === null) + (b === null) + (c === null);
+  let failed = [a, b, c].filter(x => x === null).length;
   const ids = [...new Set([...(a ?? []), ...(b ?? []), ...(c ?? [])])];
   onProgress(5);
 

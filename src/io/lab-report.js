@@ -42,7 +42,7 @@ export function extractAnyRutBody(text) {
  * `toText` existe para poder probar la verificación de identidad sin pdf.js,
  * que necesita el navegador; en producción se usa el valor por omisión.
  *
- * @param {{examId: string, loadBytes: () => Promise<Uint8Array>, expectedRutBody: string, toText?: Function}} spec
+ * @param {{examId: string, loadBytes: () => Promise<Uint8Array>, expectedRutBody: string, toText?: Function, sexo?: string}} spec
  * @returns {Promise<{examId, rutBody, findings, rutVerified}>}
  * @throws si el informe declara un RUT distinto del consultado.
  */
