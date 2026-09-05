@@ -491,7 +491,7 @@
       <button id="ppLabBtn" class="pp-act" data-tip="Buscar exámenes de laboratorio (HSR + HHR)" aria-label="Laboratorio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/><path d="M7 15h10"/></svg>Laboratorio</button>
     </div>
   </div>
-  <div class="pp-datos" id="ppDatos" hidden></div>
+  <div class="pp-datos" id="ppDatos" hidden><div class="pp-ficha-status" id="ppFichaStatus" role="status"></div><div id="ppDatosBody"></div></div>
   <section class="ia-sheet" id="iaSheet" role="dialog" aria-modal="true" aria-labelledby="iaTitle" hidden>
     <div class="ia-head"><h2 id="iaTitle">Informe con IA</h2><button id="iaClose" class="btn-mini" aria-label="Cerrar informe (Esc)">✕</button></div>
     <p class="ia-nota">Nada sale de este equipo hasta que copias el prompt. Lo que se copia no lleva nombre, RUN ni nombres de profesionales, y las fechas van relativas salvo que marques «fechas reales». Pega la respuesta del modelo autorizado y el informe se arma aquí, con la identidad repuesta.</p>
@@ -511,13 +511,11 @@
     <div class="ia-row"><button class="btn" id="iaImprimir" disabled>Imprimir / PDF</button><button class="btn" id="iaCopiarMd" disabled>Copiar Markdown</button></div>
   </section>
   <nav class="pp-tabs" role="tablist" aria-label="Ficha del paciente">
-    <button class="pp-tab active" role="tab" aria-selected="true" data-pt="dx" aria-controls="ppPaneDx">Problemas <span class="cnt"></span></button>
+    <button class="pp-tab active" role="tab" aria-selected="true" data-pt="dx" aria-controls="ppPaneDx">Antecedentes <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="at" aria-controls="ppPaneAt">Atenciones <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="ic" aria-controls="ppPaneIc">Interconsultas <span class="cnt"></span></button>
     <button class="pp-tab" role="tab" aria-selected="false" tabindex="-1" data-pt="rx" aria-controls="ppPaneRx">Recetas <span class="cnt"></span></button>
   </nav>
-  <div class="pp-ficha-row"><button type="button" class="pp-ghost" id="ppFichaToggle" aria-expanded="false" aria-controls="ppFichaStatus" aria-label="Estado de la ficha clínica">Ficha<span class="dot" id="ppFichaDot" hidden></span></button></div>
-  <div class="pp-ficha-status" id="ppFichaStatus" role="status" hidden></div>
   <div class="pp-pane active" data-pt="dx" id="ppPaneDx" role="tabpanel"></div>
   <div class="pp-pane" data-pt="at" id="ppPaneAt" role="tabpanel"></div>
   <div class="pp-pane" data-pt="ic" id="ppPaneIc" role="tabpanel"></div>

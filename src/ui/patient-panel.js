@@ -100,11 +100,6 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     $('ppAvatar').classList.toggle('on', !hidden);
     $('ppAvatar').setAttribute('aria-expanded', String(!hidden));
   });
-  $('ppFichaToggle').addEventListener('click', () => {
-    const box = $('ppFichaStatus');
-    box.hidden = !box.hidden;
-    $('ppFichaToggle').setAttribute('aria-expanded', String(!box.hidden));
-  });
   // Segmentos internos: Medicina/Otros, Mías/De otros, Activas/Vencidas.
   $('patientPanel').addEventListener('click', e => {
     const seg = e.target.closest('[data-seg][data-scope]');
