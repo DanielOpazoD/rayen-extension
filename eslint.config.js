@@ -3,7 +3,7 @@ import globals from 'globals';
 
 export default [
   // vendor/ son bibliotecas de terceros minificadas; su estilo no es nuestro.
-  { ignores: ['node_modules/**', 'dist/**', 'vendor/**', '*.har'] },
+  { ignores: ['node_modules/**', 'dist/**', 'vendor/**', '*.har', '.stryker-tmp/**', '.coverage/**', 'test-results/**', 'playwright-report/**'] },
   js.configs.recommended,
   {
     files: ['**/*.js'],

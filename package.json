@@ -1,6 +1,6 @@
 {
   "name": "rayen-extension",
-  "version": "2.52.0",
+  "version": "2.53.0",
   "private": true,
   "type": "module",
   "description": "Chrome MV3 extension: Rayen/Eloisa atenciones, ficha clínica e interconsultas for Hospital Hanga Roa",
@@ -11,13 +11,17 @@
     "docs:check": "node scripts/check-architecture.mjs",
     "release:check": "node scripts/check-release.mjs",
     "cycles:check": "node scripts/check-cycles.mjs",
-    "check": "npm run lint && npm run types && npm test && npm run cycles:check && npm run knip && npm run docs:check && npm run release:check",
+    "check": "npm run lint && npm run types && npm test && npm run cycles:check && npm run deps:check && npm run knip && npm run docs:check && npm run release:check",
     "pack": "npm run check && rm -f rayen-extension-$npm_package_version.zip && zip -r -q rayen-extension-$npm_package_version.zip manifest.json app.html app.js popup.html popup-init.js report.html report.js src styles vendor icons README.md ARCHITECTURE.md DOCUMENTATION_MAP.md MAPA_API.html CHANGELOG.md && unzip -l rayen-extension-$npm_package_version.zip | tail -1",
     "dev": "python3 -m http.server 8765 --bind 127.0.0.1",
     "types": "tsc -p tsconfig.json",
     "knip": "knip",
     "coverage": "node scripts/coverage.mjs",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "deps:check": "depcruise src app.js --config .dependency-cruiser.cjs",
+    "deps:graph": "depcruise src app.js --config .dependency-cruiser.cjs --output-type dot > .coverage/deps.dot && echo \"grafo en .coverage/deps.dot (dot -Tsvg para verlo)\"",
+    "mutation": "stryker run",
+    "visual:update": "playwright test e2e/visual.spec.js --project=desktop --update-snapshots"
   },
   "engines": {
     "node": ">=20"
@@ -25,9 +29,12 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.1",
+    "@stryker-mutator/core": "^10.0.0",
     "@types/chrome": "^0.2.8",
     "c8": "^12.0.0",
+    "dependency-cruiser": "^18.2.0",
     "eslint": "^9.39.5",
+    "fast-check": "^4.9.0",
     "globals": "^15.15.0",
     "knip": "^6.34.0",
     "typescript": "^5.9.3"
