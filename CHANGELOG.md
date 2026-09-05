@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.37.1 — 2026-09-04
+
+Documentación, cierre del saneamiento.
+
+- ARCHITECTURE.md reescrito sobre el código actual: tabla de capas con lo que cada una puede y no puede importar, diez convenciones de código (responsabilidad, tamaño, estado, errores, HTML, idioma, pruebas, honestidad, documentación, entrega), flujos del panel, de exámenes complementarios, del informe con IA y de la captura anonimizada, cuatro invariantes nuevos (tiempo límite y cancelación, capas sin ciclos, identidad fuera del contexto de IA, prueba negativa por garantía), tabla «dónde hacer cada cambio» con las rutas vigentes y las puertas de calidad completas.
+- README: sección «Informe con IA» con el límite conocido, cancelación que aborta en vuelo, regla de interconsulta rechazada, `cycles:check`, capas y límites de tamaño.
+- DOCUMENTATION_MAP: capas y verificación de rutas en el flujo de contribución.
+
 ## 2.37.0 — 2026-09-04
 
 Flujo de informe con IA, ajustes tras el balance 6.
