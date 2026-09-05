@@ -27,6 +27,7 @@ function fillSettings() {
   $('setRefresh').value = String(refreshMin);
   $('setLock').value    = String(lockCtl?.minutes ?? 15);
   $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
+  $('setAutoLoad').checked = state.prefs.autoLoad !== false;
   $('setNetTimeout').value = String(state.prefs.netTimeoutSec ?? 20);
   $('setNueva').value = umbrales.nuevaDias;
   $('setCita').value = umbrales.citaDias; $('setControl').value = umbrales.controlDias;
@@ -60,6 +61,7 @@ export function init({ lock }) {
       await savePrefs({ lockMin: m });
     }
     if (t.id === 'setStartTab') await savePrefs({ startTab: t.value });
+    if (t.id === 'setAutoLoad') { setPrefs({ autoLoad: t.checked }); await savePrefs({ autoLoad: t.checked }); }
     if (t.id === 'setNetTimeout') {
       const sec = Number(t.value) || 20;
       setPrefs({ netTimeoutSec: sec });

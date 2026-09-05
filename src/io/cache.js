@@ -122,6 +122,7 @@ export async function clearEverything() {
 export const DEFAULT_PREFS = Object.freeze({
   historial: true, months: 6, dense: false, hiddenCols: [], retentionMonths: 3, // tres meses por defecto: menos datos en reposo (ADR 0001)
   refreshMin: 15, lockMin: 15, startTab: 'hoy',
+  autoLoad: true,      // al abrir, cargar sin pulsar «Actualizar»
   netTimeoutSec: 20,   // espera máxima por petición; la ficha completa espera el triple
   watchEsp: null,      // null = CONFIG.watchEspecialidades
   umbrales: null,      // null = CONFIG.pendientes

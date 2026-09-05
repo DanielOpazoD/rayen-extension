@@ -65,7 +65,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
     btn.disabled = false;
     $('btnRetrySync').disabled = false;
     btn.textContent = 'Actualizar';
-    document.title = 'Rayen Atenciones — Hospital Hanga Roa';
+    document.title = baseTitle; // el que tenía la página al arrancar (el arnés añade « · dev»)
   }
 
   if (!result) {
@@ -172,7 +172,10 @@ export function showExpired() {
   $('btnOpenEloisa').addEventListener('click', openEloisa);
 }
 
+let baseTitle = 'Rayen Atenciones — Hospital Hanga Roa';
+
 export function init(prefs) {
+  baseTitle = document.title || baseTitle;
   $('months').value = String(prefs.months);
   $('optHistorial').checked = prefs.historial;
   $('btnFetch').addEventListener('click', handleFetch);

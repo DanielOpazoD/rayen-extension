@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.43.1 — 2026-09-04
+
+- **Carga automática al abrir**: la agenda se carga sola (caché primero, red después) sin pulsar «Actualizar». Se apaga en Preferencias («Cargar al abrir»). El título de la pestaña vuelve al que tenía al arrancar cuando termina la carga.
+
 ## 2.43.0 — 2026-09-04
 
 Cifrado en reposo (ADR 0001, opción B, elegida por Daniel).
