@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 2.41.0 — 2026-09-04
+
+Robustez y pruebas, tras el balance 7 (5,4/7).
+
+- **Una cita nula en la respuesta de Eloisa ya no tumba la carga**: se salta y las demás se guardan (prueba de regresión).
+- **Anonimizador en tiempo lineal**: las expresiones de correo y teléfono tenían cuantificadores sin tope y un texto largo congelaba la pestaña (40 000 caracteres, 6 s). Prueba con 200 000 caracteres.
+- **El arnés no sale a Internet**: los orígenes de los laboratorios (HSR y SysLab) también responden 503 en local, salvo cuando un recorrido los simula; el README lo afirmaba sin que fuera cierto para Exámenes complementarios.
+- **Pruebas que matan mutaciones**: escape de comillas en atributos, token rechazado entregado por la pestaña de Eloisa, umbral inclusivo de pendientes, poda en el día exacto del límite, extremos de `inRange`, nota propagada a todas las filas del paciente. Y `npm test` vuelve a durar segundos: una prueba dejaba un temporizador de 100 s vivo.
+
 ## 2.40.0 — 2026-09-04
 
 Panel del paciente, ajustes pedidos por Daniel.
