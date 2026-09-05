@@ -8,7 +8,7 @@ Antes de cambiar código, lee también [`DOCUMENTATION_MAP.md`](DOCUMENTATION_MA
 
 - Extensión Chrome Manifest V3, formada por módulos ES nativos y sin paso de compilación.
 - No tiene backend propio. Las únicas dependencias de ejecución son dos librerías empaquetadas en `vendor/` (pdf.js para leer informes, pdf-lib para unirlos), cargadas bajo demanda. Utiliza las sesiones que el usuario ya tiene abiertas en Eloisa, en el portal del Hospital Salvador y en SysLab.
-- Tres transportes, cada uno con guardia de origen: `src/http.js` sólo habla con `https://clinicohangaroa.eloisa.cl`; `src/lab-http.js` sólo con `https://examenesusuarios.hsalvador.cl`; `src/syslab-http.js` sólo conduce pestañas de `http://10.4.69.90` (red interna del HHR). Son exactamente los tres `host_permissions` del manifest.
+- Tres transportes, cada uno con guardia de origen: `src/io/http.js` sólo habla con `https://clinicohangaroa.eloisa.cl`; `src/io/lab-http.js` sólo con `https://examenesusuarios.hsalvador.cl`; `src/io/syslab-http.js` sólo conduce pestañas de `http://10.4.69.90` (red interna del HHR). Son exactamente los tres `host_permissions` del manifest.
 - Agenda, ficha, SIC, preferencias y notas se conservan localmente en el perfil de Chrome. El token solo vive en `chrome.storage.session`.
 - La aplicación completa se compone en `app.js`; `popup-init.js` solo abre la experiencia completa y `report.js` prepara el reporte imprimible.
 
@@ -74,17 +74,17 @@ flowchart LR
 
 | Necesidad | Punto de entrada | Validación mínima |
 |---|---|---|
-| Endpoint, autenticación o error HTTP | `src/http.js`, `src/auth.js`, servicio correspondiente | pruebas unitarias, guardia de origen y sesión vencida |
-| Agenda, caché o actualización histórica | `src/api.js`, `src/historial.js`, `src/cache.js` | pruebas de fechas mutables, fallo parcial y reintento |
-| Estado global o coordinación entre vistas | `src/state.js`, `src/actions.js` | contrato de eventos y ausencia de copias divergentes |
-| Filtro o columna de Atenciones | `src/tabs/atenciones.js`, `src/table.js` | filtro, contador, limpiar/deshacer y exportación |
-| Interconsultas | `src/sic.js`, `src/ic-tab.js`, `src/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
-| Vista Hoy | `src/today.js`, `src/tabs/hoy.js` | jornada vacía, antecedentes y navegación de paciente |
-| Panel o reporte de paciente | `src/patient-panel.js`, `src/patient-report.js`, `src/ficha.js` | identidad, escape de texto y variantes del reporte |
-| Laboratorio / ProactiveLIS (HSR) | `src/lab-http.js`, `src/lab-api.js`, `src/tabs/laboratorio.js` | sesión cookie, parsing de órdenes, guardia de origen |
-| Laboratorio / SysLab (HHR) | `src/syslab-http.js`, `src/syslab-api.js`, `src/tabs/laboratorio.js` | pestaña con sesión, espera de navegación, identidad del lote |
+| Endpoint, autenticación o error HTTP | `src/io/http.js`, `src/io/auth.js`, servicio correspondiente | pruebas unitarias, guardia de origen y sesión vencida |
+| Agenda, caché o actualización histórica | `src/io/api.js`, `src/io/historial.js`, `src/io/cache.js` | pruebas de fechas mutables, fallo parcial y reintento |
+| Estado global o coordinación entre vistas | `src/io/state.js`, `src/ui/actions.js` | contrato de eventos y ausencia de copias divergentes |
+| Filtro o columna de Atenciones | `src/ui/tabs/atenciones.js`, `src/ui/table.js` | filtro, contador, limpiar/deshacer y exportación |
+| Interconsultas | `src/io/sic.js`, `src/ui/ic-tab.js`, `src/ui/tabs/interconsultas.js` | carga completa/parcial, filtros, orden y exportación |
+| Vista Hoy | `src/ui/today.js`, `src/ui/tabs/hoy.js` | jornada vacía, antecedentes y navegación de paciente |
+| Panel o reporte de paciente | `src/ui/patient-panel.js`, `src/ui/patient-report.js`, `src/core/ficha.js` | identidad, escape de texto y variantes del reporte |
+| Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js` | sesión cookie, parsing de órdenes, guardia de origen |
+| Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js`, `src/ui/tabs/laboratorio.js` | pestaña con sesión, espera de navegación, identidad del lote |
 | Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
-| Sistema visual y responsive | `styles/app.css`, `src/ui.js`, `src/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido |
+| Sistema visual y responsive | `styles/app.css`, `src/ui/ui.js`, `src/ui/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido |
 | Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos, cero red externa, escritorio y ventana estrecha |
 | Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
 
@@ -95,6 +95,10 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`. Cada 
 ## Capas
 
 El código de `src/` está en tres capas con dependencia en un solo sentido: `ui` → `io` → `core`. El lint (`eslint.config.js`) lo hace cumplir: `core` no puede usar `document`, `window`, `chrome` ni `fetch`, ni importar de `io`/`ui`; `io` no importa de `ui`. La cuarta capa, `src/ai/`, contiene los flujos con modelos de lenguaje; depende de `core` e `io`, nunca de `ui`.
+
+## Red: tiempo límite y cancelación
+
+Cada petición a Eloisa (`src/io/http.js`) lleva `AbortSignal.timeout(CONFIG.httpTimeoutMs)` y la señal de la carga en curso: `cancelRun()` aborta lo que está en vuelo y los cargadores no encolan más lotes. Un 401/403 marca la sesión como vencida e invalida la copia del token en `storage.session`. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`.
 
 ## Flujo con IA
 
@@ -109,7 +113,7 @@ datos (agenda, ficha, SIC, laboratorio, imagenología, biopsias)
   → armarInforme          identidad repuesta en local, pie de revisión (ai/report.js)
 ```
 
-Reglas que no dependen de la plantilla: la identidad del paciente y los nombres de los profesionales nunca entran al contexto; si el anonimizador detecta un resto, `prepararInforme` falla y no hay prompt. El proveedor por API exige clave, permiso de host en el manifiesto y una decisión institucional; por eso viene apagado.
+Reglas que no dependen de la plantilla: la identidad del paciente y los nombres de los profesionales nunca entran al contexto; si el anonimizador detecta un resto, `prepararInforme` falla y no hay prompt. El proveedor por API exige clave y una decisión institucional; por eso viene apagado (el manifiesto no lo bloquea: la Messages API acepta llamadas desde el navegador con la cabecera correspondiente).
 
 <!-- module-map:start -->
 
@@ -127,14 +131,15 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 - `src/core/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
 - `src/core/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
 - `src/core/lab-parser.js` — interpretación clínica del texto de un informe y detección de fuera de rango.
-- `src/core/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
-- `src/core/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
+- `src/io/lab-pdf-text.js` — texto de un PDF con las filas reconstruidas, vía pdf.js bajo demanda.
+- `src/io/lab-report.js` — informe PDF → detalle verificado por RUT, con concurrencia acotada.
 - `src/core/lab-specimen.js` — clasifica la muestra biológica y decide qué entra en cada vista y en qué orden.
 - `src/core/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
 - `src/core/load-summary.js` — resumen honesto y compacto del resultado de carga.
 - `src/core/parser.js` — normalización de fechas, RUN y respuestas de Eloisa.
 - `src/core/pendientes.js` — reglas explicables de pendientes clínico-administrativos.
 - `src/core/period.js` — periodos rápidos y rangos explícitos.
+- `src/core/sic-rules.js` — reglas puras de interconsultas (`isMine`, `contactsFromSICs`), sin red ni estado.
 - `src/core/text.js` — `cleanText`, `nameOf` y `esc`, utilidades de texto sin DOM.
 
 **Entrada/salida (`src/io/`) — Eloisa, SysLab, ProactiveLIS, almacenamiento de Chrome y estado de la aplicación. No conoce la interfaz.**

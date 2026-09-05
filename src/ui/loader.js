@@ -7,7 +7,7 @@ import { toast } from './toast.js';
 import { $, skeletonRows, skeletonCards } from './dom.js';
 import { COLUMNS } from './table.js';
 import { CONFIG } from '../core/config.js';
-import { state, setData, emit } from '../io/state.js';
+import { state, setData, emit, setLoadedMonths } from '../io/state.js';
 import { setStatus } from './ui.js';
 import { initSyncStatus, renderSyncStatus } from './sync-status.js';
 import { failRunningSyncSources, loadSyncHealth, pendingSyncItems } from '../io/sync-health.js';
@@ -27,7 +27,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
   const operationId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const btn  = $('btnFetch');
   const prog = $('progress');
-  state.loadedMonths = parseInt($('months').value);
+  setLoadedMonths(parseInt($('months').value));
   const selectedHistorial = $('optHistorial').checked;
   const historial = selectedHistorial || forceHistorial;
   savePrefs({ months: state.loadedMonths, historial: selectedHistorial }).catch(() => setStatus('No se pudo guardar la preferencia de período en este perfil de Chrome.', 'warn'));

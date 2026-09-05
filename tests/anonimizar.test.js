@@ -51,7 +51,7 @@ test('el desplazamiento por defecto es aleatorio y no aparece en el resultado', 
   assert.ok(!('desplazamientoDias' in a) && !JSON.stringify(a).includes('desplazamiento'));
 });
 
-test('si un nombre sobrevive en un campo no previsto, verificado es false y se nombra el resto', () => {
+test('un nombre que sólo aparece en texto libre sin campo de persona no se detecta: límite documentado', () => {
   // Un nombre metido en una clave que no es de persona ni texto libre con espacios: «Observacion» es texto libre y se limpia;
   // forzamos el fallo con un token que el tokenizador no pudo recoger porque la persona sólo aparece en texto libre.
   const r = anonimizar({ Nota: 'Paciente Tuki refiere dolor', Apellidos: 'Tuki' }, { desplazamientoDias: 1 });
@@ -65,4 +65,10 @@ test('tokens con acento se borran sin importar mayúsculas ni acentos, y las pal
   const r = anonimizar({ NombreCompleto: 'María José Pakarati Tepano', Nota: 'MARIA jose y pakarati tepano vinieron; la maría luna no.' }, { desplazamientoDias: 1 });
   assert.equal(r.data.Nota, '<nombre> <nombre> y <nombre> <nombre> vinieron; la <nombre> luna no.');
   assert.equal(r.verificado, true);
+});
+
+test('si un nombre sobrevive donde el recorrido no llega (una clave), verificado es false y se nombra', () => {
+  const r = anonimizar({ NombreCompleto: 'Rosa Tuki', 'Rosa Tuki': { visitas: 3 } }, { desplazamientoDias: 1 });
+  assert.equal(r.verificado, false);
+  assert.deepEqual(r.restos, ['Rosa', 'Tuki']);
 });

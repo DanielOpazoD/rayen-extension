@@ -3,7 +3,7 @@ import { initPanel, syncNote } from './src/ui/patient-panel.js';
 import { initPalette } from './src/ui/palette.js';
 import { initLock } from './src/ui/lock.js';
 import { $, initTooltips, initTablist, activateOnKey } from './src/ui/dom.js';
-import { state, setPrefs, on } from './src/io/state.js';
+import { setPrefs, on, setLoadedMonths } from './src/io/state.js';
 import { remeasure } from './src/ui/ui.js';
 import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
 import { CONFIG } from './src/core/config.js';
@@ -30,7 +30,7 @@ setPrefs({
   umbrales:   prefs.umbrales && typeof prefs.umbrales === 'object' ? { ...CONFIG.pendientes, ...prefs.umbrales } : { ...CONFIG.pendientes },
   retentionMonths: Number.isFinite(+prefs.retentionMonths) && +prefs.retentionMonths > 0 ? +prefs.retentionMonths : CONFIG.retentionMonths,
 });
-state.loadedMonths = prefs.months;
+setLoadedMonths(prefs.months);
 
 // Tabs: click or ←/→ (WAI-ARIA tablist, roving tabindex)
 const showTab = initTablist(document.querySelector('.tabs'), name => {

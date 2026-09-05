@@ -80,7 +80,7 @@ Cada regla dice qué disparó, sobre qué dato y desde cuándo. Umbrales en `con
 
 | Permiso | Uso |
 |---|---|
-| `tabs`, `scripting` | Leer el `accessToken` desde `localStorage` de la pestaña de Eloisa (world MAIN). No se inyecta nada en la página. |
+| `tabs`, `scripting` | Leer el `accessToken` desde `localStorage` de la pestaña de Eloisa (mundo aislado: la página no puede interceptar la lectura). No se inyecta nada en la página. |
 | `storage`, `unlimitedStorage` | Caché local de agenda, ficha y SIC (6–12 meses superan los 10 MB por defecto). |
 | `host_permissions: clinicohangaroa.eloisa.cl` | Único origen al que se envía el token (`src/io/http.js → resolveUrl` lo garantiza). |
 

@@ -1,5 +1,5 @@
 import { CONFIG } from '../core/config.js';
-import { contactsFromSICs } from './sic.js';
+import { contactsFromSICs } from '../core/sic-rules.js';
 import { computePendientes } from '../core/pendientes.js';
 import { patientKey } from './notes.js';
 
@@ -38,6 +38,10 @@ export function setData({ allData, team, sics, novedades } = {}) {
   state.version++;
   emit('data');
 }
+
+/** Los meses cargados y el orden pintado de la tabla son estado: se cambian aquí, no desde las pestañas. */
+export function setLoadedMonths(n) { state.loadedMonths = n; }
+export function setRendered(rows) { state.rendered = rows; }
 
 /** Prefs that feed a derived value (umbrales, watchEsp) must re-render; the rest just persist. */
 export function setPrefs(patch, { rerender = false } = {}) {

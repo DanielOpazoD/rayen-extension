@@ -7,7 +7,7 @@ import { checkSyslabSession, syslabPdfUrl, syslabReportBytes, resetSyslabSession
 import { createSessionMonitor } from '../../io/lab-session.js';
 import { createLabSearch } from '../../io/lab-search.js';
 import { mergePdfs } from '../pdf-merge.js';
-import { buildDetails } from '../../core/lab-report.js';
+import { buildDetails } from '../../io/lab-report.js';
 import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../../core/lab-analytics.js';
 import { renderTrendGroups } from '../lab-charts.js';
 import {
