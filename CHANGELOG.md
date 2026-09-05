@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.44.1 — 2026-09-04
+
+- Datos del paciente mostraba «Previsión» dos veces.
+
 ## 2.44.0 — 2026-09-04
 
 Panel del paciente, ajustes pedidos por Daniel con datos reales.
