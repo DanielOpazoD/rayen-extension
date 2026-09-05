@@ -1,5 +1,15 @@
 # Historial de cambios
 
+## 2.49.0 — 2026-09-05
+
+Saneamiento, tanda 2 de 4: duplicación.
+
+- **`core/dates.js`**: una sola implementación de Date ↔ «YYYYMMDD», días entre fechas, retención en meses y formatos de laboratorio. Desaparecen cuatro copias de «Date → YYYYMMDD», ocho de «YYYYMMDD → Date», dos cálculos de retención a mano (interconsultas e historial, que además diferían de `retentionMin8`) y dos formateadores que se llamaban igual que `parser.fmtDate` haciendo otra cosa.
+- **`core/labels.js` y `core/sort.js`**: lo puro de la tabla (día con hora, letra del sexo, rol en la interconsulta, «tipo · razón», orden por columna) sale de `ui/table.js`; el mapa Emití/Recibí/Otra deja de estar copiado tres veces.
+- **Una sola «es mía»**: `esMiaAtencion` en `core/sic-rules.js` reemplaza cuatro copias (historial, panel, historia imprimible); `pendientes` reutiliza `isMine`.
+- JSDoc en los 16 exports de `core` que no lo tenían; pruebas de tabla para `core/dates.js`.
+- **Nueva valla**: la prueba de contrato comprueba que cada import con nombre exista en el módulo que lo exporta. El navegador se niega a arrancar ante uno roto y `node --test` nunca carga la interfaz; esta tanda dejó dos así y el arnés los detectó tarde.
+
 ## 2.48.0 — 2026-09-05
 
 Saneamiento, tanda 1 de 4 (auditoría independiente de estructura, modularidad, pruebas y documentación).

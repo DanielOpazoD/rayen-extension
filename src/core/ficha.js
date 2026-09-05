@@ -108,6 +108,7 @@ const SECTIONS = [
   ['morbidos',       'Antecedentes mórbidos',          ['MorbidosPersonalesMedicos', 'MorbidosPersonalesQuirurgicos', 'MorbidosFamiliares'], describe],
   ['enmendaciones',  'Enmendaciones',                  ['Enmendaciones'],                        describe],
 ];
+/** Etiqueta legible de cada sección de la ficha, por id. */
 export const SECTION_LABELS = Object.fromEntries(SECTIONS.map(([id, label]) => [id, label]));
 const SECTION_KEYS = new Set(SECTIONS.flatMap(([, , keys]) => keys));
 
@@ -128,6 +129,10 @@ const USED_ANAMNESIS = new Set(['MotivoConsulta', 'HistoriaEnfermedadActual']);
 const humanKey = k => TEXT_LABELS[k] ?? k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
 const isFreeText = v => typeof v === 'string' && v.trim().length >= 20 && /\s/.test(v.trim()) && !isRayenDate(v);
 
+/**
+ * Textos libres de una atención que ninguna sección modela (evolución de urgencia, categorización…).
+ * @returns {Array<{key:string, label:string, text:string}>}
+ */
 export function textosLibres(a) {
   const out = [];
   const seen = new Set();
@@ -214,6 +219,7 @@ export function parseProgramas(list) {
   return [...by.values()].sort((a, b) => b.fechaRaw.localeCompare(a.fechaRaw));
 }
 
+/** Ficha administrativa (Inscripcion/UsuarioApsRut) → datos de identificación, contacto e inscripción; null si no hay usuario. */
 export function parseMaster(u) {
   if (!u) return null;
   const tel = (u.Telefonos ?? []).filter(t => !t.Eliminado && !t.EsBorrado).map(t => t.TelefonoDescripcion).filter(Boolean);

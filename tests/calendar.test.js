@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { monthGrid, monthLabel, countsByDay, shiftMonth, toDate8 } from '../src/core/calendar.js';
+import { monthGrid, monthLabel, countsByDay, shiftMonth } from '../src/core/calendar.js';
+import { toDate8 } from '../src/core/dates.js';
 
 test('monthGrid empieza en lunes, cubre el mes entero y marca hoy y el día elegido', () => {
   // Septiembre de 2026 empieza en martes.

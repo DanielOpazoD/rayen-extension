@@ -18,6 +18,7 @@ import { cleanText } from './text.js';
 
 export { cleanText };
 
+/** Clave de comparación de un nombre de examen: sin acentos, signos ni mayúsculas. */
 export const comparisonToken = value => cleanText(value)
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -37,6 +38,7 @@ export const isSystemicTrendEligible = finding => {
   return !isUrineSection(specimenSignature(finding)) && !isOtherFluidSection(specimenSignature(finding));
 };
 
+/** Nombre canónico de un análisis según el catálogo (sinónimos, siglas), dentro de su sección. */
 export function normalizeAnalysisName(value, section) {
   const name = cleanText(value);
   const token = comparisonToken(name);

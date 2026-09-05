@@ -32,6 +32,7 @@ export const IMPORTANT_ANALYSES = [
   'Hb glicosilada', 'Colesterol Total', 'LDL', 'HDL', 'TG', 'RAC', 'RPC',
 ];
 
+/** Tope de informes que entran en un análisis: más no caben en la matriz ni en el PDF. */
 export const MAX_SELECTED_EXAMS = 24;
 
 /** Cuerpo del RUT: sin puntos, sin dígito verificador, sólo dígitos. */
@@ -58,6 +59,7 @@ export function rutInputAmbiguous(value) {
   return /^\d{7,8}$/.test(raw.replace(/\D/g, ''));
 }
 
+/** Cuerpo del RUT sin puntos ni verificador (lo quita sólo si es correcto); '' si no es un RUT. */
 export function normalizePatientRutBody(value) {
   const raw = cleanText(value).toUpperCase();
   if (raw.includes('-')) return normalizeRutBody(raw);

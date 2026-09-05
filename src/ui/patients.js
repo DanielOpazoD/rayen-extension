@@ -2,7 +2,7 @@ import { SIC_RECHAZADA_IDS } from '../core/config.js';
 import { esc, stateDot, sicTone, $ } from './dom.js';
 import { dateToInt } from '../core/parser.js';
 import { patientKey } from '../io/notes.js';
-import { sicRole } from './table.js';
+import { sicRole, ROLE_LABEL } from '../core/labels.js';
 
 /**
  * The patient-centric lens. Everything else in the app is organised by
@@ -13,7 +13,6 @@ import { sicRole } from './table.js';
  */
 
 const OPEN = new Set(['pendiente', 'enviada']);
-const ROL = { out: 'Emití', in: 'Recibí', other: 'Otra' };
 
 /**
  * @param {object[]} allData    atención records
@@ -131,7 +130,7 @@ function row(p) {
   const sic = p.abiertas.length
     ? `<div class="pac-sic">` + p.abiertas.slice(0, 2).map(s =>
         `<span class="ic-line sic-link" data-sic="${s.id}" role="button" tabindex="0" data-tip="SIC #${s.id} · ${esc(s.estado)} · ${s.antiguedadDias} días">` +
-        `<span class="rol rol-${sicRole(s)}">${ROL[sicRole(s)]}</span><span class="ic-esp">${esc(s.especialidad)}</span>` +
+        `<span class="rol rol-${sicRole(s)}">${ROLE_LABEL[sicRole(s)]}</span><span class="ic-esp">${esc(s.especialidad)}</span>` +
         stateDot(s.estado, { tone: sicTone(s.grupo), small: true }) + `</span>`).join('') +
       (p.abiertas.length > 2 ? `<span class="pac-more">+${p.abiertas.length - 2}</span>` : '') + `</div>`
     : p.rechazadas.length ? `<span class="pac-rech" data-tip="${esc(p.rechazadas.map(s => `${s.especialidad} · ${s.estado}`).join('\n'))}">${p.rechazadas.length} rechazada${p.rechazadas.length > 1 ? 's' : ''}</span>`

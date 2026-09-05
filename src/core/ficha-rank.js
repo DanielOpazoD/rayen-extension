@@ -7,6 +7,7 @@
  * en la receta («cada 12 horas por 6 meses») y la fecha de la atención.
  */
 import { cleanText } from './text.js';
+import { fromDate8 } from './dates.js';
 
 // Prefijos CIE-10 de condiciones crónicas frecuentes en atención primaria.
 const CHRONIC_CIE = /^(E1[0-4]|E78|E66|I1[0-5]|I2[0-5]|I48|I50|J4[4-5]|N18|M0[5-6]|M1[5-9]|F2\d|F3[1-3]|F41|G40|G20|K21|E03|E05|D50|B2[0-4]|C\d\d)/i;
@@ -74,7 +75,7 @@ const DURATION = /por\s+(\d+)\s*(d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)/i;
 export function prescripcionEstado(texto, fecha8, { suspendido = false, hoy = new Date() } = {}) {
   if (suspendido) return 'suspendida';
   if (!/^\d{8}$/.test(String(fecha8 || ''))) return 'activa';
-  const start = new Date(+fecha8.slice(0, 4), +fecha8.slice(4, 6) - 1, +fecha8.slice(6, 8));
+  const start = fromDate8(fecha8);
   const m = String(texto || '').match(DURATION);
   const end = new Date(start);
   if (!m) end.setDate(end.getDate() + 30);

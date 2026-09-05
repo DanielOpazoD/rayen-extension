@@ -1,18 +1,18 @@
 import { esc, stateDot, sicTone, $ } from './dom.js';
+import { fromDate8 } from '../core/dates.js';
 import { localDateStr, dateToInt } from '../core/parser.js';
 import { patientKey } from '../io/notes.js';
-import { sicRole } from './table.js';
+import { sicRole, ROLE_LABEL } from '../core/labels.js';
 
 /** SIC groups that still need someone to act on them. */
 const OPEN_GROUPS = new Set(['pendiente', 'enviada']);
 const DOW = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const MONTH = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const ROL_LABEL = { out: 'Emití', in: 'Recibí', other: 'Otra' };
 
 /** "martes 2 de septiembre" */
 function longDate(d8) {
-  if (d8.length !== 8) return '';
-  const d = new Date(+d8.slice(0, 4), +d8.slice(4, 6) - 1, +d8.slice(6, 8));
+  const d = fromDate8(d8);
+  if (!d) return '';
   return `${DOW[d.getDay()]} ${d.getDate()} de ${MONTH[d.getMonth()]}`;
 }
 
@@ -74,7 +74,7 @@ function card(rec, allData, sics) {
     : `<div class="none">${visitas ? 'Sin diagnósticos registrados' : 'Primera atención contigo'}</div>`;
 
   const icHTML = open.length
-    ? open.map(s => `<div><span class="rol rol-${sicRole(s)}">${ROL_LABEL[sicRole(s)]}</span> ${esc(s.especialidad)} ` +
+    ? open.map(s => `<div><span class="rol rol-${sicRole(s)}">${ROLE_LABEL[sicRole(s)]}</span> ${esc(s.especialidad)} ` +
         `${stateDot(s.estado, { tone: sicTone(s.grupo), small: true })} <span class="muted">· ${s.antiguedadDias} d</span></div>`).join('')
     : `<div class="none">Sin interconsultas abiertas</div>`;
 

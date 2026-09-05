@@ -171,6 +171,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/core/calendar.js` — rejilla mensual de atenciones para Hoy, sin DOM.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
+- `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/core/exam-request-catalog.js` — catálogo literal del formulario de solicitud: 10 categorías, 65 exámenes y sus tubos.
 - `src/core/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.
@@ -180,8 +181,10 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/historial-merge.js` — cruce puro de la agenda con el historial diario: cita del mismo día, cita exacta declarada por Rayen o la más cercana (estimada); resumen del equipo por día.
 - `src/core/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
 - `src/core/sic-parse.js` — análisis de una solicitud de interconsulta a los campos que muestra la aplicación.
+- `src/core/sort.js` — orden de la tabla de atenciones por columna.
 - `src/core/sync-plan.js` — plan puro de una carga: fechas del período, refrescos por estado mutable, reintentos y historial acoplado (`SyncPlan`).
 - `src/core/sync-rules.js` — fuentes de sincronización y qué quedó pendiente, sin almacenamiento.
+- `src/core/labels.js` — etiquetas puras compartidas por tabla, Pacientes, Hoy y la historia imprimible: día con hora, letra del sexo, rol en una interconsulta, «tipo · razón».
 - `src/core/lab-analytics.js` — identidad del paciente, lote íntegro, matriz comparativa y tendencias.
 - `src/core/lab-catalog.js` — vocabulario clínico: orden de lectura, exclusiones, grupos, reglas de microbiología y siglas.
 - `src/core/lab-microbiology.js` — categoriza cultivos, antibiogramas y PCR virales, y decide qué resultado merece destacarse.
@@ -192,7 +195,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/parser.js` — normalización de fechas, RUN y respuestas de Eloisa.
 - `src/core/pendientes.js` — reglas explicables de pendientes clínico-administrativos.
 - `src/core/period.js` — periodos rápidos y rangos explícitos.
-- `src/core/sic-rules.js` — reglas puras de interconsultas (`isMine`, `contactsFromSICs`), sin red ni estado.
+- `src/core/sic-rules.js` — quién es «mío»: la interconsulta que registré o ejecuto y la atención en la que soy prestador (única definición); contactos por RUN desde las SIC. (antes: reglas puras de interconsultas (`isMine`, `contactsFromSICs`), sin red ni estado.)
 - `src/core/text.js` — `cleanText`, `nameOf` y `esc`, utilidades de texto sin DOM.
 
 **Entrada/salida (`src/io/`) — Eloisa, SysLab, ProactiveLIS, almacenamiento de Chrome y estado de la aplicación. No conoce la interfaz.**

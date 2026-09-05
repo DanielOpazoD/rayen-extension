@@ -6,8 +6,9 @@ import { esc, stateDot, $ } from '../dom.js';
 import { certificadoPath, recetaPdfPath } from '../../io/pdf.js';
 
 const PRINTER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>';
-import { whenLabel } from '../table.js';
-import { isMineVisit, segGroup, empty, setTabCount } from './helpers.js';
+import { whenLabel } from '../../core/labels.js';
+import { segGroup, empty, setTabCount } from './helpers.js';
+import { esMiaAtencion } from '../../core/sic-rules.js';
 
 function sectionHTML(id, items, v) {
   // Cada receta lleva su impresora: el PDF de Eloisa, para imprimirlo desde la atención.
@@ -20,7 +21,7 @@ function sectionHTML(id, items, v) {
 }
 
 function fichaVisitHTML(v, agendaByAtencion) {
-  const mine = isMineVisit(v);
+  const mine = esMiaAtencion(v);
   const cita = agendaByAtencion.get(v.id);
   const who  = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections);

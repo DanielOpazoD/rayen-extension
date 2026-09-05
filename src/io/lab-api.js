@@ -1,4 +1,5 @@
 import { labGet, labBlob, labSession, resetLabSession, LAB_ORIGIN, LabAuthError } from './lab-http.js';
+import { fmtIso } from '../core/dates.js';
 import { normalizePatientRutBody } from '../core/lab-analytics.js';
 
 export { labSession, resetLabSession, LabAuthError, LAB_ORIGIN };
@@ -48,12 +49,12 @@ export async function checkLabSession() {
 export async function buscarOrdenesPorRut(rut, { desde, hasta, signal } = {}) {
   if (!hasta) {
     const d = new Date();
-    hasta = fmtDate(d);
+    hasta = fmtIso(d);
   }
   if (!desde) {
     const d = new Date();
     d.setFullYear(d.getFullYear() - DEFAULT_YEARS_BACK);
-    desde = fmtDate(d);
+    desde = fmtIso(d);
   }
   const params = new URLSearchParams({
     tipoBusqueda: '1',
@@ -157,8 +158,4 @@ export function normalizeOrden(raw) {
   };
 }
 
-export function fmtDate(d) {
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0');
-}
+

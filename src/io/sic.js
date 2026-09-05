@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { CONFIG, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO } from '../core/config.js';
 import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
 import { parseSIC } from '../core/sic-parse.js';
+import { retentionMin8 } from '../core/sync-plan.js';
 import { localDateStr } from '../core/parser.js';
 import { storageGet, storageSet } from './cache.js';
 
@@ -52,9 +53,7 @@ async function fetchDetails(token, ids) {
  * sólo se podaban agenda y ficha y este almacén crecía sin límite.
  */
 export function pruneByRetention(records, now = new Date()) {
-  const months = state.prefs?.retentionMonths ?? CONFIG.retentionMonths;
-  const min = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
-  const min8 = `${min.getFullYear()}${String(min.getMonth() + 1).padStart(2, '0')}${String(min.getDate()).padStart(2, '0')}`;
+  const min8 = retentionMin8(state.prefs?.retentionMonths ?? CONFIG.retentionMonths, now);
   return records.filter(r => !r.fecha8 || r.fecha8 >= min8);
 }
 

@@ -1,7 +1,7 @@
 /** Estado de la ficha dentro de Datos, con su tono en el avatar. */
 import { esc, $ } from '../dom.js';
 import { humanError } from '../../core/errors.js';
-import { isMineVisit } from './helpers.js';
+import { esMiaAtencion } from '../../core/sic-rules.js';
 
 /**
  * El estado de la ficha («Ficha completa · 4 atenciones (1 mías) desde…») vive
@@ -26,7 +26,7 @@ const humanFichaError = e => { const m = String(e).match(/^([^:]{2,40}):\s*(.+)$
 
 /** Texto y tono para una ficha cargada: completa o parcial, cuántas atenciones, desde cuándo, a qué hora. */
 export function fichaStatusHtml(ficha) {
-  const mineN = ficha.visits.filter(isMineVisit).length;
+  const mineN = ficha.visits.filter(v => esMiaAtencion(v)).length;
   const n = ficha.visits.length;
   // Sólo fuentes («Historial: …»); el aviso de sesión vencida no es una fuente.
   const fallos = ficha.errors.filter(e => /^[^:]{2,40}:\s/.test(e)).length;

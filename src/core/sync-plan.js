@@ -19,6 +19,7 @@
  * @property {(date: string) => boolean} inWindow  fecha YYYYMMDD válida, dentro de la retención y no futura
  */
 import { dateRange, localDateStr } from './parser.js';
+import { minusMonths8 } from './dates.js';
 import { pendingSyncItems } from './sync-rules.js';
 
 /**
@@ -32,9 +33,7 @@ export function isMutableAppointmentStatus(status = '') {
 
 /** Primer día que se conserva según la retención en meses. */
 export function retentionMin8(retentionMonths, today = new Date()) {
-  const min = new Date(today);
-  min.setMonth(min.getMonth() - retentionMonths);
-  return localDateStr(min);
+  return minusMonths8(retentionMonths, today);
 }
 
 /**
