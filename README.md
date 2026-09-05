@@ -111,7 +111,7 @@ npm run pack       # genera rayen-extension-<versión>.zip
 
 La estructura completa y la responsabilidad de cada archivo viven en [`ARCHITECTURE.md`](ARCHITECTURE.md); el CI exige que su mapa incluya cada módulo de `src/` exactamente una vez.
 
-El smoke de navegador levanta `dev/`, que usa la aplicación real con almacenamiento Chrome simulado y datos inventados. También comprueba que ninguna solicitud abandone `localhost`; no sustituye una prueba de la extensión cargada ni una sesión autenticada de Eloisa.
+El smoke de navegador levanta `dev/`, que usa la aplicación real con almacenamiento Chrome simulado y datos inventados, incluida una ficha clínica sintética por paciente (`/dev/?ficha=off` simula la ficha caída). Para ver la forma real de las respuestas sin datos personales, importa una copia anonimizada del Explorador con `node scripts/import-capture.mjs <archivo.json> <endpoint>`; queda en `dev/fixtures/` (no versionada) y el arnés la sirve al abrir `/dev/?ficha=capturas`. Todo comprueba que ninguna solicitud abandone `localhost`; no sustituye una prueba de la extensión cargada ni una sesión autenticada de Eloisa.
 
 Convenciones: módulos ES nativos, sin build, en cuatro capas (`core` → `io` → `ai` → `ui`) que el lint hace cumplir, con funciones de hasta 150 líneas útiles y módulos de hasta 500; `esc()` en todo `innerHTML` con texto de la API; tooltips solo vía `data-tip` (`dom.js → initTooltips`, hover y foco); la interfaz vive en `app.html` y su sistema visual en `styles/app.css`. Los colores salen de tokens CSS (`:root`, con bloque `prefers-color-scheme: dark`) — los SVG de gráficos también los usan. Las diez convenciones completas están en [`ARCHITECTURE.md`](ARCHITECTURE.md), sección «Convenciones de código».
 

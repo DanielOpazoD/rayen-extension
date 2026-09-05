@@ -23,7 +23,7 @@ Ruta corta para continuar el proyecto sin depender del contexto de una conversac
 | Nivel | Qué demuestra | Qué no demuestra |
 |---|---|---|
 | Fuente y pruebas locales | Contratos y lógica aislada | integración visual ni Chrome MV3 real |
-| Arnés sintético en navegador | interacción, diseño y datos controlados | permisos, almacenamiento y sesión reales |
+| Arnés sintético en navegador | interacción, diseño, datos controlados y la ficha (sintética o capturas anonimizadas reales) | permisos, almacenamiento y sesión reales |
 | Extensión cargada en Chrome | manifiesto, permisos y ejecución MV3 | exactitud frente a una sesión clínica concreta |
 | Eloisa autenticada | comportamiento integrado con la API real | ausencia futura de cambios en la API |
 

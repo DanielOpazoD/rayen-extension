@@ -6,3 +6,4 @@ test-results/
 *.har
 .DS_Store
 npm-debug.log*
+dev/fixtures/*.json

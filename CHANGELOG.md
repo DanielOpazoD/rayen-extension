@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.39.0 — 2026-09-04
+
+Arnés con ficha clínica: el panel, las recetas, la portada y el informe con IA se ejercitan por fin en los recorridos.
+
+- **Ficha sintética por paciente** (`dev/ficha-fixture.js`): las siete respuestas que la extensión pide a Eloisa (ficha administrativa, historial de diez años con anamnesis, prescripciones, recetas, órdenes de control, una atención de urgencia con evolución, antecedentes, programas, vigencias, riesgo y RAM), con las claves reales de las capturas y valores inventados, deterministas por paciente. El stub de Chrome del arnés enruta cada endpoint; antes todo respondía 503 y un tercio del código clínico nunca corría en el navegador.
+- `/dev/?ficha=off` reproduce la ficha caída; `/dev/?ficha=capturas` sirve copias anonimizadas reales importadas con `node scripts/import-capture.mjs <archivo> <endpoint>`, que vuelve a pasar el anonimizador y rechaza RUT, correos y teléfonos. Los fixtures no se versionan.
+- Dos recorridos nuevos: panel con ficha completa (problemas, atención con cuerpo desplegable, recetas, informe que declara la ficha completa y un contexto sin apellidos) y panel con ficha caída (título honesto, Atenciones y Recetas con «Ficha no disponible»). Treinta recorridos en total.
+
 ## 2.38.0 — 2026-09-04
 
 Red y sincronización, con las correcciones de una revisión adversarial de los PR #27–#31.
