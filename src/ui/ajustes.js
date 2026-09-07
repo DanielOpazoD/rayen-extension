@@ -8,7 +8,9 @@ import { diffWatched } from '../io/watch.js';
 import { esc, $, targetOf, closestOf } from './dom.js';
 import { state, setData, setPrefs, on } from '../io/state.js';
 import { initMenu, setStatus } from './ui.js';
-import { armRefresh, cargarFuturas } from './loader.js';
+import { armRefresh, cargarFuturas, handleFetch } from './loader.js';
+import { getToken } from '../io/auth.js';
+import { reconciliarCitas } from '../io/historial.js';
 
 /** Preferences and local-data controls. */
 
@@ -36,6 +38,22 @@ function fillSettings() {
 
 export function init({ lock }) {
   lockCtl = lock;
+  $('btnReconciliar').addEventListener('click', async () => {
+    const btn = $('btnReconciliar');
+    btn.disabled = true;
+    setStatus('Reconciliando fechas de atención con Eloisa…', 'idle');
+    try {
+      const token = await getToken();
+      if (!token) { setStatus('Sin sesión en Eloisa: inicia sesión y vuelve a intentarlo.', 'warn'); return; }
+      const { revisadas, resueltas } = await reconciliarCitas(token);
+      if (resueltas) await handleFetch();
+      setStatus(revisadas
+        ? `Reconciliación: ${resueltas} de ${revisadas} atenciones quedaron con su cita exacta.`
+        : 'Reconciliación: no había atenciones pendientes de resolver.', resueltas || !revisadas ? 'ok' : 'warn');
+    } catch (err) {
+      setStatus(`No se pudo reconciliar. ${humanError(err, 'Eloisa')}`, 'err');
+    } finally { btn.disabled = false; }
+  });
   $('pinChangeForm').addEventListener('submit', async e => {
     e.preventDefault();
     if (!(await readMeta())) { toast('Sin cifrado en este modo (arnés): no hay PIN que cambiar.', { tone: 'info' }); return; }

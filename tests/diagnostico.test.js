@@ -26,6 +26,10 @@ test('clasifica cada atención por cómo se cruzó, y cuenta por día de la sema
   assert.equal(d.atenciones.total, 5);
   assert.equal(d.atenciones.urgencias, 1);
   assert.deepEqual([d.atenciones.porDia.Vie, d.atenciones.porDia.Mar, d.atenciones.porDia.Jue, d.atenciones.porDia.Lun], [3, 1, 1, 0]);
+  // La urgencia del jueves se marca aparte: una atención espontánea en un día que no atiendo no es una anomalía.
+  assert.deepEqual([d.atenciones.urgPorDia.Jue, d.atenciones.urgPorDia.Vie], [1, 0]);
+  assert.match(formatearDiagnostico(d), /jue 1 \(1 urg\)/);
+  assert.ok(!formatearDiagnostico(d).includes('vie 3 ('), 'sin urgencias no se añade el paréntesis');
   assert.equal(d.registro.conDesfase, 2);
   assert.equal(d.registro.maxDesfase, 4, 'del 04-09 al 08-09');
   assert.equal(d.fecha, '05-09-2026 11:40');

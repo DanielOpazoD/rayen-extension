@@ -33,7 +33,7 @@ test('el diagnóstico resume la carga en recuentos y no lleva datos de pacientes
 
   const texto = await page.locator('#explorerOut').inputValue();
   expect(texto).toMatch(/Rayen Atenciones .+ · diagnóstico/);
-  expect(texto).toMatch(/Por día: lun \d+ · mar \d+/);
+  expect(texto).toMatch(/Por día: lun \d+( \(\d+ urg\))? · mar \d+/);
   expect(texto).toMatch(/Cruce agenda–ficha: \d+ mismo día/);
   // Ningún nombre ni RUN del arnés sobrevive.
   for (const prohibido of ['Ejemplo', 'Tuki', 'Lagos', '25106217', '17.752.753']) expect(texto).not.toContain(prohibido);

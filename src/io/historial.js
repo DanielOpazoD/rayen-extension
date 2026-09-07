@@ -158,3 +158,24 @@ export async function loadHistorial(token, dates8, citaKeys, onProgress = (/** @
  * HistorialAtencion) and appends the officer's atenciones that have no cita
  * (espontáneas) as extra rows.
  */
+
+/**
+ * Vuelve a preguntar por la cita exacta de las atenciones que ya están en
+ * caché sin resolver. Hace falta porque `resolverCitas` sólo corre cuando un
+ * día se descarga: los días guardados antes de que existiera el cruce exacto
+ * se quedaron con la conjetura por cercanía, y volver a bajar meses de
+ * historial para arreglar unas pocas filas cuesta cientos de megabytes.
+ * @param {string} token
+ * @returns {Promise<{ revisadas: number, resueltas: number }>}
+ */
+export async function reconciliarCitas(token) {
+  const store  = await loadStore(CONFIG.historialKey);
+  const agenda = await loadStore(CONFIG.cacheKey);
+  const citaKeys = new Set([...agenda.records.values()].map(matchKey));
+  const atenciones = [...store.records.values()];
+  const revisadas = atenciones.filter(a => esMiaAtencion(a) && !a.esUrgencia && !a.idCita && !a.fechaCita8 && a.idUsp && a.fecha8 && !citaKeys.has(matchKey(a))).length;
+  const resueltas = await resolverCitas(token, atenciones, citaKeys);
+  // `resolverCitas` modifica los mismos objetos que guarda el almacén.
+  if (resueltas) await saveStore(store, [], atenciones);
+  return { revisadas, resueltas };
+}

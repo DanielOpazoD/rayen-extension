@@ -35,13 +35,14 @@ export function diagnosticoCarga({
   meses = 0, syncPendiente = {}, version = '', hoy = new Date(),
 } = {}) {
   const porDia = Object.fromEntries(DIAS.map(d => [d, 0]));
+  const urgPorDia = Object.fromEntries(DIAS.map(d => [d, 0]));
   const cruce = { mismoDia: 0, exacta: 0, estimada: 0, sinAtencion: 0, sueltas: 0 };
   let urgencias = 0, conDesfase = 0, maxDesfase = 0;
 
   for (const r of allData) {
     const dia = r.diaSemana || DOW_LABEL[3];
     if (dia in porDia) porDia[dia] += 1;
-    if (r.esUrgencia) urgencias += 1;
+    if (r.esUrgencia) { urgencias += 1; if (dia in urgPorDia) urgPorDia[dia] += 1; }
 
     if (r.origen !== 'cita') cruce.sueltas += 1;
     else if (!r.atencionId) cruce.sinAtencion += 1;
@@ -58,7 +59,7 @@ export function diagnosticoCarga({
 
   return {
     version, fecha: sello(hoy), hoy8: toDate8(hoy), meses,
-    atenciones: { total: allData.length, porDia, urgencias },
+    atenciones: { total: allData.length, porDia, urgPorDia, urgencias },
     cruce,
     registro: { conDesfase, maxDesfase },
     futuras: futurasEstado
@@ -74,7 +75,8 @@ const fmt8 = d8 => (/^\d{8}$/.test(d8 ?? '') ? `${d8.slice(6)}-${d8.slice(4, 6)}
 /** El diagnóstico como texto plano, listo para pegar. */
 export function formatearDiagnostico(d) {
   const { atenciones: a, cruce: c, registro: reg } = d;
-  const dias = DIAS.map(k => `${k.toLowerCase()} ${a.porDia[k]}`).join(' · ');
+  // Las urgencias son espontáneas y caen cualquier día: separarlas evita leer como anomalía lo que no lo es.
+  const dias = DIAS.map(k => `${k.toLowerCase()} ${a.porDia[k]}${a.urgPorDia?.[k] ? ` (${a.urgPorDia[k]} urg)` : ''}`).join(' · ');
   const sync = Object.entries(d.syncPendiente).map(([k, n]) => `${k} ${n}`).join(' · ');
   return [
     `Rayen Atenciones ${d.version} · diagnóstico ${d.fecha}`,
