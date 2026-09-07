@@ -24,7 +24,7 @@
     "visual:update": "playwright test e2e/visual.spec.js --project=desktop --update-snapshots"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

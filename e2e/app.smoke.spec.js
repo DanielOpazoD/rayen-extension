@@ -79,15 +79,25 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   expect(matching).toBeLessThan(total);
   expect(all).toBe(total);
 
+  // Al fallar hay que poder leer por qué sin volver a correr CI: la barra de
+  // desplazamiento clásica de Linux estrecha la ventana y macOS no la tiene.
   const layout = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
-    const violations = ['#topbar', '#mainContent', '#filterPanel']
-      .map(selector => [selector, document.querySelector(selector)?.getBoundingClientRect()])
-      .filter(([, box]) => box && (box.left < -1 || box.right > viewportWidth + 1))
-      .map(([selector]) => selector);
-    return { viewportWidth, violations };
+    const medidas = ['#topbar', '#mainContent', '#filterPanel'].map(selector => {
+      const box = document.querySelector(selector)?.getBoundingClientRect();
+      return box ? { selector, left: Math.round(box.left), right: Math.round(box.right), width: Math.round(box.width) } : { selector, ausente: true };
+    });
+    return {
+      viewportWidth,
+      innerWidth: window.innerWidth,
+      barra: window.innerWidth - viewportWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollX: Math.round(window.scrollX),
+      medidas,
+      violations: medidas.filter(m => !m.ausente && (m.left < -1 || m.right > viewportWidth + 1)).map(m => m.selector),
+    };
   });
-  expect(layout.violations).toEqual([]);
+  expect(layout.violations, `disposición: ${JSON.stringify(layout)}`).toEqual([]);
   const menuBox = await page.locator('#filtTipoMenu').boundingBox();
   expect(menuBox.x).toBeGreaterThanOrEqual(0);
   expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(layout.viewportWidth + 1);
