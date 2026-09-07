@@ -23,7 +23,7 @@ function area(m) {
 const ROOT = new URL('../', import.meta.url).href;
 
 globalThis.chrome = {
-  runtime: { lastError: undefined, getURL: p => new URL(p, ROOT).href },
+  runtime: { lastError: undefined, getURL: p => new URL(p, ROOT).href, getManifest: () => ({ version: 'dev' }) },
   storage: { local: area(mem.local), session: area(mem.session) },
   tabs:    { query: async () => [], create: async ({ url }) => window.open(url, '_blank'), update: async () => {} },
   action:  { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
