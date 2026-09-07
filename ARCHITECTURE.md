@@ -48,11 +48,13 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 | `knip` (`npm run knip`) | archivos, exports y dependencias sin uso (entradas en `knip.json`) | `check` |
 | `scripts/check-architecture.mjs` (`npm run docs:check`) | mapa de módulos completo y por capa; rutas citadas existen | `check` |
 | `scripts/coverage.mjs` (`npm run coverage`) | cobertura de `core`, `io` y `ai` con umbral (líneas ≥ 90 %, ramas ≥ 75 %); la interfaz la cubren los recorridos | manual |
-| Playwright (`npm run test:e2e`) | 16 recorridos × 2 anchos sobre el arnés `/dev/` | CI |
+| Playwright (`npm run test:e2e`) | 21 recorridos × 2 anchos sobre el arnés `/dev/`, más 21 pruebas del lector de SysLab | CI |
 | `dependency-cruiser` (`npm run deps:check`) | el grafo de módulos contra las mismas reglas de capas y ciclos, con informe por regla; `npm run deps:graph` lo exporta en DOT | `check` |
 | `fast-check` (`tests/property.test.js`) | propiedades sobre cientos de entradas generadas: fechas inversas, ningún RUN válido sobrevive al anonimizador, el cruce agenda–historial nunca usa una atención dos veces | `check` (vía `npm test`) |
 | Stryker (`npm run mutation`) | mutación sobre las reglas clínicas puras (`dates`, `historial-merge`, `pendientes`, `sic-rules`, `receta`): mide si las pruebas detectan errores; tarda minutos | manual |
+| Playwright SysLab (`e2e/syslab.spec.js`) | los cinco pasos que `chrome.scripting` inyecta en la pestaña de SysLab, ejecutados en Chromium con `page.evaluate` (la misma serialización, así que también comprueba que sigan siendo autocontenidos) contra un portal servido en `http://10.4.69.90` por interceptación, sin red | CI |
 | Playwright visual (`e2e/visual.spec.js`) | capturas de referencia de PIN, tabla y panel con el reloj congelado; se saltan en CI (fuentes de Linux) y se regeneran con `npm run visual:update` cuando el cambio es intencional | local |
+| Desborde horizontal (`e2e/app.smoke.spec.js`) | ensancha las letras un píxel y exige que el documento no sea más ancho que la ventana estrecha: la disposición no puede depender de la anchura exacta de la fuente, que no es la misma en macOS que en Linux | CI |
 | `.githooks/pre-commit` | lint + tipos + unitarios antes de cada commit (`npm install` lo activa vía `prepare`; `git commit -n` lo salta) | local |
 
 ## Convenciones de código
@@ -180,7 +182,7 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 | Panel del paciente | `src/ui/patient-panel.js`, `src/ui/panel/*.js`, `src/core/ficha.js`, `src/io/ficha-load.js` | identidad, escape de texto, ficha caída honesta, foco y Escape |
 | Historia imprimible | `src/core/patient-report.js`, `src/ui/export.js` | variantes del reporte y aviso de exportación |
 | Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js`, `src/ui/lab/*.js` | sesión cookie, parsing de órdenes, guardia de origen |
-| Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js` | pestaña con sesión, espera de navegación, identidad del lote |
+| Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js`, `e2e/syslab.spec.js` | pestaña con sesión, espera de navegación, identidad del lote; los cinco pasos que se inyectan, contra un SysLab servido en su propia dirección |
 | Interpretación de informes | `src/core/lab-parser.js`, `src/core/lab-analytics.js`, `src/core/lab-catalog.js` | corpus de líneas reales anonimizadas; la marca del laboratorio fuerza la alerta |
 | Informe con IA | `src/ai/*.js`, `src/ui/ia-panel.js` | contexto sin nombre ni RUN (prueba y recorrido), plantilla válida, respuesta reconocida |
 | Anonimizador | `src/core/anonimizar.js`, `src/ui/tabs/explorador.js` | entradas adversariales; `verificado=false` ante un resto |
@@ -325,7 +327,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `npm run docs:check`: cobertura del mapa arquitectónico, capa de cada módulo y rutas citadas.
 - `npm run release:check`: coherencia de versiones, permisos y archivos MV3.
 - `npm run check`: ejecuta todas las anteriores.
-- `npm run test:e2e`: recorridos sintéticos en Chromium a 1440×900 y 582×900, sin solicitudes externas: carga y filtros, teclado, panel con ficha sintética y con ficha caída, informe con IA, captura anonimizada, laboratorio, bloqueo y flujos (Lab, Escape, chip «+n», Detalle, flechas). El arnés (`dev/chrome-stub.js`) enruta los siete endpoints de la ficha a `dev/ficha-fixture.js`, o a capturas anonimizadas reales importadas con `scripts/import-capture.mjs`.
+- `npm run test:e2e`: recorridos sintéticos en Chromium a 1440×900 y 582×900, sin solicitudes externas: carga y filtros, teclado, panel con ficha sintética y con ficha caída, informe con IA, captura anonimizada, laboratorio, bloqueo y flujos (Lab, Escape, chip «+n», Detalle, flechas). `e2e/syslab.spec.js` prueba aparte los cinco pasos que se inyectan en la pestaña de SysLab, a un solo ancho porque no dependen de la ventana. El arnés (`dev/chrome-stub.js`) enruta los siete endpoints de la ficha a `dev/ficha-fixture.js`, o a capturas anonimizadas reales importadas con `scripts/import-capture.mjs`.
 - `npm run pack`: vuelve a validar y genera el ZIP instalable.
 
 El CI ejecuta `quality` y `browser-smoke` como trabajos independientes. Las pruebas reales deben registrarse por nivel: fuente local, arnés sintético, extensión cargada en Chrome y sesión autenticada de Eloisa. No se debe ascender evidencia de un nivel al siguiente.

@@ -92,8 +92,13 @@ function waitForLoad(tabId) {
 }
 
 // ── Pasos inyectados en la pestaña SysLab (deben ser autocontenidos) ──
+//
+// Se exportan para poder probarlos: son el único código de la extensión que
+// interpreta la interfaz de otro sistema, y hasta ahora fallaban en silencio
+// si SysLab cambiaba una tabla. Autocontenidos significa que no pueden usar
+// nada de fuera: `chrome.scripting` los serializa y los ejecuta en la pestaña.
 
-function probeStatus() {
+export function probeStatus() {
   return {
     loginRequired: Boolean(document.querySelector('input[name="password"], input[type="password"]')),
     hasRutInput: Boolean(document.querySelector('input[name="rut"]')),
@@ -101,7 +106,7 @@ function probeStatus() {
   };
 }
 
-function stepPrepareSearch() {
+export function stepPrepareSearch() {
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   if (document.querySelector('input[name="password"], input[type="password"]')) {
     return { loginRequired: true };
@@ -116,7 +121,7 @@ function stepPrepareSearch() {
   return { navigated: true };
 }
 
-function stepSubmitSearch(rutBody) {
+export function stepSubmitSearch(rutBody) {
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   if (document.querySelector('input[name="password"], input[type="password"]')) {
     return { loginRequired: true };
@@ -148,7 +153,7 @@ function stepSubmitSearch(rutBody) {
   return { navigated: true };
 }
 
-function stepReadResults() {
+export function stepReadResults() {
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   if (document.querySelector('input[name="password"], input[type="password"]')) {
     return { loginRequired: true };
@@ -193,7 +198,7 @@ function stepReadResults() {
  * same-origin y lleva la cookie de sesión. `detalleexamenes.php` a veces
  * devuelve HTML que envuelve o enlaza el PDF real, así que se sigue un nivel.
  */
-function stepFetchReport(link) {
+export function stepFetchReport(link) {
   const ORIGIN = 'http://10.4.69.90';
   const MAX_BYTES = 6 * 1024 * 1024;
   const allowed = value => {

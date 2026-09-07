@@ -1,5 +1,20 @@
 # Historial de cambios
 
+## 2.61.0 — 2026-09-07
+
+- **El lector de SysLab ya tiene pruebas.** Es el único código de la extensión que interpreta la interfaz de otro sistema: cinco funciones que Chrome serializa e inyecta en la pestaña del portal para llegar al formulario, escribir el RUT, leer la tabla de resultados y traer el PDF del informe. Hasta ahora, si SysLab movía un botón o cambiaba una columna, fallaba en silencio. Veintiuna pruebas en Chromium las ejercitan contra un portal servido en su propia dirección por interceptación, sin red: la pantalla de acceso es la real del hospital, las demás páginas son sintéticas escritas contra el mismo contrato que lee el código. Eso no demuestra que SysLab siga siendo así —sólo el hospital puede decirlo—, pero fija el contrato por escrito y hace ruidoso cualquier cambio en el lector.
+- Se ejecutan con `page.evaluate`, que serializa la función igual que `chrome.scripting.executeScript`. Así la prueba también vigila que los pasos sigan siendo autocontenidos, que es el error más fácil de cometer al tocarlos.
+- Se comprobó rompiendo el lector a propósito: catorce cambios plausibles (aflojar el selector de la tabla, aceptar filas cortas, soltar el ancla de la ruta del informe, dejar de comprobar el origen, escribir el RUT en el campo de usuario, quitar el límite de 6 MB) y doce fallan ahora. Los dos que sobreviven son equivalentes: `innerHTML` normaliza siempre el salto de línea, y las dos ramas del patrón del menú coinciden en cualquier etiqueta real.
+- Dos huecos del contrato que sólo aparecieron al romperlo: una fila de cinco celdas reventaba la lectura entera —no sólo esa fila— y una ruta con cola al estilo de PHP (`detalleexamenes.php/1`) habría pasado por informe. Ambos casos están ahora en el fixture.
+- `tests/contract.test.js` cuenta también los recorridos de Playwright como consumidores: un paso que sólo se puede probar en un navegador real ya no cuenta como exportación muerta.
+
+### CI, que llevaba días en rojo sin que nadie lo mirara
+
+- **`npm run check` fallaba en CI desde el 5 de septiembre.** `dependency-cruiser` 18 dejó de admitir Node 20 y el flujo lo tenía fijado ahí; en el portátil, con Node 24, pasaba. CI usa ahora Node 24, la versión con la que se desarrolla, y `engines` pasa a `>=22`.
+- **La ventana estrecha se salía quince píxeles, sólo en Linux.** Los dos `input[type=date]` del rango de fechas son ítems flex, y un `min-width` automático no los deja bajar de su anchura intrínseca, que es la que ocupa la fecha escrita: con la fuente de Linux, más ancha, empujaban el panel y la página entera fuera de la ventana. `min-width:0` en el campo y en su contenedor lo arregla.
+- Se añadió la prueba que faltaba: ensancha las letras un píxel a propósito y exige que el documento no sea más ancho que la ventana. Comprobada en los dos sentidos —sin el arreglo, la página se sale veinticinco píxeles—, así que una disposición que dependa de la anchura exacta de la fuente falla ahora en el portátil y no una semana después en otro sistema.
+- La prueba de disposición dice al fallar la anchura de la ventana, la del documento, el desplazamiento y la caja de cada contenedor. Antes sólo nombraba los tres contenedores, y la hipótesis obvia (la barra de desplazamiento clásica de Linux) resultó ser falsa.
+
 ## 2.60.0 — 2026-09-05
 
 - **La identidad sale de tu sesión, no del código.** El identificador del profesional y el del nodo estaban escritos a mano en la configuración y de ellos dependían 27 lugares: qué atención es «mía», qué agenda se pide, qué cuenta el calendario, qué interconsultas son mías. Al arrancar se lee ahora el objeto de sesión de Eloisa y se toma la identidad de ahí. Las claves están ancladas para no confundirse con las que hablan de otra persona o de otro sitio («IdNodoOrigen», «IdFuncionarioRegistrador»), sólo se adoptan enteros válidos, y si la sesión no la declara se conserva la de configuración. Nunca en silencio: el diagnóstico dice de dónde salió y, si no coincide con la configuración, la barra de estado lo avisa.

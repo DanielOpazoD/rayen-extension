@@ -79,15 +79,25 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   expect(matching).toBeLessThan(total);
   expect(all).toBe(total);
 
+  // Al fallar hay que poder leer por qué sin volver a correr CI: la barra de
+  // desplazamiento clásica de Linux estrecha la ventana y macOS no la tiene.
   const layout = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
-    const violations = ['#topbar', '#mainContent', '#filterPanel']
-      .map(selector => [selector, document.querySelector(selector)?.getBoundingClientRect()])
-      .filter(([, box]) => box && (box.left < -1 || box.right > viewportWidth + 1))
-      .map(([selector]) => selector);
-    return { viewportWidth, violations };
+    const medidas = ['#topbar', '#mainContent', '#filterPanel'].map(selector => {
+      const box = document.querySelector(selector)?.getBoundingClientRect();
+      return box ? { selector, left: Math.round(box.left), right: Math.round(box.right), width: Math.round(box.width) } : { selector, ausente: true };
+    });
+    return {
+      viewportWidth,
+      innerWidth: window.innerWidth,
+      barra: window.innerWidth - viewportWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollX: Math.round(window.scrollX),
+      medidas,
+      violations: medidas.filter(m => !m.ausente && (m.left < -1 || m.right > viewportWidth + 1)).map(m => m.selector),
+    };
   });
-  expect(layout.violations).toEqual([]);
+  expect(layout.violations, `disposición: ${JSON.stringify(layout)}`).toEqual([]);
   const menuBox = await page.locator('#filtTipoMenu').boundingBox();
   expect(menuBox.x).toBeGreaterThanOrEqual(0);
   expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(layout.viewportWidth + 1);
@@ -254,4 +264,30 @@ test('la cabecera pliega sus opciones en pantallas estrechas y las muestra en es
   }
   expect(runtime.consoleIssues).toEqual([]);
   expect(runtime.pageErrors).toEqual([]);
+});
+
+/**
+ * La fuente del sistema no mide igual en macOS que en Linux, y con la de Linux
+ * el rango de fechas del panel de filtros sacaba la página quince píxeles fuera
+ * de la ventana estrecha. Sólo lo veía CI, y el mensaje no decía por qué.
+ * Ensanchar las letras a propósito reproduce aquí lo que allá pasaba solo: si la
+ * disposición vuelve a depender de la anchura exacta de la fuente, falla en el
+ * portátil y no una semana después.
+ */
+test('la ventana estrecha no se desborda aunque las letras midan más', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'narrow', 'es la ventana estrecha la que se desbordaba');
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.addStyleTag({ content: 'body, body * { letter-spacing: 1px !important; }' });
+  await page.locator('#btnFetch').click();
+  await expect(page.locator('#statusBar')).toContainText('atenciones');
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones', exact: true }).click();
+  await page.locator('#btnFilters').click();
+  await expect(page.locator('#filterPanel')).toBeVisible();
+  const medida = await page.evaluate(() => ({
+    ventana: document.documentElement.clientWidth,
+    documento: document.documentElement.scrollWidth,
+  }));
+  expect(medida.documento, `la página se sale ${medida.documento - medida.ventana} px`)
+    .toBeLessThanOrEqual(medida.ventana);
 });

@@ -1,6 +1,6 @@
 {
   "name": "rayen-extension",
-  "version": "2.60.0",
+  "version": "2.61.0",
   "private": true,
   "type": "module",
   "description": "Chrome MV3 extension: Rayen/Eloisa atenciones, ficha clínica e interconsultas for Hospital Hanga Roa",
@@ -24,7 +24,7 @@
     "visual:update": "playwright test e2e/visual.spec.js --project=desktop --update-snapshots"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
