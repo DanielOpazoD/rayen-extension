@@ -66,7 +66,7 @@ function routeEloisa(url, init) {
   const idDe = re => { const m = path.match(re); return m ? Number(m[1]) : null; };
   const m = path.match(/\/inscripcion\/usuarioapsrut\/([0-9k]+)\//);
   if (m) {
-    const body = m[1].replace(/[^0-9]/g, '').slice(0, -1);
+    const body = m[1].slice(0, -1).replace(/[^0-9]/g, ''); // el DV va al final y puede ser «k»: se quita antes de filtrar dígitos
     const rec = captures.master ?? ficha.byRunBody.get(body);
     return rec ? json([rec]) : json([], 200);
   }

@@ -219,6 +219,13 @@
 
 <!-- Tab: Pacientes -->
 <div class="tab-pane" id="tab-pacientes" role="tabpanel">
+  <div class="toolbar pac-find" id="pacFindBar">
+    <label for="pacRun">Ficha por RUN</label>
+    <input type="search" id="pacRun" placeholder="12.345.678-9" autocomplete="off" spellcheck="false"
+           aria-describedby="pacRunMsg" data-tip="Abre la ficha de cualquier paciente del nodo, esté o no entre tus atenciones">
+    <button class="btn-mini" id="btnPacRun">Abrir ficha</button>
+    <span class="pac-find-msg" id="pacRunMsg" role="status"></span>
+  </div>
   <div class="toolbar" id="pacBar" style="display:none">
     <input type="text" id="pacSearch" placeholder="Buscar paciente por nombre, RUN o diagnóstico…" aria-label="Buscar paciente">
     <select id="pacFilt" aria-label="Filtro rápido">

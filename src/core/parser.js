@@ -1,6 +1,6 @@
 import { nameOf } from './text.js';
 import { DOW_LABEL, SEXO_BY_ID } from './config.js';
-import { toDate8, fromDate8 } from './dates.js';
+import { toDate8, fromDate8, edadAnios } from './dates.js';
 
 // ── Date helpers ──────────────────────────────────────────────
 
@@ -35,12 +35,7 @@ export function dateRange(from, to) {
 
 /** Calculates age in years from a Rayen DOB string */
 function calcAge(dob = '') {
-  const bd = fromDate8(String(dob).replace(/\s.*/, ''));
-  if (!bd) return null;
-  const now = new Date();
-  let age = now.getFullYear() - bd.getFullYear();
-  if (now < new Date(now.getFullYear(), bd.getMonth(), bd.getDate())) age--;
-  return age;
+  return edadAnios(String(dob).replace(/\s.*/, ''));
 }
 
 /** "DD-MM-YYYY" → sortable integer YYYYMMDD */

@@ -31,7 +31,7 @@ function fichaVisitHTML(v, agendaByAtencion) {
       <div class="pp-vhead" ${hasBody ? 'role="button" tabindex="0" aria-expanded="false"' : ''}>
         <strong class="pp-date">${v.fechaAtencion}</strong>
         <span class="pp-hora">${esc(whenLabel(v))}</span>
-        ${v.fechaRegistro ? `<span class="pp-info" role="img" tabindex="0" aria-label="Ficha registrada el ${esc(v.fechaRegistro)}" data-tip="Ficha registrada el ${esc(v.fechaRegistro)}; la fecha mostrada es la de la cita.">i</span>` : ''}
+        ${v.fechaRegistro ? `<span class="pp-regi" role="img" tabindex="0" aria-label="Ficha registrada el ${esc(v.fechaRegistro)}" data-tip="Ficha registrada el ${esc(v.fechaRegistro)}; la fecha mostrada es la de la cita.">i</span>` : ''}
         <span class="pp-tipo">${esc(v.tipoAtencion)}</span>
         ${v.esUrgencia ? `<span class="flag flag-urg" data-tip="Urgencia">U</span>` : ''}
         ${v.esEspontanea ? `<span class="flag flag-esp" data-tip="Espontánea">E</span>` : ''}

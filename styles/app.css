@@ -524,8 +524,8 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .pp-visit.expanded .pp-expand{transform:rotate(180deg)}
 .pp-date{font-size:var(--t-sm);font-weight:500;font-variant-numeric:tabular-nums}
 .pp-hora{font-size:var(--t-xs);color:var(--ink-3)}
-.pp-info{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--ink-4);color:var(--ink-3);font-size:9px;font-weight:600;font-style:italic;font-family:Georgia,serif;line-height:1;flex:none;cursor:help}
-.pp-info:hover,.pp-info:focus-visible{border-color:var(--brand);color:var(--brand-2)}
+.pp-regi{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--ink-4);color:var(--ink-3);font-size:9px;font-weight:600;font-style:italic;font-family:Georgia,serif;line-height:1;flex:none;cursor:help}
+.pp-regi:hover,.pp-regi:focus-visible{border-color:var(--brand);color:var(--brand-2)}
 .pp-tipo{font-size:var(--t-sm);color:var(--ink-2)}
 .pp-razon{font-size:var(--t-xs);color:var(--ink-3)}
 .pp-who{font-size:var(--t-xs);color:var(--ink-3);margin:1px 0 3px}
@@ -572,6 +572,11 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 #ppSaveNote:hover{background:var(--brand-2)}
 
 /* ═══ Pacientes ═══ */
+.pac-find{gap:var(--sp-2)}
+.pac-find label{font-size:var(--t-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pac-find input{width:170px;font-variant-numeric:tabular-nums}
+.pac-find-msg{font-size:var(--t-sm);color:var(--ink-3)}
+.pac-find-msg.err{color:var(--bad)}
 .pac-table col.p-nom{width:230px} .pac-table col.p-eda{width:70px} .pac-table col.p-n{width:52px}
 .pac-table col.p-ult{width:104px} .pac-table col.p-dx{width:250px} .pac-table col.p-sic{width:180px}
 .pac-table col.p-pend{width:150px} .pac-table col.p-nota{width:170px}

@@ -1,5 +1,6 @@
 import { cleanText, nameOf } from './text.js';
 import { parseAtencion, fmtDate, formatRun } from './parser.js';
+import { date8FromDMY, edadAnios } from './dates.js';
 
 /**
  * Per-patient ficha clínica, loaded on demand when the patient panel opens.
@@ -253,5 +254,40 @@ export function parseMaster(u) {
     cuidador:     !!u.EsCuidador,
     movilidadReducida: !!u.MovilidadReducida,
     nodoInscripcion: u.IdNodo ?? 0,
+  };
+}
+
+/**
+ * Ficha administrativa (parseMaster) → registro con la forma que consume el
+ * panel del paciente. Lo usa la búsqueda manual por RUN: un paciente que no
+ * está en mi agenda no tiene fila de la que salir, así que se arma una desde
+ * su inscripción, con las listas vacías que el panel espera encontrar.
+ * @param {object|null} master
+ * @returns {object|null}
+ */
+export function recordDesdeMaster(master) {
+  if (!master) return null;
+  // `master.run` viene ya formateado («25.106.217-K»); el panel, las notas y las
+  // interconsultas comparan por el canónico, así que se recupera aquí.
+  const { run, runStr } = formatRun(master.run);
+  return {
+    id: `run_${run ?? master.idUsp ?? 0}`,
+    origen: 'busqueda',
+    idUsp: master.idUsp ?? 0,
+    run, runStr: runStr || master.run || '',
+    nombre: master.nombre ?? '', nombres: '', ap: '', am: '',
+    dob: master.dob ?? '',
+    edad: edadAnios(date8FromDMY(master.dob ?? '')),
+    edadLabel: '',
+    sexo: master.sexo ?? '',
+    prevision: master.prevision ?? '',
+    telefono: master.telefonos ?? '',
+    direccion: master.direccion ?? '',
+    sector: '',
+    razon: '', estado: '', tipoAtencion: '',
+    fecha8: '', fechaAtencion: '', hora: '', diaSemana: '',
+    diagnosticos: [], actividades: [], prestadores: [], adjuntos: [], proximoControl: [],
+    esIC: false, icCitadoPor: '', icSIC: '', esUrgencia: false, esEspontanea: false,
+    note: '', notas: [],
   };
 }

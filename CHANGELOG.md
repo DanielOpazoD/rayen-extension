@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 2.56.0 — 2026-09-05
+
+- **El nombre y el RUN del paciente volvieron a verse en el panel.** El icono «i» del registro tardío (v2.46.1) se llamó `.pp-info`, igual que el contenedor del nombre en la cabecera, y le impuso 14 px de ancho y `flex:none` sobre su `flex:1`. Desde entonces la cabecera mostraba un circulito en vez del nombre. Se renombró el icono y una prueba nueva vigila la causa: dos reglas base de la misma clase que asignan la misma propiedad con valores distintos son dos componentes compartiendo nombre. Las capturas de referencia se regeneraron: se habían tomado con el fallo dentro.
+- **Ficha por RUN en Pacientes.** Un campo en la pestaña Pacientes abre la ficha de cualquier paciente del nodo, esté o no entre mis atenciones, y funciona aunque la agenda no esté cargada. Comprueba el dígito verificador antes de consultar (un dígito mal tecleado se vería como «no existe»), consulta la inscripción del nodo y abre el mismo panel de siempre, que carga la ficha completa. Las notas que ya existían sobre esa persona se traen antes de abrir: un panel con la nota vacía se habría guardado encima de la anterior.
+- Arnés: el maestro de un paciente con dígito verificador «K» no se encontraba, porque la clave se calculaba quitando dígitos antes que el verificador. Sólo afectaba a `/dev/`.
+
 ## 2.55.0 — 2026-09-05
 
 Comprobación de tipos en toda la interfaz (`src/ui` y `app.js`): de 272 avisos a cero, dentro de `npm run check`.

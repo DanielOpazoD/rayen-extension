@@ -92,3 +92,15 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
   if (!ficha.errors.length) memo.set(key, { savedAt: ficha.savedAt, ficha }); // una ficha a medias no se recuerda 30 min
   return ficha;
 }
+
+/**
+ * Busca un paciente por RUN sin cargar su ficha: una sola llamada a la
+ * inscripción del nodo. `null` cuando Eloisa no devuelve a nadie.
+ * @param {string} token
+ * @param {string} run  canónico, sin puntos ni guion («25106217K»)
+ * @returns {Promise<object|null>} el maestro de parseMaster, o null
+ */
+export async function buscarPacientePorRun(token, run) {
+  const d = await apiGet(token, `/API/api/rayen/Inscripcion/UsuarioApsRut/${String(run).toLowerCase()}/${CONFIG.nodeId}`);
+  return parseMaster(Array.isArray(d) ? d[0] : d);
+}

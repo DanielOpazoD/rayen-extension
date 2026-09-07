@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeChrome } from './helpers/fake-chrome.js';
-import { loadFicha } from '../src/io/ficha-load.js';
+import { loadFicha, buscarPacientePorRun } from '../src/io/ficha-load.js';
 
 /**
  * loadFicha reúne seis fuentes por paciente. Lo que importa aquí no es el
@@ -65,4 +65,22 @@ test('sin identificador de paciente no se consulta nada y se explica', async () 
   const f = await loadFicha('tok', { run: null, idUsp: 0 });
   assert.equal(calls.length, 0);
   assert.ok(f.errors.some(e => /identificar/.test(e)));
+});
+
+test('buscarPacientePorRun pide la inscripción del nodo con el RUN en minúsculas y devuelve el maestro', async () => {
+  scriptFetch(() => [{ Id: 2113572, Rut: '17752753K', NombreFormateado: 'Lagos Ejemplo Luis', FechaDeNacimiento: '19900812 000000' }]);
+  const master = await buscarPacientePorRun('tok', '17752753K');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /\/API\/api\/rayen\/Inscripcion\/UsuarioApsRut\/17752753k\/\d+$/);
+  assert.equal(master.idUsp, 2113572);
+  assert.equal(master.run, '17.752.753-K');
+});
+
+test('buscarPacientePorRun devuelve null cuando Eloisa no conoce el RUN, y propaga el fallo de red', async () => {
+  scriptFetch(() => []);
+  assert.equal(await buscarPacientePorRun('tok', '17752753K'), null);
+  scriptFetch(() => ({ Id: 0 }));
+  assert.equal((await buscarPacientePorRun('tok', '17752753K')).idUsp, 0, 'un objeto suelto también se acepta');
+  scriptFetch(() => fail());
+  await assert.rejects(buscarPacientePorRun('tok', '17752753K'));
 });
