@@ -68,19 +68,19 @@ test('sin identificador de paciente no se consulta nada y se explica', async () 
 });
 
 test('buscarPacientePorRun pide la inscripción del nodo con el RUN en minúsculas y devuelve el maestro', async () => {
-  scriptFetch(() => [{ Id: 2113572, Rut: '17752753K', NombreFormateado: 'Lagos Ejemplo Luis', FechaDeNacimiento: '19900812 000000' }]);
-  const master = await buscarPacientePorRun('tok', '17752753K');
+  scriptFetch(() => [{ Id: 2113572, Rut: '56785678K', NombreFormateado: 'Lagos Ejemplo Luis', FechaDeNacimiento: '19900812 000000' }]);
+  const master = await buscarPacientePorRun('tok', '56785678K');
   assert.equal(calls.length, 1);
-  assert.match(calls[0], /\/API\/api\/rayen\/Inscripcion\/UsuarioApsRut\/17752753k\/\d+$/);
+  assert.match(calls[0], /\/API\/api\/rayen\/Inscripcion\/UsuarioApsRut\/56785678k\/\d+$/);
   assert.equal(master.idUsp, 2113572);
-  assert.equal(master.run, '17.752.753-K');
+  assert.equal(master.run, '56.785.678-K');
 });
 
 test('buscarPacientePorRun devuelve null cuando Eloisa no conoce el RUN, y propaga el fallo de red', async () => {
   scriptFetch(() => []);
-  assert.equal(await buscarPacientePorRun('tok', '17752753K'), null);
+  assert.equal(await buscarPacientePorRun('tok', '56785678K'), null);
   scriptFetch(() => ({ Id: 0 }));
-  assert.equal((await buscarPacientePorRun('tok', '17752753K')).idUsp, 0, 'un objeto suelto también se acepta');
+  assert.equal((await buscarPacientePorRun('tok', '56785678K')).idUsp, 0, 'un objeto suelto también se acepta');
   scriptFetch(() => fail());
-  await assert.rejects(buscarPacientePorRun('tok', '17752753K'));
+  await assert.rejects(buscarPacientePorRun('tok', '56785678K'));
 });

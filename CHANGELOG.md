@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 2.59.1 — 2026-09-05
+
+- **El RUT del autor estaba en el repositorio.** Se usaba como RUT de un paciente sintético en el arnés y en catorce archivos de prueba, en un repositorio público; apareció al revisar una captura, donde consta como `RutFuncionarioPrestador`. Sustituido por uno evidentemente inventado (`56.785.678-K`, que mantiene el verificador «K» para seguir ejercitando ese camino). La convención de datos sintéticos lo dice ahora de forma explícita.
+
 ## 2.59.0 — 2026-09-05
 
 Primera validación contra Eloisa real (diagnóstico de Daniel, 3 meses, 129 atenciones).

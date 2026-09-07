@@ -7,11 +7,11 @@ import { patientKey, saveNote, restoreNote, attachNotes, addNote, updateNote, no
 let fake;
 beforeEach(() => { fake = installFakeChrome(); });
 
-const withRun = { run: '17752753K', ap: 'Pérez', am: 'Soto', dob: '01-01-1980', nombre: 'Ana Pérez Soto' };
+const withRun = { run: '56785678K', ap: 'Pérez', am: 'Soto', dob: '01-01-1980', nombre: 'Ana Pérez Soto' };
 const noRun   = { run: null,        ap: 'Pérez', am: 'Soto', dob: '01-01-1980', nombre: 'Ana Pérez Soto' };
 
 test('patientKey: RUN when known, otherwise surname + DOB (case-insensitive)', () => {
-  assert.equal(patientKey(withRun), 'run_17752753K');
+  assert.equal(patientKey(withRun), 'run_56785678K');
   assert.equal(patientKey(noRun), 'pérez|soto|01-01-1980');
   assert.equal(patientKey({ ...noRun, ap: 'PÉREZ' }), patientKey(noRun));
   assert.notEqual(patientKey(withRun), patientKey(noRun), 'a RUN never collides with a name key');
@@ -19,7 +19,7 @@ test('patientKey: RUN when known, otherwise surname + DOB (case-insensitive)', (
 
 test('saveNote trims, stores under the patient key and deletes on empty text', async () => {
   await saveNote(withRun, '  control en 30 días  ');
-  const stored = fake.local.get(CONFIG.notesKey).run_17752753K;
+  const stored = fake.local.get(CONFIG.notesKey).run_56785678K;
   assert.equal(stored.entries.length, 1);
   assert.equal(stored.entries[0].text, 'control en 30 días');
   assert.ok(stored.entries[0].at, 'la nota nueva lleva fecha');
@@ -39,7 +39,7 @@ test('restoreNote puts a deleted note back verbatim', async () => {
   await saveNote(withRun, 'original');
   await saveNote(withRun, '');
   await restoreNote(withRun, 'original');
-  assert.equal(fake.local.get(CONFIG.notesKey).run_17752753K.entries[0].text, 'original');
+  assert.equal(fake.local.get(CONFIG.notesKey).run_56785678K.entries[0].text, 'original');
 });
 
 test('attachNotes decorates every record of the same patient and leaves others empty', async () => {
@@ -67,7 +67,7 @@ test('addNote y updateNote llevan el diario; record.note es la última', async (
 });
 
 test('una nota antigua guardada como texto se lee como una entrada sin fecha', async () => {
-  globalThis.chrome.storage.local.set({ [CONFIG.notesKey]: { run_17752753K: 'nota vieja' } });
+  globalThis.chrome.storage.local.set({ [CONFIG.notesKey]: { run_56785678K: 'nota vieja' } });
   const d = await noteEntries(withRun);
   assert.deepEqual(d, [{ at: null, text: 'nota vieja' }]);
   await addNote(withRun, 'nueva', '2026-09-04T08:00:00.000Z');

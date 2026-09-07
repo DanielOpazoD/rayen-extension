@@ -11,16 +11,16 @@ test('abre la ficha de un paciente por su RUN sin haber cargado la agenda', asyn
   await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Pacientes' }).click();
 
   // Dígito verificador incorrecto: se avisa sin tocar la red.
-  await page.locator('#pacRun').fill('17.752.753-0');
+  await page.locator('#pacRun').fill('56.785.678-0');
   await page.locator('#btnPacRun').click();
   await expect(page.locator('#pacRunMsg')).toHaveText(/dígito verificador/);
   await expect(page.locator('#patientPanel')).not.toHaveClass(/open/);
 
-  await page.locator('#pacRun').fill('17752753K');
+  await page.locator('#pacRun').fill('56785678K');
   await page.locator('#btnPacRun').click();
   await expect(page.locator('#patientPanel')).toHaveClass(/open/);
   await expect(page.locator('#ppName')).toHaveText('Luis Ejemplo Lagos');
-  await expect(page.locator('#ppMeta')).toContainText('17.752.753-K');
+  await expect(page.locator('#ppMeta')).toContainText('56.785.678-K');
   await expect(page.locator('#ppAvatar')).toHaveAttribute('data-ficha', /Ficha/, { timeout: 10000 });
   await expect(page.locator('#pacRunMsg')).toHaveText('');
   // Sin agenda cargada no hay lista en la que moverse: las flechas quedan apagadas.

@@ -12,12 +12,12 @@ test('formatRun: Rayen glues the DV to the number, K may be lowercase', () => {
   assert.deepEqual(formatRun('89068444'),  { run: '89068444',  runStr: '8.906.844-4',  dvOk: true });
 });
 
-test('formatRun: the user-provided example 17.752.753-K round-trips', () => {
-  const r = formatRun('17752753K');
-  assert.equal(r.runStr, '17.752.753-K');
-  assert.equal(computeDv('17752753'), 'K');
+test('formatRun: the user-provided example 56.785.678-K round-trips', () => {
+  const r = formatRun('56785678K');
+  assert.equal(r.runStr, '56.785.678-K');
+  assert.equal(computeDv('56785678'), 'K');
   assert.equal(r.dvOk, true);
-  assert.equal(formatRun('17.752.753-K').run, '17752753K');
+  assert.equal(formatRun('56.785.678-K').run, '56785678K');
 });
 
 test('formatRun: rejects non-RUN identifiers without throwing', () => {
@@ -28,8 +28,8 @@ test('formatRun: rejects non-RUN identifiers without throwing', () => {
 });
 
 test('formatRun: flags a wrong check digit but still formats it', () => {
-  const r = formatRun('177527530');
-  assert.equal(r.runStr, '17.752.753-0');
+  const r = formatRun('567856780');
+  assert.equal(r.runStr, '56.785.678-0');
   assert.equal(r.dvOk, false);
 });
 
@@ -178,11 +178,11 @@ test('formatRun: largos, verificador, puntos y casos inválidos', () => {
   assert.deepEqual(formatRun('1K'), { run: null, runStr: '', dvOk: false }, 'menos de dos dígitos no es RUN');
   assert.deepEqual(formatRun('ABC'), { run: null, runStr: '', dvOk: false });
   assert.deepEqual(formatRun(null), { run: null, runStr: '', dvOk: false });
-  assert.deepEqual(formatRun('17752753K'), { run: '17752753K', runStr: '17.752.753-K', dvOk: true });
-  assert.deepEqual(formatRun('177527530'), { run: '177527530', runStr: '17.752.753-0', dvOk: false }, 'verificador incorrecto se conserva pero se marca');
+  assert.deepEqual(formatRun('56785678K'), { run: '56785678K', runStr: '56.785.678-K', dvOk: true });
+  assert.deepEqual(formatRun('567856780'), { run: '567856780', runStr: '56.785.678-0', dvOk: false }, 'verificador incorrecto se conserva pero se marca');
   assert.equal(formatRun('1234567K').runStr, '1.234.567-K');
-  assert.equal(formatRun('17752753K9').run, null, 'diez caracteres no son un RUN');
-  for (const [body, dv] of [['17752753', 'K'], ['25106217', 'K'], ['1', '9'], ['6543210', '2'], ['12345678', '5']]) assert.equal(computeDv(body), dv, body);
+  assert.equal(formatRun('56785678K9').run, null, 'diez caracteres no son un RUN');
+  for (const [body, dv] of [['56785678', 'K'], ['25106217', 'K'], ['1', '9'], ['6543210', '2'], ['12345678', '5']]) assert.equal(computeDv(body), dv, body);
 });
 
 test('humanCase: oración desde mayúsculas, partículas en minúscula salvo al inicio, y lo que no se toca', () => {

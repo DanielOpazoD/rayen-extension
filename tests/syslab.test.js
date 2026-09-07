@@ -8,8 +8,8 @@ test('normalizeRutBody deja sólo el cuerpo del RUT, sin puntos ni dígito verif
   assert.equal(normalizeRutBody('16.940.645-6'), '16940645');
   assert.equal(normalizeRutBody('16940645-6'), '16940645');
   assert.equal(normalizeRutBody('16940645'), '16940645');
-  assert.equal(normalizeRutBody('17.752.753-K'), '17752753');
-  assert.equal(normalizeRutBody(' 17752753 '), '17752753');
+  assert.equal(normalizeRutBody('56.785.678-K'), '56785678');
+  assert.equal(normalizeRutBody(' 56785678 '), '56785678');
   assert.equal(normalizeRutBody(null), '');
   assert.equal(normalizeRutBody(undefined), '');
 });
@@ -26,7 +26,7 @@ test('examRowsMatchRut acepta un lote cuyas filas son todas del RUN consultado',
 test('examRowsMatchRut rechaza el lote completo si una sola fila es de otro paciente', () => {
   const exams = [
     { id: '1', rutBody: '16940645' },
-    { id: '2', rutBody: '17752753' },
+    { id: '2', rutBody: '56785678' },
   ];
   assert.equal(examRowsMatchRut(exams, '16940645'), false);
 });
