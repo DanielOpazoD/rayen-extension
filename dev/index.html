@@ -5,7 +5,7 @@
 <script type="module">
   // Dev harness: real app.html + real app.js, fake chrome.* and synthetic data.
   // Open via `npm run dev` (or any static server at the repo root) → /dev/
-  import { seed, setFichaResponses, setFichaMode, setCitasPorDia, loadCaptures } from './chrome-stub.js';
+  import { seed, setFichaResponses, setFichaMode, setCitasPorDia, loadCaptures, setSyslab } from './chrome-stub.js';
   import { buildFixture } from './fixture.js';
   import { buildFichaResponses } from './ficha-fixture.js';
   const fixture = buildFixture();
@@ -17,6 +17,10 @@
   // Las capturas se cargan sólo si se piden (?ficha=capturas): así el arnés por
   // defecto no pide un manifiesto que no existe y la consola queda limpia.
   const capturas = params.get('ficha') === 'capturas' ? await loadCaptures() : [];
+  // Sin `?syslab=1` no hay pestaña de SysLab, que es lo normal en el arnés. Con
+  // ella, el transporte responde y se puede recorrer lo que necesita los dos
+  // hospitales a la vez (marcar todo, PDF único, análisis mezclado).
+  if (params.get('syslab') === '1') setSyslab({ exams: (await import('./syslab-fixture.js')).EXAMENES });
 
   const html = await (await fetch('../app.html')).text();
   const doc  = new DOMParser().parseFromString(html, 'text/html');

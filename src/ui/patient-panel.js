@@ -71,7 +71,7 @@ let labSearch = null;
  * @param {Function} [deps.addNote]
  * @param {Function} [deps.editNote]
  * @param {(dir: number, record: object) => void} [deps.onNavigate]
- * @param {(run: string, sexo: string) => void} [deps.onLabSearch]
+ * @param {(run: string, sexo: string, record: object) => void} [deps.onLabSearch]
  * @param {(run: string) => object[]} [deps.labItems]
  */
 export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch, labItems } = {}) {
@@ -123,9 +123,9 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     // Se cierra antes de saltar: con el diálogo abierto el resto queda inerte y
     // la pestaña Laboratorio no se podría usar.
     if (!cur?.record?.run || !labSearch) return;
-    const { run, sexo } = cur.record; // close() vacía `cur`: se lee todo antes
+    const record = cur.record; // close() vacía `cur`: se lee todo antes
     close();
-    labSearch(run, sexo);
+    labSearch(record.run, record.sexo, record);
   });
 
   // Tabs: click or ←/→; remembered across patients

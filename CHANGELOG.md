@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## 2.62.0 — 2026-09-07
+
+- **El menú «Historia» del panel se abría cortado por la mitad.** El panel del paciente tiene `overflow-y:auto`, así que el navegador calcula también `overflow-x:auto` y recorta por los lados; el menú estaba anclado al borde derecho de su botón, que está a la izquierda del panel, y se abría hacia fuera: se perdían 168 píxeles y las opciones quedaban ilegibles. Ahora se ancla a la izquierda y abre hacia dentro. La prueba mide la caja del menú y la de cada opción contra la del panel, porque el recorte depende del ancho del panel y no de la fuente.
+- Elegir una opción del menú dejaba `aria-expanded="true"`: para un lector de pantalla el menú seguía abierto. Se cierra de verdad, con su estado.
+
+### Exámenes complementarios
+
+- **«Marcar todas» ahora alcanza a los dos hospitales.** Había una casilla de cabecera por tabla y ninguna forma de marcar las dos a la vez, así que marcar todo dejaba fuera un hospital entero sin decirlo. La regla vive en `src/core/lab-selection.js`, que recibe los resultados de ambos juntos: la respuesta no puede depender de qué tabla se pintó. Las casillas de cabecera siguen marcando su tabla y ahora muestran el estado intermedio.
+- **Lo marcado se puede convertir en PDF.** Antes la selección sólo servía para analizar, y para el PDF único no había forma de elegir: era todo o nada. Ahora un solo menú reúne marcar todas, quitar la selección, PDF de lo marcado, analizar lo marcado y PDF de todos los informes, cada opción con cuántos informes le corresponden.
+- **El PDF dice por qué se quedó un informe fuera.** «PDF con 6 de 8 informes. 2 no se pudo incluir» mandaba a buscar el problema en el paciente cuando casi siempre era que un portal no tenía sesión iniciada. Ahora se agrupa el motivo por hospital y se nombra; si lo que llegó no era un PDF se dice que suele ser la página de inicio de sesión, en vez de dejar pasar el mensaje en inglés de la biblioteca.
+- **Vuelta a la ficha en un clic.** Al abrir el laboratorio desde el panel del paciente aparece «‹ Volver a <nombre>»; volver era antes cerrar, ir a Atenciones y buscar otra vez. Se retira al buscar otro RUT o al limpiar: un botón que abriera la ficha de otra persona sería peor que no tenerlo.
+- El arnés simula el transporte de SysLab con `?syslab=1` (`dev/syslab-fixture.js`), que no es HTTP sino la conducción de una pestaña ajena. Sin eso no había forma de recorrer en el navegador nada que necesitara los dos hospitales a la vez. Los pasos se distinguen por el nombre de la función, no por su código.
+- Corregido de paso: pdf-lib se pedía con una ruta relativa al documento, así que en el arnés se buscaba bajo `/dev/` y respondía 404. El PDF único nunca se había podido probar ahí. Ahora se resuelve contra el módulo, como pdf.js.
+
 ## 2.61.0 — 2026-09-07
 
 - **El lector de SysLab ya tiene pruebas.** Es el único código de la extensión que interpreta la interfaz de otro sistema: cinco funciones que Chrome serializa e inyecta en la pestaña del portal para llegar al formulario, escribir el RUT, leer la tabla de resultados y traer el PDF del informe. Hasta ahora, si SysLab movía un botón o cambiaba una columna, fallaba en silencio. Veintiuna pruebas en Chromium las ejercitan contra un portal servido en su propia dirección por interceptación, sin red: la pantalla de acceso es la real del hospital, las demás páginas son sintéticas escritas contra el mismo contrato que lee el código. Eso no demuestra que SysLab siga siendo así —sólo el hospital puede decirlo—, pero fija el contrato por escrito y hace ruidoso cualquier cambio en el lector.

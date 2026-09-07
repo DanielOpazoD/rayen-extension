@@ -5,9 +5,7 @@ import { humanError } from '../../core/errors.js';
 import { esc, $, qsa } from '../dom.js';
 import { informeResultado } from '../../io/lab-api.js';
 import { syslabPdfUrl } from '../../io/syslab-api.js';
-
-/** Sólo se puede analizar una orden de la que se pueda obtener el informe. */
-export const analysable = (source, o) => source === 'hsr' ? Boolean(o.ordenEncryptada) : Boolean(o.link);
+import { analysable } from '../../core/lab-selection.js';
 
 
 /**

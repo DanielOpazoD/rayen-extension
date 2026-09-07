@@ -328,6 +328,7 @@
 <div class="tab-pane" id="tab-laboratorio" role="tabpanel">
   <div class="lab">
     <div class="lab-header">
+      <button class="btn-mini lab-back" id="labBack" hidden data-tip="Volver a la ficha desde la que se abrió el laboratorio">‹ <span id="labBackName">Volver a la ficha</span></button>
       <span class="lab-origin"><span id="labHsrStatus" class="lab-session checking">HSR…</span><button class="btn-mini ghost" id="labCheckHsr" aria-label="Volver a comprobar la sesión del Hospital Salvador" data-tip="Volver a comprobar la sesión">↻</button></span>
       <span class="lab-origin"><span id="labHhrStatus" class="lab-session checking">HHR…</span><button class="btn-mini ghost" id="labCheckHhr" aria-label="Volver a comprobar la sesión de SysLab" data-tip="Volver a comprobar la sesión">↻</button></span>
     </div>
@@ -345,8 +346,19 @@
       <label class="lab-date-label">Desde <input type="date" id="labDesde" aria-label="Fecha desde"></label>
       <label class="lab-date-label">Hasta <input type="date" id="labHasta" aria-label="Fecha hasta"></label>
       <button class="btn btn-primary" id="labSearchBtn">Buscar</button>
-      <button class="btn-mini" id="labAnalyze" hidden>Analizar</button>
-      <button class="btn-mini" id="labDownloadAll" hidden>Todos los PDF</button>
+      <div class="menu-wrap" id="labSelWrap" hidden>
+        <button class="btn-mini" id="labSelBtn" aria-haspopup="menu" aria-expanded="false" data-tip="Qué hacer con las órdenes de los dos hospitales">Informes <span class="caret">▾</span></button>
+        <div class="menu" id="labSelMenu" role="menu">
+          <button role="menuitem" id="labPickAll">Marcar todas <small id="labPickAllHint"></small></button>
+          <button role="menuitem" id="labPickNone">Quitar la selección</button>
+          <div class="menu-sep" role="separator"></div>
+          <button role="menuitem" id="labPdfSelected">PDF de lo marcado <small id="labPdfSelectedHint"></small></button>
+          <button role="menuitem" id="labAnalyze">Analizar lo marcado <small id="labAnalyzeHint"></small></button>
+          <div class="menu-sep" role="separator"></div>
+          <button role="menuitem" id="labDownloadAll">PDF de todos los informes <small id="labDownloadAllHint"></small></button>
+          <div class="menu-note">Un solo archivo con los informes de los dos hospitales, en el orden de las tablas.</div>
+        </div>
+      </div>
       <button class="btn-mini" id="labRequestOpen" data-tip="Formulario de solicitud para imprimir y entregar">Solicitud</button>
       <button class="btn-mini" id="labClear">Limpiar</button>
     </div>
@@ -377,7 +389,7 @@
       <div class="tbl-wrap">
         <table class="lab-table" aria-label="Órdenes Hospital Salvador (ProactiveLIS)">
           <thead><tr>
-            <th class="lab-pick"><input type="checkbox" id="labPickAllHsr" aria-label="Seleccionar todas las órdenes del Hospital Salvador"></th>
+            <th class="lab-pick"><input type="checkbox" id="labPickAllHsr" aria-label="Marcar todas las órdenes del Hospital Salvador"></th>
             <th>Fecha</th>
             <th>N° Orden</th>
             <th>Paciente</th>
@@ -394,7 +406,7 @@
       <div class="tbl-wrap">
         <table class="lab-table" aria-label="Órdenes Hospital Hanga Roa (SysLab)">
           <thead><tr>
-            <th class="lab-pick"><input type="checkbox" id="labPickAllHhr" aria-label="Seleccionar todas las órdenes del Hospital Hanga Roa"></th>
+            <th class="lab-pick"><input type="checkbox" id="labPickAllHhr" aria-label="Marcar todas las órdenes del Hospital Hanga Roa"></th>
             <th>Fecha</th>
             <th>N° Orden</th>
             <th>Paciente</th>

@@ -66,6 +66,9 @@ function closeMenu(m) {
   m.menu.classList.remove('open');
   m.btn.setAttribute('aria-expanded', 'false');
 }
+/** Cierra todos los menús: una opción ya elegida no debe dejar el menú abierto. */
+export function closeMenus() { for (const m of MENUS) closeMenu(m); }
+
 export function initMenu(btnId, menuId, wrapId, onOpen = null) {
   const m = { btn: $(btnId), menu: $(menuId), wrap: wrapId ? $(wrapId) : null };
   MENUS.push(m);

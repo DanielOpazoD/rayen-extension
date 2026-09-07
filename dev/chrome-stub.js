@@ -25,9 +25,43 @@ const ROOT = new URL('../', import.meta.url).href;
 globalThis.chrome = {
   runtime: { lastError: undefined, getURL: p => new URL(p, ROOT).href, getManifest: () => ({ version: 'dev' }) },
   storage: { local: area(mem.local), session: area(mem.session) },
-  tabs:    { query: async () => [], create: async ({ url }) => window.open(url, '_blank'), update: async () => {} },
+  tabs:    { query: async q => (syslab && String(q?.url ?? '').startsWith('http://10.4.69.90') ? [{ id: 7, url: 'http://10.4.69.90/syslab/index.php' }] : []),
+             create: async ({ url }) => window.open(url, '_blank'), update: async () => {} },
+  scripting: { executeScript: async ({ func, args }) => [{ result: syslabStep(func, args) }] },
   action:  { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
 };
+
+// ── SysLab en el arnés ──
+// SysLab no se consulta por HTTP: la extensión conduce una pestaña ajena y lee
+// su DOM. Aquí se simula ese transporte —no el DOM— para poder recorrer en el
+// navegador lo que necesita los dos hospitales a la vez: marcar todo, el PDF
+// único y el análisis mezclado. El lector real de esa página se prueba aparte,
+// contra su HTML, en `e2e/syslab.spec.js`.
+let syslab = null; // null = sin pestaña de SysLab; si no, { exams: [...] }
+export function setSyslab(estado) { syslab = estado; }
+const PDF_SINTETICO = 'JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCAzMDAgMzAwXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNCAwIFI+Pj4+L0NvbnRlbnRzIDUgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCjUgMCBvYmoKPDwvTGVuZ3RoIDQ4Pj5zdHJlYW0KQlQgL0YxIDE0IFRmIDMwIDE1MCBUZCAoSW5mb3JtZSBzaW50ZXRpY28pIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTQgMDAwMDAgbiAKMDAwMDAwMDEwNSAwMDAwMCBuIAowMDAwMDAwMjE3IDAwMDAwIG4gCjAwMDAwMDAyODAgMDAwMDAgbiAKdHJhaWxlcgo8PC9TaXplIDYvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgozNzUKJSVFT0YK';
+
+function syslabStep(func, args = []) {
+  if (!syslab) return { error: 'dev: sin pestaña de SysLab' };
+  // Se distingue el paso por su nombre, no por su código: no hay compilación
+  // que lo renombre, y una simulación que dependiera del texto se quedaría
+  // muda en cuanto se editara una línea del lector.
+  switch (func?.name) {
+    case 'probeStatus':
+      return { loginRequired: false, hasRutInput: true, url: 'http://10.4.69.90/syslab/index.php' };
+    case 'stepPrepareSearch':
+      return { navigated: false };
+    case 'stepSubmitSearch':
+      return /^\d{5,9}$/.test(String(args[0] ?? '')) ? { navigated: false } : { error: 'dev: RUT no válido' };
+    case 'stepReadResults':
+      return { exams: syslab.exams ?? [] };
+    case 'stepFetchReport':
+      return { base64: PDF_SINTETICO };
+    default:
+      return { error: `dev: paso de SysLab no simulado (${func?.name || 'anónimo'})` };
+  }
+}
+
 mem.session.set('rayenToken', 'dev-token');
 // El arnés guarda en claro (datos sintéticos); con ?pin=1 se prueba la pantalla de PIN y el cifrado.
 globalThis.__RAYEN_DEV_PLAIN = !new URLSearchParams(globalThis.location?.search ?? '').has('pin');
