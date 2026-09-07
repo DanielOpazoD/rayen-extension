@@ -23,9 +23,12 @@ function jsFiles(dir) {
 const srcFiles = jsFiles('src');
 const appFiles = ['app.js', ...srcFiles];
 const testFiles = jsFiles('tests').filter(f => f.endsWith('.test.js'));
+// Los recorridos de Playwright también consumen exportaciones: los pasos que se
+// inyectan en la pestaña de SysLab sólo se pueden probar en un navegador real.
+const e2eFiles = jsFiles('e2e').filter(f => f.endsWith('.spec.js'));
 // A pure helper exported only so a test can reach it is fine; an export nobody
 // imports — not even a test — is dead weight.
-const consumers = [...appFiles, 'report.js', 'popup-init.js', 'dev/fixture.js', 'dev/chrome-stub.js', ...testFiles];
+const consumers = [...appFiles, 'report.js', 'popup-init.js', 'dev/fixture.js', 'dev/chrome-stub.js', ...testFiles, ...e2eFiles];
 
 test('every $(id) / getElementById(id) resolves to an element in app.html or one the JS creates', () => {
   const html = read('app.html');
