@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 2.57.0 — 2026-09-05
+
+- **Citas futuras en el calendario.** Los días con pacientes ya citados a mi nombre se marcan con una insignia hueca, distinta de la de atenciones hechas, y al abrir uno se ve a quién tengo citado con sus diagnósticos previos y sus interconsultas abiertas. El pie del calendario dice hasta qué fecha llega y cuántos días no se pudieron consultar. La ventana se elige en Preferencias: 30, 60 (por defecto), 90 días o ninguno.
+- Van en una fuente aparte y no entran en el período cargado: una cita que aún no ocurrió contaría en la tabla, en las estadísticas y en las visitas por paciente como si ya hubiera pasado. Se consultan después de la carga principal y en su propio `try`, así que un fallo suyo no toca la agenda.
+- `Citas/ListaPacientesCitados` acepta un rango de fechas pero devuelve sólo el día de inicio: comprobado en tres capturas antes de diseñarlo, así que cada día es una petición, como en el período cargado. La petición vive ahora en `io/agenda.js`, compartida por las dos cargas.
+
 ## 2.56.0 — 2026-09-05
 
 - **El nombre y el RUN del paciente volvieron a verse en el panel.** El icono «i» del registro tardío (v2.46.1) se llamó `.pp-info`, igual que el contenedor del nombre en la cabecera, y le impuso 14 px de ancho y `flex:none` sobre su `flex:1`. Desde entonces la cabecera mostraba un circulito en vez del nombre. Se renombró el icono y una prueba nueva vigila la causa: dos reglas base de la misma clase que asignan la misma propiedad con valores distintos son dos componentes compartiendo nombre. Las capturas de referencia se regeneraron: se habían tomado con el fallo dentro.

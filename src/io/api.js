@@ -1,7 +1,8 @@
 import { state } from './state.js';
 import { CONFIG } from '../core/config.js';
 import { getToken } from './auth.js';
-import { apiGet, rayenParams, chunk, session, resetSession, run, resetRun } from './http.js';
+import { chunk, session, resetSession, run, resetRun } from './http.js';
+import { fetchCitasDia } from './agenda.js';
 import { parseCita, matchKey } from '../core/parser.js';
 import { loadStore, saveStore, pruneStore, dropDay } from './cache.js';
 import { loadHistorial } from './historial.js';
@@ -15,30 +16,6 @@ export { isMutableAppointmentStatus };
 /** Raw citas from the last network fetches (for the API explorer's field discovery). */
 const rawSamples = [];
 export function getRawSamples() { return rawSamples; }
-
-/**
- * Fetches all appointments for a single YYYYMMDD date.
- * @returns {Promise<object[]|null|undefined>} null on failure (never an empty
- *   array, so a failed day is not mistaken for a day without appointments);
- *   undefined when the person cancelled: it is not a failure and is not counted as one.
- */
-async function fetchDay(token, dateStr) {
-  const params = rayenParams([
-    ['FechaHoraInicio',  `${dateStr} 000000`],
-    ['FechaHoraTermino', `${dateStr} 235959`],
-    ['IdsDeRecursos',    CONFIG.officerId],
-    ['EsAnulado', 2],
-    ['EsGrupal',  2],
-    ['TraerLlamadosPaciente', true],
-    ['TraerTeleconsulta',     true],
-  ]);
-  try {
-    const data = await apiGet(token, `/API/api/rayen/Citas/ListaPacientesCitados/${CONFIG.nodeId}/${params}`, { signal: run.controller.signal });
-    return Array.isArray(data) ? data : null;
-  } catch (err) {
-    return err?.name === 'CancelledError' ? undefined : null; // AuthError already flagged session.expired
-  }
-}
 
 /**
  * Una carga completa. `SyncRun` es el único objeto que viaja entre los pasos:
@@ -126,7 +103,7 @@ async function fetchAgendaBatches(token, toFetch, store, citasShare, onProgress)
   const failedDates = [], cancelledDates = [], succeededDates = [];
   for (const batch of chunk(toFetch, CONFIG.batchSize)) {
     if (session.expired || run.cancelled) break;
-    const responses = await Promise.all(batch.map(d => fetchDay(token, d)));
+    const responses = await Promise.all(batch.map(d => fetchCitasDia(token, d)));
     const okDates = [], newRecords = [];
 
     responses.forEach((day, i) => {

@@ -27,8 +27,8 @@ function updateBadge() {
 
 /** Cheap: pure functions over data already in memory. */
 export function refresh() {
-  const { allData, sics, novedades, prefs } = state;
-  const shown = renderToday(allData, sics, { novedades, especialidades: prefs.watchEsp, dia8: todayDate || undefined });
+  const { allData, sics, novedades, prefs, futuras } = state;
+  const shown = renderToday(allData, sics, { novedades, especialidades: prefs.watchEsp, dia8: todayDate || undefined, futuras });
   $('dayNav').style.display = allData.length ? '' : 'none';
   if (shown) $('dayPick').value = date8ToIso(shown);
   $('dayHint').textContent = todayDate ? '' : 'Hoy, o la última jornada con datos';
@@ -36,21 +36,36 @@ export function refresh() {
   updateBadge();
 }
 
+/** Pie del calendario: hasta dónde llega la agenda futura y qué faltó. */
+function leyendaFuturas() {
+  const e = state.futurasEstado;
+  if (!e || !e.dias) return '';
+  const hasta = e.hasta8 ? `${e.hasta8.slice(6)}-${e.hasta8.slice(4, 6)}-${e.hasta8.slice(0, 4)}` : '';
+  const n = state.futuras.length;
+  const falta = e.failed ? ` · ${e.failed} ${e.failed === 1 ? 'día no se pudo consultar' : 'días no se pudieron consultar'}` : '';
+  return `Citado a futuro: ${n} ${n === 1 ? 'cita' : 'citas'} hasta el ${hasta}${falta}`;
+}
+
 /**
- * Calendario del mes: cada día con su número de atenciones; hoy con contorno,
- * el día mostrado con fondo. Clic en un día lo abre; ‹ › cambian de mes.
+ * Calendario del mes: cada día con su número de atenciones y, en hueco, las
+ * citas ya agendadas a mi nombre; hoy con contorno, el día mostrado con fondo.
+ * Clic en un día lo abre; ‹ › cambian de mes.
  */
 function renderCalendar(allData, shown) {
   const base = shown || localDateStr(new Date());
   if (calYear == null) { calYear = +base.slice(0, 4); calMonth = +base.slice(4, 6) - 1; }
   const today8 = localDateStr(new Date());
-  const weeks = monthGrid(calYear, calMonth, countsByDay(allData), { today8, selected8: shown || '' });
+  const weeks = monthGrid(calYear, calMonth, countsByDay(allData), { today8, selected8: shown || '', futuras: countsByDay(state.futuras) });
   $('calTitle').textContent = monthLabel(calYear, calMonth);
+  $('calFuturas').textContent = leyendaFuturas();
   $('calGrid').innerHTML = `<div class="cal-row cal-dow" role="row">${DIAS_CORTOS.map(d => `<span role="columnheader">${d}</span>`).join('')}</div>` +
     weeks.map(w => `<div class="cal-row" role="row">${w.map(c => {
-      const label = `${c.day} · ${c.count ? `${c.count} ${c.count === 1 ? 'atención' : 'atenciones'}` : 'sin atenciones'}`;
-      const cls = ['cal-d', c.inMonth ? '' : 'out', c.count ? 'has' : '', c.isToday ? 'is-today' : '', c.weekend ? 'we' : ''].filter(Boolean).join(' ');
-      return `<button type="button" role="gridcell" class="${cls}" data-date8="${c.date8}" aria-pressed="${c.isSelected}" aria-label="${esc(label)}"><span class="cal-n">${c.day}</span>${c.count ? `<span class="cal-c">${c.count}</span>` : ''}</button>`;
+      const label = [`${c.day}`,
+        c.count ? `${c.count} ${c.count === 1 ? 'atención' : 'atenciones'}` : c.futuras ? '' : 'sin atenciones',
+        c.futuras ? `${c.futuras} ${c.futuras === 1 ? 'cita agendada' : 'citas agendadas'}` : ''].filter(Boolean).join(' · ');
+      const cls = ['cal-d', c.inMonth ? '' : 'out', c.count ? 'has' : '', c.futuras ? 'fut' : '', c.isToday ? 'is-today' : '', c.weekend ? 'we' : ''].filter(Boolean).join(' ');
+      return `<button type="button" role="gridcell" class="${cls}" data-date8="${c.date8}" aria-pressed="${c.isSelected}" aria-label="${esc(label)}"><span class="cal-n">${c.day}</span>` +
+        `${c.count ? `<span class="cal-c">${c.count}</span>` : ''}${c.futuras ? `<span class="cal-c cal-f">${c.futuras}</span>` : ''}</button>`;
     }).join('')}</div>`).join('');
 }
 
@@ -79,4 +94,5 @@ export function init() {
 
   on('data', refresh);
   on('notes', refresh);
+  on('futuras', refresh);   // llega después de la carga: sólo repinta Hoy
 }

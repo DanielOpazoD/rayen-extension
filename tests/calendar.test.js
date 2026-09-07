@@ -26,3 +26,17 @@ test('monthLabel, shiftMonth y toDate8', () => {
   assert.deepEqual(shiftMonth(2026, 0, -1), { year: 2025, month: 11 });
   assert.equal(toDate8(new Date(2026, 8, 4)), '20260904');
 });
+
+test('monthGrid cuenta las citas futuras aparte de las atenciones', () => {
+  const counts = new Map([['20260904', 3]]);
+  const futuras = new Map([['20260908', 5], ['20260904', 1]]);
+  const semanas = monthGrid(2026, 8, counts, { today8: '20260905', selected8: '20260908', futuras });
+  const dia = d8 => semanas.flat().find(c => c.date8 === d8);
+  assert.deepEqual([dia('20260904').count, dia('20260904').futuras], [3, 1], 'un día puede tener ambas cosas');
+  assert.deepEqual([dia('20260908').count, dia('20260908').futuras], [0, 5]);
+  assert.deepEqual([dia('20260907').count, dia('20260907').futuras], [0, 0]);
+  assert.equal(dia('20260905').isToday, true);
+  assert.equal(dia('20260908').isSelected, true);
+  // Sin mapa de futuras, todo queda en cero: la rejilla no inventa citas.
+  assert.equal(monthGrid(2026, 8, counts, { today8: '20260905' }).flat().every(c => c.futuras === 0), true);
+});

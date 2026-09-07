@@ -45,6 +45,10 @@ let fichaMode = 'synthetic'; // 'synthetic' | 'off'
 const DELAY_MS = 80;         // que se vea el esqueleto, como en la red real
 
 export function setFichaResponses(responses) { ficha = responses; }
+
+// Agenda por día (citas futuras): el arnés la sirve como Eloisa, un día por petición.
+let citasPorDia = new Map();
+export function setCitasPorDia(map) { citasPorDia = map; }
 export function setFichaMode(mode) { fichaMode = mode; }
 export async function loadCaptures(base = new URL('./fixtures/', import.meta.url)) {
   try {
@@ -64,6 +68,8 @@ function routeEloisa(url, init) {
   if (fichaMode === 'off' || !ficha) return json('dev: sin red', 503);
   const path = new URL(url).pathname.toLowerCase();
   const idDe = re => { const m = path.match(re); return m ? Number(m[1]) : null; };
+  const cit = path.match(/\/citas\/listapacientescitados\/\d+\/fechahorainicio=(\d{8})/);
+  if (cit) return json(citasPorDia.get(cit[1]) ?? []);
   const m = path.match(/\/inscripcion\/usuarioapsrut\/([0-9k]+)\//);
   if (m) {
     const body = m[1].slice(0, -1).replace(/[^0-9]/g, ''); // el DV va al final y puede ser «k»: se quita antes de filtrar dígitos

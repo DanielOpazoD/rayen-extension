@@ -148,7 +148,18 @@ export function buildFixture(today = new Date()) {
     source, status: 'ok', attemptedAt: now - 15 * 60_000, completedAt: now - 15 * 60_000,
     lastSuccessAt: now - 15 * 60_000, failedItems: [], networkCount: 1, cacheCount: 0, hasData: true,
   });
-  return {
+  // La agenda por día que sirve el stub: los mismos días sembrados (hoy se
+  // vuelve a pedir en cada carga: si el stub no los devolviera, se borrarían)
+  // más las citas ya agendadas a futuro.
+  const citasPorDia = new Map();
+  for (const c of citas) {
+    const d8 = String(c.FechaHoraInicio).slice(0, 8);
+    if (!citasPorDia.has(d8)) citasPorDia.set(d8, []);
+    citasPorDia.get(d8).push(c);
+  }
+  for (const [d8, dia] of citasFuturas(today)) citasPorDia.set(d8, dia);
+
+  return { citasPorDia, storage: {
     [CONFIG.cacheKey]:     { fetchedDates: dates, records: citas.map(parseCita).filter(Boolean), extra: {}, savedAt: now },
     [CONFIG.historialKey]: { fetchedDates: dates, records: atenciones, extra: { team }, savedAt: now },
     [CONFIG.sicKey]:       { records: sics, savedAt: now, months: MONTHS },
@@ -157,5 +168,41 @@ export function buildFixture(today = new Date()) {
     [CONFIG.syncKeys.agenda]:    syncOk('agenda'),
     [CONFIG.syncKeys.historial]: syncOk('historial'),
     [CONFIG.syncKeys.sics]:      syncOk('sics'),
-  };
+  } };
+}
+
+/**
+ * Pacientes ya citados a mi nombre después de hoy, como los devuelve
+ * `Citas/ListaPacientesCitados` un día cualquiera. Martes y viernes, que son
+ * los días que el policlínico tiene abiertos.
+ * @returns {Map<string, object[]>} fecha8 → citas crudas de ese día
+ */
+function citasFuturas(today = new Date(), dias = 90) {
+  const r = rng(777);
+  const porDia = new Map();
+  let id = 800000;
+  for (let i = 1; i <= dias; i += 1) {
+    const d = new Date(today); d.setDate(d.getDate() + i);
+    const wd = d.getDay();
+    if (wd !== 2 && wd !== 5) continue;            // martes y viernes
+    const d8 = localDateStr(d);
+    const n = 3 + Math.floor(r() * 4);
+    const dia = [];
+    for (let k = 0; k < n; k += 1) {
+      const p = pick(r, PATIENTS);
+      const hh = String(9 + k).padStart(2, '0');
+      dia.push({
+        Id: ++id, FechaHoraInicio: `${d8} ${hh}0000`, Razon: pick(r, ['Control', 'Morbilidad', 'Resultado de exámenes', '']),
+        Tag: { Nombre: r() < 0.3 ? 'Confirmado' : 'Agendado' }, TipoDeAtencion: { Nombre: 'Consulta Médica' }, EsCitaInterconsulta: 0,
+        Cupos: [{ Descripcion: '', TipoAtencion: 'Consulta Médica' }],
+        UsuarioAps: {
+          Id: p.idUsp, Rut: p.rut, NombreFormateado: p.nombre, Nombres: p.nom, ApellidoPaterno: p.ap, ApellidoMaterno: p.am,
+          FechaDeNacimiento: `${p.dob} 000000`, Sexo: { Nombre: p.sexo }, ConvenioPrevisional: { Nombre: p.prev },
+          Sector: { Nombre: 'Sector Único' }, Telefonos: [{ TelefonoDescripcion: '9 0000 0000', Eliminado: false }],
+        },
+      });
+    }
+    porDia.set(d8, dia);
+  }
+  return porDia;
 }

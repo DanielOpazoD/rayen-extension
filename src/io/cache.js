@@ -105,7 +105,7 @@ export function dropDay(store, date8) {
  * que sólo se borraba si la pestaña de impresión llegaba a abrirse.
  */
 export async function clearAllCaches() {
-  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, ...Object.values(CONFIG.syncKeys), 'rayen_report']); // 'rayen_report' en local: restos de versiones anteriores
+  await storageRemove([CONFIG.cacheKey, CONFIG.historialKey, CONFIG.sicKey, CONFIG.futurasKey, ...Object.values(CONFIG.syncKeys), 'rayen_report']); // 'rayen_report' en local: restos de versiones anteriores
   try { await chrome.storage.session.remove('rayen_report'); } catch { /* sin session storage */ }
 }
 
@@ -125,6 +125,7 @@ export const DEFAULT_PREFS = Object.freeze({
   refreshMin: 15, lockMin: 15, startTab: 'hoy',
   autoLoad: true,      // al abrir, cargar sin pulsar «Actualizar»
   netTimeoutSec: 20,   // espera máxima por petición; la ficha completa espera el triple
+  futurasDias: 60,     // días de agenda futura en el calendario; 0 = no cargarla
   watchEsp: null,      // null = CONFIG.watchEspecialidades
   umbrales: null,      // null = CONFIG.pendientes
   sortCol: 'fechaAtencion', sortDir: -1,

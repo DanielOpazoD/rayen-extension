@@ -5,8 +5,11 @@ import { patientKey } from './notes.js';
 
 /**
  * The one place data lives. Tabs read from here and subscribe to two events:
- *   'data'   — allData / team / sics / prefs that affect them changed
- *   'notes'  — one patient's note changed (detail: the record)
+ *   'data'    — allData / team / sics / prefs that affect them changed
+ *   'notes'   — one patient's note changed (detail: the record)
+ *   'futuras' — llegó la agenda futura. Evento propio a propósito: llega segundos
+ *               después de la carga y sólo lo mira el calendario. Con 'data' se
+ *               repintaba la tabla entera y se perdía el foco de la fila activa.
  * Anything that can be computed from the data is a memoized function below,
  * not a second copy that could drift.
  */
@@ -15,6 +18,8 @@ export const state = {
   team: {},
   sics: [],
   novedades: null,         // change memory for the watched specialties
+  futuras: [],             // citas ya agendadas a mi nombre después de hoy (no son atenciones)
+  futurasEstado: null,     // { dias, desde8, hasta8, failed, savedAt } de la última consulta
   rendered: [],            // the atenciones table's current order (‹ ›, palette)
   loadedMonths: 6,
   prefs: {
@@ -44,6 +49,17 @@ export function setData({ allData, team, sics, novedades } = {}) {
   if (novedades !== undefined) state.novedades = novedades;
   state.version++;
   emit('data');
+}
+
+/**
+ * La agenda futura, con su propio evento: nadie más que el calendario la mira.
+ * @param {object[]} citas
+ * @param {{ dias: number, desde8: string, hasta8: string, failed: number, savedAt: number }} estado
+ */
+export function setFuturas(citas, estado) {
+  state.futuras = citas;
+  state.futurasEstado = estado;
+  emit('futuras');
 }
 
 /** Los meses cargados y el orden pintado de la tabla son estado: se cambian aquí, no desde las pestañas. */

@@ -25,10 +25,11 @@ export function countsByDay(records) {
  * @param {number} year
  * @param {number} month  0–11
  * @param {Map<string, number>} counts  fecha8 → atenciones
- * @param {{ today8?: string, selected8?: string }} [marks]
- * @returns {Array<Array<{date8, day, inMonth, count, isToday, isSelected, weekend}>>} 5 o 6 semanas
+ * @param {{ today8?: string, selected8?: string, futuras?: Map<string, number> }} [marks]
+ *   `futuras`: citas ya agendadas por día, que no son atenciones y se cuentan aparte.
+ * @returns {Array<Array<{date8, day, inMonth, count, futuras, isToday, isSelected, weekend}>>} 5 o 6 semanas
  */
-export function monthGrid(year, month, counts = new Map(), { today8 = '', selected8 = '' } = {}) {
+export function monthGrid(year, month, counts = new Map(), { today8 = '', selected8 = '', futuras = new Map() } = {}) {
   const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7; // lunes = 0
   const start = new Date(year, month, 1 - offset);
@@ -40,7 +41,8 @@ export function monthGrid(year, month, counts = new Map(), { today8 = '', select
       const date8 = toDate8(cursor);
       week.push({
         date8, day: cursor.getDate(), inMonth: cursor.getMonth() === month,
-        count: counts.get(date8) ?? 0, isToday: date8 === today8, isSelected: date8 === selected8,
+        count: counts.get(date8) ?? 0, futuras: futuras.get(date8) ?? 0,
+        isToday: date8 === today8, isSelected: date8 === selected8,
         weekend: i >= 5,
       });
       cursor.setDate(cursor.getDate() + 1);

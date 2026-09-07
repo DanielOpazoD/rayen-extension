@@ -122,6 +122,10 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 
 Todo lo que se guarda pasa por `storageGet`/`storageSet` de `src/io/cache.js`; con clave en memoria (`src/io/crypto-store.js`) se cifra con AES-GCM 256 y una clave derivada del PIN (PBKDF2, 300 000 iteraciones, sal por instalación). Al arrancar, `src/ui/pin-screen.js` crea el PIN la primera vez (y cifra lo que había en claro) o lo pide; el bloqueo por inactividad descarta la clave y «Continuar» vuelve a pedirlo. Sin PIN creado (pruebas y arnés) el almacenamiento queda en claro; la aplicación real no arranca sin PIN. Olvidar el PIN equivale a «Eliminar todo». Decisión y alternativas en `docs/adr/0001-persistencia-cifrada.md`.
 
+## Agenda futura
+
+El calendario de Hoy muestra, además de las atenciones del período cargado, a los pacientes ya citados a nombre del oficial después de hoy (`io/agenda-futura.js`, ventana en Preferencias, 60 días por defecto). Va en una fuente propia y nunca entra en `state.allData`: una cita que aún no ocurrió contaría en la tabla, en las estadísticas y en las visitas por paciente como si ya hubiera pasado. Se consulta después de la carga principal y en su propio `try`, así que un fallo suyo no toca el período cargado; lo que faltó se dice en el pie del calendario. `Citas/ListaPacientesCitados` acepta un rango de fechas pero devuelve sólo el día de inicio (verificado en tres capturas), de modo que cada día es una petición.
+
 ## Red: tiempo límite y cancelación
 
 Cada petición a Eloisa (`src/io/http.js`) lleva un tiempo límite: `net.timeoutMs` (20 s, Preferencias → «Espera máxima por petición») para la agenda y la ficha diaria, y `net.longTimeoutMs` (60 s o el triple del anterior) para la ficha completa de un paciente, que va en una sola llamada de diez años. Sólo la carga de la agenda es cancelable: sus peticiones llevan `run.controller.signal` y `cancelRun()` las aborta en vuelo; las llamadas del panel y de PDF no llevan señal y no se ven afectadas; la carga de interconsultas mira `run.cancelled` entre lotes y se detiene, contando lo que faltó como pendiente. Un día cancelado queda pendiente, no fallido. Un 401/403 marca la sesión como vencida, invalida la copia del token y recuerda el token rechazado para no volver a entregarlo aunque la pestaña de Eloisa siga mostrándolo. Errores: `AuthError`, `TimeoutError`, `CancelledError`, todos traducidos por `core/errors.js`. El plan de cada carga (fechas, refrescos, reintentos) lo calcula `src/core/sync-plan.js`, puro y con pruebas; `src/io/api.js` sólo ejecuta el plan en dos pasos, agenda y ficha, sobre un único objeto `SyncRun` documentado.
@@ -190,7 +194,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 **Núcleo (`src/core/`) — dominio puro: sin DOM, sin red, sin Chrome. Todo lo que aquí vive se prueba con `node --test` sin arnés.**
 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
-- `src/core/calendar.js` — rejilla mensual de atenciones para Hoy, sin DOM.
+- `src/core/calendar.js` — rejilla mensual para Hoy, sin DOM: atenciones por día y, aparte, las citas ya agendadas.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
@@ -223,6 +227,8 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 
 **Entrada/salida (`src/io/`) — Eloisa, SysLab, ProactiveLIS, almacenamiento de Chrome y estado de la aplicación. No conoce la interfaz.**
 
+- `src/io/agenda-futura.js` — pacientes ya citados a mi nombre después de hoy: ventana en días, caché con caducidad corta y una petición por día; vive aparte del período cargado.
+- `src/io/agenda.js` — una petición de agenda (las citas del oficial en un día). Eloisa devuelve sólo el día de inicio aunque el endpoint acepte rango.
 - `src/io/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/io/auth.js` — recuperación segura de la sesión activa de Eloisa.
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
