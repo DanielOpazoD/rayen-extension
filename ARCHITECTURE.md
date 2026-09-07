@@ -54,6 +54,7 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 | Stryker (`npm run mutation`) | mutación sobre las reglas clínicas puras (`dates`, `historial-merge`, `pendientes`, `sic-rules`, `receta`): mide si las pruebas detectan errores; tarda minutos | manual |
 | Playwright SysLab (`e2e/syslab.spec.js`) | los cinco pasos que `chrome.scripting` inyecta en la pestaña de SysLab, ejecutados en Chromium con `page.evaluate` (la misma serialización, así que también comprueba que sigan siendo autocontenidos) contra un portal servido en `http://10.4.69.90` por interceptación, sin red | CI |
 | Playwright visual (`e2e/visual.spec.js`) | capturas de referencia de PIN, tabla y panel con el reloj congelado; se saltan en CI (fuentes de Linux) y se regeneran con `npm run visual:update` cuando el cambio es intencional | local |
+| Desborde horizontal (`e2e/app.smoke.spec.js`) | ensancha las letras un píxel y exige que el documento no sea más ancho que la ventana estrecha: la disposición no puede depender de la anchura exacta de la fuente, que no es la misma en macOS que en Linux | CI |
 | `.githooks/pre-commit` | lint + tipos + unitarios antes de cada commit (`npm install` lo activa vía `prepare`; `git commit -n` lo salta) | local |
 
 ## Convenciones de código
