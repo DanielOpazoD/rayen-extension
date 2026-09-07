@@ -1,6 +1,6 @@
 /** Pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una lista, alergias y programas. */
+import { identidad } from '../../core/identidad.js';
 import { rankProblems } from '../../core/ficha-rank.js';
-import { CONFIG } from '../../core/config.js';
 import { esc, $ } from '../dom.js';
 import { h4, empty, setTabCount } from './helpers.js';
 
@@ -10,7 +10,7 @@ export function renderDx(cur) {
   // Con peso, no en orden de aparición: GES y crónicos primero, luego los
   // recurrentes, luego los recientes; el mismo problema en dos redacciones es
   // una sola fila con su recuento.
-  const probs = rankProblems(src, { officerId: CONFIG.officerId });
+  const probs = rankProblems(src, { officerId: identidad.officerId });
   const a = ficha?.antecedentes;
   let html = '';
 

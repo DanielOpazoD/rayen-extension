@@ -3,7 +3,7 @@
  * sexo, rol del oficial en una interconsulta y «tipo · razón» de una atención.
  * Sin DOM: la tabla, Pacientes, Hoy y la historia imprimible las comparten.
  */
-import { CONFIG } from './config.js';
+import { identidad } from './identidad.js';
 import { fromDate8 } from './dates.js';
 
 const DOW_LONG = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -29,8 +29,8 @@ export function sexLetter(s = '') {
  *   other – another professional's SIC on the same patient → "Otra"
  */
 export function sicRole(s, isOrigin = false) {
-  if (s.registrador.id === CONFIG.officerId) return 'out';
-  if (s.ejecutor.id === CONFIG.officerId || isOrigin) return 'in';
+  if (s.registrador.id === identidad.officerId) return 'out';
+  if (s.ejecutor.id === identidad.officerId || isOrigin) return 'in';
   return 'other';
 }
 /** Texto del rol para la persona: un único mapa (antes había tres copias). */

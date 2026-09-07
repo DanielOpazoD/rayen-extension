@@ -1,7 +1,7 @@
 /** Pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o, sin ficha, la agenda. */
+import { identidad } from '../../core/identidad.js';
 import { isMedicalVisit } from '../../core/patient-report.js';
 import { SECTION_LABELS } from '../../core/ficha.js';
-import { CONFIG } from '../../core/config.js';
 import { esc, stateDot, $ } from '../dom.js';
 import { certificadoPath, recetaPdfPath } from '../../io/pdf.js';
 
@@ -12,7 +12,7 @@ import { esMiaAtencion } from '../../core/sic-rules.js';
 
 function sectionHTML(id, items, v) {
   // Cada receta lleva su impresora: el PDF de Eloisa, para imprimirlo desde la atención.
-  const prest = v.prestadores?.[0]?.id ?? CONFIG.officerId;
+  const prest = v.prestadores?.[0]?.id ?? identidad.officerId;
   const printer = it => id === 'recetas' && it.raw?.Id
     ? `<button class="btn-mini pp-print" data-pdf="${esc(recetaPdfPath(v.id, it.raw.Id, prest))}" data-tip="Imprimir la receta (PDF de Eloisa)" aria-label="Imprimir receta">${PRINTER}</button>` : '';
   return `<div class="pp-sec"><span class="pp-sec-l">${esc(SECTION_LABELS[id] ?? id)}</span>` +
@@ -23,7 +23,7 @@ function sectionHTML(id, items, v) {
 function fichaVisitHTML(v, agendaByAtencion) {
   const mine = esMiaAtencion(v);
   const cita = agendaByAtencion.get(v.id);
-  const who  = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
+  const who  = v.prestadores.map(p => p.id === identidad.officerId ? 'Tú' : `${p.nombre}${p.instrumento ? ` (${p.instrumento})` : ''}`).join(', ');
   const secs = Object.entries(v.sections);
   const hasBody = v.anamnesis.motivo || v.anamnesis.historia || v.extras?.length || secs.length || v.actividades.length || v.adjuntos.length;
   return `

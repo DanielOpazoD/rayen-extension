@@ -8,6 +8,7 @@
  * diagnósticos ni fechas de nadie, así que se puede pegar en una conversación.
  */
 import { DOW_LABEL } from './config.js';
+import { identidad } from './identidad.js';
 import { diasEntre, date8FromDMY, toDate8 } from './dates.js';
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -59,6 +60,8 @@ export function diagnosticoCarga({
 
   return {
     version, fecha: sello(hoy), hoy8: toDate8(hoy), meses,
+    // Sin nombre ni RUT: sólo los identificadores y de dónde salieron.
+    identidad: { officerId: identidad.officerId, nodeId: identidad.nodeId, origen: identidad.origen },
     atenciones: { total: allData.length, porDia, urgPorDia, urgencias },
     cruce,
     registro: { conDesfase, maxDesfase },
@@ -80,6 +83,7 @@ export function formatearDiagnostico(d) {
   const sync = Object.entries(d.syncPendiente).map(([k, n]) => `${k} ${n}`).join(' · ');
   return [
     `Rayen Atenciones ${d.version} · diagnóstico ${d.fecha}`,
+    `Identidad: profesional ${d.identidad.officerId} · nodo ${d.identidad.nodeId} (${d.identidad.origen === 'sesion' ? 'de tu sesión' : d.identidad.origen === 'mixto' ? 'parte de tu sesión' : 'de la configuración'})`,
     `Período: ${d.meses} meses · ${a.total} atenciones · ${a.urgencias} urgencias`,
     `Por día: ${dias}`,
     `Cruce agenda–ficha: ${c.mismoDia} mismo día · ${c.exacta} cita exacta · ${c.estimada} estimadas · ${c.sinAtencion} citas sin atención · ${c.sueltas} sueltas`,

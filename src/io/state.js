@@ -1,3 +1,4 @@
+import { identidad } from '../core/identidad.js';
 import { CONFIG } from '../core/config.js';
 import { contactsFromSICs } from '../core/sic-rules.js';
 import { computePendientes } from '../core/pendientes.js';
@@ -103,4 +104,4 @@ export const pendientes = memo(() => state.allData.length
   ? computePendientes(state.allData, state.sics, { umbrales: state.prefs.umbrales }) : []);
 
 /** What table.js and stats.js need to resolve a record's SICs. */
-export const tableCtx = () => ({ sicsById: sicsById(), sicsByRun: sicsByRun(), officerId: CONFIG.officerId });
+export const tableCtx = () => ({ sicsById: sicsById(), sicsByRun: sicsByRun(), officerId: identidad.officerId });

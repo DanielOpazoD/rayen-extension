@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 2.60.0 — 2026-09-05
+
+- **La identidad sale de tu sesión, no del código.** El identificador del profesional y el del nodo estaban escritos a mano en la configuración y de ellos dependían 27 lugares: qué atención es «mía», qué agenda se pide, qué cuenta el calendario, qué interconsultas son mías. Al arrancar se lee ahora el objeto de sesión de Eloisa y se toma la identidad de ahí. Las claves están ancladas para no confundirse con las que hablan de otra persona o de otro sitio («IdNodoOrigen», «IdFuncionarioRegistrador»), sólo se adoptan enteros válidos, y si la sesión no la declara se conserva la de configuración. Nunca en silencio: el diagnóstico dice de dónde salió y, si no coincide con la configuración, la barra de estado lo avisa.
+- El objeto de sesión se lee en el mundo aislado y sin los valores secretos: el token no sale de donde ya estaba.
+
 ## 2.59.1 — 2026-09-05
 
 - **El RUT del autor estaba en el repositorio.** Se usaba como RUT de un paciente sintético en el arnés y en catorce archivos de prueba, en un repositorio público; apareció al revisar una captura, donde consta como `RutFuncionarioPrestador`. Sustituido por uno evidentemente inventado (`56.785.678-K`, que mantiene el verificador «K» para seguir ejercitando ese camino). La convención de datos sintéticos lo dice ahora de forma explícita.

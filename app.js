@@ -6,9 +6,11 @@ import { initPalette } from './src/ui/palette.js';
 import { initLock } from './src/ui/lock.js';
 import { $, initTooltips, initTablist, activateOnKey } from './src/ui/dom.js';
 import { state, setPrefs, on, setLoadedMonths } from './src/io/state.js';
-import { remeasure } from './src/ui/ui.js';
+import { remeasure, setStatus } from './src/ui/ui.js';
 import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
 import { CONFIG } from './src/core/config.js';
+import { aplicarIdentidad } from './src/core/identidad.js';
+import { leerSesionEloisa } from './src/io/auth.js';
 import { patientKey } from './src/io/notes.js';
 import * as loader from './src/ui/loader.js';
 import * as ajustes from './src/ui/ajustes.js';
@@ -37,6 +39,13 @@ setPrefs({
 });
 setLoadedMonths(prefs.months);
 applyNetPrefs(state.prefs);
+
+// Quién soy lo dice la sesión de Eloisa, no el código. Si no lo declara se
+// conserva la identidad de configuración; si la declara y no coincide, se avisa.
+const ident = aplicarIdentidad(await leerSesionEloisa());
+if (ident.cambio) {
+  setStatus(`Identidad tomada de tu sesión: profesional ${ident.officerId}, nodo ${ident.nodeId} (la configuración decía ${ident.antes.officerId}/${ident.antes.nodeId}).`, 'warn');
+}
 
 // Tabs: click or ←/→ (WAI-ARIA tablist, roving tabindex)
 const showTab = initTablist(document.querySelector('.tabs'), name => {

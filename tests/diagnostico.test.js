@@ -47,6 +47,7 @@ test('el texto no contiene ningún dato de paciente', () => {
     assert.ok(!texto.includes(prohibido), `el diagnóstico no debe contener «${prohibido}»:\n${texto}`);
   }
   assert.match(texto, /Rayen Atenciones 2\.57\.0 · diagnóstico 05-09-2026 11:40/);
+  assert.match(texto, /Identidad: profesional \d+ · nodo \d+ \(de la configuración\)/);
   assert.match(texto, /Citas futuras: 1 en 60 días, hasta 04-11-2026/);
 });
 

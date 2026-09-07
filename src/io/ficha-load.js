@@ -4,6 +4,7 @@
  * para el Explorador API. El análisis de cada respuesta vive en core/ficha.js;
  * aquí sólo hay red, tiempo y memoria.
  */
+import { identidad } from '../core/identidad.js';
 import { apiGet, apiPost, session, net } from './http.js';
 import { CONFIG } from '../core/config.js';
 import { localDateStr, fmtDate } from '../core/parser.js';
@@ -42,7 +43,7 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
   rawCaptures.clear();
   if (run) {
     try {
-      const d = await apiGet(token, `/API/api/rayen/Inscripcion/UsuarioApsRut/${run.toLowerCase()}/${CONFIG.nodeId}`);
+      const d = await apiGet(token, `/API/api/rayen/Inscripcion/UsuarioApsRut/${run.toLowerCase()}/${identidad.nodeId}`);
       remember('Ficha administrativa (UsuarioApsRut)', 'Inscripcion/UsuarioApsRut', d);
       master = parseMaster(Array.isArray(d) ? d[0] : d);
     } catch (e) { errors.push(`Ficha administrativa: ${e.message}`); }
@@ -101,6 +102,6 @@ export async function loadFicha(token, { run, idUsp = 0 }, { force = false } = {
  * @returns {Promise<object|null>} el maestro de parseMaster, o null
  */
 export async function buscarPacientePorRun(token, run) {
-  const d = await apiGet(token, `/API/api/rayen/Inscripcion/UsuarioApsRut/${String(run).toLowerCase()}/${CONFIG.nodeId}`);
+  const d = await apiGet(token, `/API/api/rayen/Inscripcion/UsuarioApsRut/${String(run).toLowerCase()}/${identidad.nodeId}`);
   return parseMaster(Array.isArray(d) ? d[0] : d);
 }
