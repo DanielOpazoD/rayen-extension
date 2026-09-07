@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 2.58.0 — 2026-09-05
+
+- **Diagnóstico de la carga** («Copiar diagnóstico», en Explorador API). Resume en recuentos lo que sólo se puede comprobar con datos reales: atenciones por día de la semana, cuántas se cruzaron el mismo día, por la cita exacta que declara Rayen o estimadas por cercanía, cuántas citas quedaron sin atención, cuántas fichas se cerraron otro día y con qué desfase máximo, la agenda futura y lo que quedó pendiente de sincronizar. No lleva nombres, RUN, diagnósticos ni fechas de pacientes, así que se puede pegar en una conversación; una prueba lo comprueba con datos que sí los tienen.
+- Arnés: `chrome.runtime.getManifest` faltaba, y la versión salía vacía en el diagnóstico y en la copia anonimizada.
+
 ## 2.57.0 — 2026-09-05
 
 - **Citas futuras en el calendario.** Los días con pacientes ya citados a mi nombre se marcan con una insignia hueca, distinta de la de atenciones hechas, y al abrir uno se ve a quién tengo citado con sus diagnósticos previos y sus interconsultas abiertas. El pie del calendario dice hasta qué fecha llega y cuántos días no se pudieron consultar. La ventana se elige en Preferencias: 30, 60 (por defecto), 90 días o ninguno.

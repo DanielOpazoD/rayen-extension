@@ -21,3 +21,21 @@ test('la copia anonimizada del Explorador no contiene nombres, RUT ni correos', 
   expect(cuerpo.datos.Anamnesis[0].Evolucion).toBe('Sra. <nombre>, RUT <rut>, evoluciona bien; hija al <fono>.');
   await expect(page.locator('#explorerAnonMeta')).toHaveText(/comprobación final sin restos/);
 });
+
+test('el diagnóstico resume la carga en recuentos y no lleva datos de pacientes', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.locator('#btnFetch').click();
+  await expect(page.locator('#statusBar')).toContainText('atenciones');
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Explorador API' }).click();
+  await page.locator('#btnDiag').click();
+
+  const texto = await page.locator('#explorerOut').inputValue();
+  expect(texto).toMatch(/Rayen Atenciones .+ · diagnóstico/);
+  expect(texto).toMatch(/Por día: lun \d+ · mar \d+/);
+  expect(texto).toMatch(/Cruce agenda–ficha: \d+ mismo día/);
+  // Ningún nombre ni RUN del arnés sobrevive.
+  for (const prohibido of ['Ejemplo', 'Tuki', 'Lagos', '25106217', '17.752.753']) expect(texto).not.toContain(prohibido);
+  await expect(page.locator('#explorerAnonMeta')).toContainText('Sólo recuentos');
+});

@@ -1,3 +1,8 @@
+import { diagnosticoCarga, formatearDiagnostico } from '../../core/diagnostico.js';
+import { pendingSyncItems, SYNC_SOURCES } from '../../core/sync-rules.js';
+import { loadSyncHealth } from '../../io/sync-health.js';
+import { state, pendientes } from '../../io/state.js';
+import { copyToClipboard } from '../toast.js';
 import { getRawSamples } from '../../io/api.js';
 import { explorerFetch, QUICK_LINKS, summarizeExtraFields } from '../../io/explorer.js';
 import { getFichaCaptures } from '../../io/ficha-load.js';
@@ -61,6 +66,25 @@ function descargarAnonimizada() {
   meta.className = 'explorer-meta ok';
 }
 
+/**
+ * Recuentos de la carga actual, sin un solo dato de paciente: para validar en
+ * la red del hospital lo que el arnés no puede probar y poder compartirlo.
+ */
+async function copiarDiagnostico() {
+  const salud = await loadSyncHealth();
+  const texto = formatearDiagnostico(diagnosticoCarga({
+    allData: state.allData, futuras: state.futuras, futurasEstado: state.futurasEstado,
+    sics: state.sics, pendientes: pendientes(), meses: state.loadedMonths,
+    syncPendiente: Object.fromEntries(SYNC_SOURCES.map(s => [s, pendingSyncItems(salud, s).size])),
+    version: chrome.runtime?.getManifest?.().version ?? '',
+  }));
+  $('explorerOut').value = texto;
+  fuente = 'diagnostico';
+  copyToClipboard(texto, 'Diagnóstico copiado');
+  $('explorerAnonMeta').textContent = 'Sólo recuentos: sin nombres, RUN, diagnósticos ni fechas de pacientes.';
+  $('explorerAnonMeta').className = 'explorer-meta ok';
+}
+
 export function init() {
   let capturas = listarCapturas();
   document.querySelector('.tabs')?.addEventListener('click', () => { capturas = listarCapturas(); });
@@ -72,6 +96,7 @@ export function init() {
     $('explorerAnonMeta').textContent = '';
   });
   $('btnExplorerAnon').addEventListener('click', descargarAnonimizada);
+  $('btnDiag').addEventListener('click', copiarDiagnostico);
   $('explorerOut').addEventListener('input', () => { fuente = 'pegado'; });
 
   QUICK_LINKS.forEach(({ label, url }) => {

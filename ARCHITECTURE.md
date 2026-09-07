@@ -197,6 +197,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/calendar.js` — rejilla mensual para Hoy, sin DOM: atenciones por día y, aparte, las citas ya agendadas.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
+- `src/core/diagnostico.js` — recuentos de una carga para validar contra Eloisa (cómo se cruzó cada atención, días de la semana, agenda futura) sin un solo dato de paciente.
 - `src/core/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/core/exam-request-catalog.js` — catálogo literal del formulario de solicitud: 10 categorías, 65 exámenes y sus tubos.
 - `src/core/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.
