@@ -89,7 +89,8 @@ export function openPatient(record) {
 }
 
 export function openPatientById(id) {
-  const rec = state.allData.find(p => String(p.id) === String(id));
+  // También entre las citas futuras: sus tarjetas se abren igual que las de una jornada pasada.
+  const rec = state.allData.find(p => String(p.id) === String(id)) ?? state.futuras.find(p => String(p.id) === String(id));
   if (rec) openPatient(rec);
 }
 

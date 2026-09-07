@@ -5,10 +5,12 @@
 <script type="module">
   // Dev harness: real app.html + real app.js, fake chrome.* and synthetic data.
   // Open via `npm run dev` (or any static server at the repo root) → /dev/
-  import { seed, setFichaResponses, setFichaMode, loadCaptures } from './chrome-stub.js';
+  import { seed, setFichaResponses, setFichaMode, setCitasPorDia, loadCaptures } from './chrome-stub.js';
   import { buildFixture } from './fixture.js';
   import { buildFichaResponses } from './ficha-fixture.js';
-  seed(buildFixture());
+  const fixture = buildFixture();
+  seed(fixture.storage);
+  setCitasPorDia(fixture.citasPorDia);
   setFichaResponses(buildFichaResponses());
   const params = new URLSearchParams(location.search);
   if (params.get('ficha') === 'off') setFichaMode('off');

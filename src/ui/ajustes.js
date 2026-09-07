@@ -8,7 +8,7 @@ import { diffWatched } from '../io/watch.js';
 import { esc, $, targetOf, closestOf } from './dom.js';
 import { state, setData, setPrefs, on } from '../io/state.js';
 import { initMenu, setStatus } from './ui.js';
-import { armRefresh } from './loader.js';
+import { armRefresh, cargarFuturas } from './loader.js';
 
 /** Preferences and local-data controls. */
 
@@ -29,6 +29,7 @@ function fillSettings() {
   $('setRetention').value = String(state.prefs.retentionMonths ?? CONFIG.retentionMonths);
   $('setAutoLoad').checked = state.prefs.autoLoad !== false;
   $('setNetTimeout').value = String(state.prefs.netTimeoutSec ?? 20);
+  $('setFuturas').value = String(state.prefs.futurasDias ?? CONFIG.futurasDias);
   $('setNueva').value = String(umbrales.nuevaDias);
   $('setCita').value = String(umbrales.citaDias); $('setControl').value = String(umbrales.controlDias);
 }
@@ -62,6 +63,13 @@ export function init({ lock }) {
     }
     if (t.id === 'setStartTab') await savePrefs({ startTab: t.value });
     if (t.id === 'setAutoLoad') { setPrefs({ autoLoad: t.checked }); await savePrefs({ autoLoad: t.checked }); }
+    if (t.id === 'setFuturas') {
+      const dias = Number(t.value);
+      setPrefs({ futurasDias: dias });
+      await savePrefs({ futurasDias: dias });
+      // Se aplica al momento: quitarlas vacía el calendario, ponerlas lo llena sin recargar la agenda.
+      await cargarFuturas({ force: true });
+    }
     if (t.id === 'setNetTimeout') {
       const sec = Number(t.value) || 20;
       setPrefs({ netTimeoutSec: sec });

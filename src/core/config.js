@@ -17,6 +17,7 @@ export const CONFIG = Object.freeze({
   cacheKey:     'rayen_citas_v2',
   historialKey: 'rayen_historial_v1',
   sicKey:       'rayen_sic_v1',
+  futurasKey:   'rayen_futuras_v1',
   watchKey:     'rayen_watch_v1',
   notesKey:     'rayen_notes_v1',
   prefsKey:     'rayen_prefs_v1',
@@ -28,6 +29,9 @@ export const CONFIG = Object.freeze({
 
   // SIC list is re-fetched when older than this (states change over time)
   sicTtlMs: 30 * 60 * 1000,
+  // La agenda futura cambia cuando el SOME agenda a alguien: se refresca antes que las interconsultas.
+  futurasTtlMs: 15 * 60 * 1000,
+  futurasDias: 60,   // días hacia adelante que se muestran en el calendario (0 = no cargarlas)
   httpTimeoutMs: 20 * 1000,        // agenda y ficha diaria: si Eloisa no responde en 20 s, se aborta; el resto sigue
   fichaTimeoutMs: 60 * 1000,       // la ficha de 10 años de un paciente va en una sola llamada y en una red lenta tarda más
   // Cached days older than this are pruned on load

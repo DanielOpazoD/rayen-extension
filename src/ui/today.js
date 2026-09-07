@@ -100,8 +100,9 @@ function card(rec, allData, sics) {
  *
  * @param {object[]} allData
  * @param {object[]} sics
- * @param {{ novedades?: object, especialidades?: string[], dia8?: string }} extra
+ * @param {{ novedades?: object, especialidades?: string[], dia8?: string, futuras?: object[] }} extra
  *   dia8 shows a chosen day instead of today (no fallback to the last day with data).
+ *   futuras: citas ya agendadas después de hoy; un día futuro se pinta con ellas.
  * @returns {string} the day actually shown (YYYYMMDD)
  */
 export function renderToday(allData, sics = [], extra = {}) {
@@ -113,7 +114,9 @@ export function renderToday(allData, sics = [], extra = {}) {
 
   const hoy = localDateStr(new Date());
   let dia = extra.dia8 || hoy;
-  let rows = allData.filter(r => r.fecha8 === dia);
+  // Un día posterior a hoy no tiene atenciones: tiene citas, y viven aparte.
+  const esFuturo = dia > hoy;
+  let rows = esFuturo ? (extra.futuras ?? []).filter(r => r.fecha8 === dia) : allData.filter(r => r.fecha8 === dia);
   if (!rows.length && !extra.dia8) {
     const past = [...new Set(allData.map(r => r.fecha8).filter(d => d && d < hoy))].sort().pop();
     if (past) { dia = past; rows = allData.filter(r => r.fecha8 === past); }
@@ -122,15 +125,19 @@ export function renderToday(allData, sics = [], extra = {}) {
 
   const pend = rows.filter(r => !/Completado|presentó/i.test(r.estado)).length;
   const esHoy = dia === hoy;
+  const cuenta = esFuturo
+    ? `${rows.length} ${rows.length === 1 ? 'cita agendada' : 'citas agendadas'}`
+    : `${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy || extra.dia8 ? '' : ' · hoy no hay agenda cargada'}`;
 
   const brief = extra.novedades ? novedadesHTML(extra.novedades, extra.especialidades ?? []) : '';
 
+  const titulo = esFuturo ? 'Agendado' : esHoy ? 'Hoy' : extra.dia8 ? 'Jornada' : 'Última jornada';
   const agenda = rows.length
     ? `<div class="today-h">
-         <h2>${esHoy ? 'Hoy' : extra.dia8 ? 'Jornada' : 'Última jornada'} · ${longDate(dia)}</h2>
-         <span>${rows.length} ${rows.length === 1 ? 'atención' : 'atenciones'}${pend ? ` · ${pend} sin cerrar` : ''}${esHoy || extra.dia8 ? '' : ' · hoy no hay agenda cargada'}</span>
+         <h2>${titulo} · ${longDate(dia)}</h2>
+         <span>${cuenta}</span>
        </div>` + rows.map(r => card(r, allData, sics)).join('')
-    : `<div class="today-empty"><b>Sin atenciones el ${longDate(dia)}</b>${extra.dia8 ? 'Usa las flechas para moverte de día.' : 'No hay citas ni atenciones en el período cargado.'}</div>`;
+    : `<div class="today-empty"><b>Sin ${esFuturo ? 'citas' : 'atenciones'} el ${longDate(dia)}</b>${esFuturo ? 'Nadie citado a tu nombre ese día.' : extra.dia8 ? 'Usa las flechas para moverte de día.' : 'No hay citas ni atenciones en el período cargado.'}</div>`;
 
   el.innerHTML = brief + agenda;
   return dia;

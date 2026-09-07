@@ -1,3 +1,5 @@
+import { getToken } from '../io/auth.js';
+import { loadAgendaFutura } from '../io/agenda-futura.js';
 import { humanError } from '../core/errors.js';
 import { loadData } from '../io/api.js';
 import { attachNotes } from '../io/notes.js';
@@ -7,7 +9,7 @@ import { toast } from './toast.js';
 import { $, skeletonRows, skeletonCards, closestOf } from './dom.js';
 import { COLUMNS } from './table.js';
 import { CONFIG } from '../core/config.js';
-import { state, setData, emit, setLoadedMonths } from '../io/state.js';
+import { state, setData, setFuturas, emit, setLoadedMonths } from '../io/state.js';
 import { setStatus } from './ui.js';
 import { initSyncStatus, renderSyncStatus } from './sync-status.js';
 import { failRunningSyncSources, loadSyncHealth } from '../io/sync-health.js';
@@ -22,6 +24,23 @@ let fetchInFlight = null;
 
 async function applyResult(result) {
   setData({ allData: await attachNotes(result.records), team: result.team ?? {} });
+}
+
+/**
+ * Los pacientes ya citados a mi nombre después de hoy. Va después de la carga
+ * principal y en su propio try: si Eloisa no responde, el período cargado sigue
+ * intacto y el calendario lo dice en su pie, no en la barra de estado.
+ * @param {{ force?: boolean }} [opts]
+ */
+export async function cargarFuturas({ force = false } = {}) {
+  const dias = state.prefs.futurasDias ?? CONFIG.futurasDias;
+  if (!dias) { setFuturas([], { dias: 0, desde8: '', hasta8: '', failed: 0, savedAt: 0 }); return; }
+  try {
+    const token = await getToken();
+    if (!token) return;
+    const { citas, desde8, hasta8, failed, savedAt } = await loadAgendaFutura(token, { dias, force });
+    setFuturas(citas, { dias, desde8, hasta8, failed, savedAt });
+  } catch { /* la agenda futura es un extra: nunca tumba la carga */ }
 }
 
 async function performFetch({ retryOnly = false, forceHistorial = false } = {}) {
@@ -88,6 +107,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
   setStatus(s.text, s.cls);
   armRefresh();
   emit('fetched');
+  await cargarFuturas();
   return result;
 }
 
@@ -152,6 +172,7 @@ async function silentRefreshBody() {
   const s = summarizeLoad(state.allData.length, result);
   setStatus(s.text, s.cls);
   await renderSyncStatus(result.sync);
+  await cargarFuturas();
 }
 
 async function openEloisa() {
