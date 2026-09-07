@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 2.59.0 — 2026-09-05
+
+Primera validación contra Eloisa real (diagnóstico de Daniel, 3 meses, 129 atenciones).
+
+- **«Reconciliar fechas», en Preferencias.** El cruce por la cita exacta sólo actúa cuando un día se descarga, así que los días guardados antes de la 2.47.0 se quedaron con la conjetura por cercanía: en la validación real salieron 10 estimadas y ninguna exacta. Este botón vuelve a preguntar por la cita de esas atenciones concretas, unas pocas peticiones, en vez de obligar a vaciar y volver a bajar meses de historial (~1 MB por día del nodo).
+- **El diagnóstico separa las urgencias por día.** Sin eso, las atenciones espontáneas de un día que no atiendo se leían como una anomalía del cruce. Ahora la línea dice «jue 2 (2 urg)».
+- Verificado en las capturas y anotado en la arquitectura: la consulta de historial por nodo trae `IdUsp`, pero `IdCita` en cero y `FechaCita` en el centinela en 288 de 288 atenciones. Por eso el cruce exacto necesita la consulta por paciente.
+
 ## 2.58.0 — 2026-09-05
 
 - **Diagnóstico de la carga** («Copiar diagnóstico», en Explorador API). Resume en recuentos lo que sólo se puede comprobar con datos reales: atenciones por día de la semana, cuántas se cruzaron el mismo día, por la cita exacta que declara Rayen o estimadas por cercanía, cuántas citas quedaron sin atención, cuántas fichas se cerraron otro día y con qué desfase máximo, la agenda futura y lo que quedó pendiente de sincronizar. No lleva nombres, RUN, diagnósticos ni fechas de pacientes, así que se puede pegar en una conversación; una prueba lo comprueba con datos que sí los tienen.

@@ -313,3 +313,34 @@ test('mergeHistorial: el desempate hacia la cita anterior no depende del orden d
   assert.equal(out.find(c => c.id === 20260913).atencionId, 9);
   assert.equal(out.find(c => c.id === 20260917).atencionId, null);
 });
+
+test('reconciliarCitas resuelve lo que quedó en caché sin cita exacta, y no baja el historial otra vez', async () => {
+  installFakeChrome();
+  // Caché tal como la dejó una versión anterior: una atención mía sin cita ese día y sin resolver.
+  const guardada = { ...atencion({ Id: 9, Fecha: '20260904 174500' }), idUsp: 4242 };
+  const { loadStore, saveStore } = await import('../src/io/cache.js');
+  const { CONFIG } = await import('../src/core/config.js');
+  const store = await loadStore(CONFIG.historialKey);
+  await saveStore(store, ['20260904'], [guardada]);
+  const agenda = await loadStore(CONFIG.cacheKey);
+  await saveStore(agenda, ['20260902'], [cita()]);
+
+  const llamadas = [];
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init?.body ?? '{}');
+    llamadas.push(body.IdUsuario ? `paciente:${body.FechaInicio.slice(0, 8)}` : `nodo:${body.FechaInicio.slice(0, 8)}`);
+    const item = { Id: 9, IdCita: 555, FechaCita: '20260902 090000', IdUsp: 4242, Fecha: '20260904 174500',
+      RutPaciente: '25106217k', NombreCompleto: 'Rosa Ejemplo Tuki', TipoDeAtencion: 'Morbilidad Medica',
+      Diagnosticos: [], Actividades: [], FuncionariosPrestadores: [{ Id: OFFICER, NombreCompleto: 'Opazo Damiani Daniel' }] };
+    return new Response(JSON.stringify([item]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  const { reconciliarCitas } = await import('../src/io/historial.js');
+  const r = await reconciliarCitas('tok');
+  assert.deepEqual(r, { revisadas: 1, resueltas: 1 });
+  assert.deepEqual(llamadas, ['paciente:20260904'], 'una consulta por paciente; ningún día de historial del nodo');
+
+  // Y queda guardado: una segunda pasada ya no tiene nada que resolver.
+  const r2 = await reconciliarCitas('tok');
+  assert.deepEqual(r2, { revisadas: 0, resueltas: 0 });
+});
