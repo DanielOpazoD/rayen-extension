@@ -89,6 +89,7 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 1. `ui/patient-panel.js → openPanel` arma `cur` (agenda del paciente, sus SIC, contacto) y pinta al instante con `ui/panel/*`.
 2. `io/ficha-load.js → loadFicha` pide la ficha administrativa y luego seis fuentes en paralelo, con memoización por paciente sólo cuando todas respondieron; `core/ficha.js` las analiza. Si una falla, se dice cuál y las demás se muestran; una sesión vencida se lee del transporte y avisa como la carga principal. La fecha de cada atención es la de su cita (`FechaCita`, sólo en la consulta por paciente); la fecha de guardado (`Fecha`) se conserva como «registrada el …» cuando cae en otro día. El historial diario por nodo no trae `FechaCita`: para cada atención mía sin cita ese día, `resolverCitas` pide ese día del paciente (la consulta por paciente sí trae `IdCita` y `FechaCita`) y `mergeHistorial` enlaza la cita exacta; sólo si esa consulta falla recurre a la cita más cercana (hasta 14 días antes o 7 después; nunca una no atendida, anulada o suspendida), marcada como estimada. La fila toma la fecha de la cita.
 3. El panel es un diálogo modal real: fondo inerte, trampa de Tab, foco devuelto a la fila. Escape cierra lo más interno: menú, hoja de informe, panel.
+3b. La pestaña Pacientes agrega mis atenciones, pero el panel no depende de ellas: «Ficha por RUN» (`ui/actions.js → abrirFichaPorRun`) valida el dígito verificador, pide la inscripción del nodo (`io/ficha-load.js → buscarPacientePorRun`), arma el registro con `core/ficha.js → recordDesdeMaster`, le engancha las notas que ya existían y abre el mismo panel. Así se ve la ficha de alguien a quien nunca he atendido.
 4. La pestaña Antecedentes (`panel/problemas.js`) es la portada: diagnósticos por peso (`core/ficha-rank.js`) y antecedentes mórbidos en una sola lista. Cada receta de una atención lleva su impresora (PDF de Eloisa).
 5. En Recetas, «activa» lo afirma la lista de fármacos en uso de Rayen (`core/receta.js`, la misma lista que `RecuperarAntecedentes` y `FichaClinica/FarmacoEnUso`); una receta fuera de esa lista se clasifica por la duración escrita y la pestaña lo dice. Desplegar una receta pide su detalle a Eloisa (`io/receta.js`, `Farmacia/Receta/id=…`) y muestra vigencia, despacho y prescripciones suspendidas; no se escribe nada.
 
@@ -191,12 +192,12 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/core/calendar.js` — rejilla mensual de atenciones para Hoy, sin DOM.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
-- `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, retención en meses, formatos ISO y DD/MM/YYYY.
+- `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/core/exam-request-catalog.js` — catálogo literal del formulario de solicitud: 10 categorías, 65 exámenes y sus tubos.
 - `src/core/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.
 - `src/core/ficha-rank.js` — orden clínico sin DOM: problemas con peso (GES, crónicos, recurrentes) y vigencia de prescripciones.
-- `src/core/ficha.js` — análisis de la ficha clínica (atenciones, secciones, textos libres, antecedentes, programas, maestro), sin red.
+- `src/core/ficha.js` — análisis de la ficha clínica (atenciones, secciones, textos libres, antecedentes, programas, maestro) y el registro que el panel necesita cuando el paciente no está en la agenda, sin red.
 - `src/core/receta.js` — recetas sin red ni DOM: autoridad de Rayen (fármacos en uso) sobre la duración escrita, y detalle de vigencia, despacho y suspensiones.
 - `src/core/historial-merge.js` — cruce puro de la agenda con el historial diario: cita del mismo día, cita exacta declarada por Rayen o la más cercana (estimada); resumen del equipo por día.
 - `src/core/lab-session.js` — estado de sesión de los laboratorios sin DOM: qué se muestra por cada resultado y ventana de caché de la comprobación.
@@ -227,7 +228,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
 - `src/io/crypto-store.js` — cifrado en reposo (ADR 0001): AES-GCM con clave derivada del PIN por PBKDF2, creación y cambio de PIN, migración de lo que estaba en claro; la clave sólo en memoria.
 - `src/io/explorer.js` — consultas controladas del Explorador API.
-- `src/io/ficha-load.js` — carga de la ficha desde Eloisa: seis fuentes en paralelo, memoización y respuestas crudas para el Explorador.
+- `src/io/ficha-load.js` — carga de la ficha desde Eloisa: seis fuentes en paralelo, memoización, búsqueda de un paciente por RUN y respuestas crudas para el Explorador.
 - `src/io/historial.js` — historial diario desde Eloisa: caché por día, resolución de la cita exacta por paciente; el cruce con la agenda vive en core/historial-merge.js.
 - `src/io/http.js` — transporte autenticado, cancelación y guardia de origen.
 - `src/io/lab-api.js` — servicio ProactiveLIS: búsqueda de órdenes, PDF e informes.

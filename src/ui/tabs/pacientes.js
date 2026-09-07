@@ -4,7 +4,7 @@ import { toast } from '../toast.js';
 import { $, closestOf, qsa } from '../dom.js';
 import { state, on, pendientes } from '../../io/state.js';
 import { markSorted, remeasure } from '../ui.js';
-import { openPatientById, copyRun, jumpToSIC } from '../actions.js';
+import { openPatientById, copyRun, jumpToSIC, abrirFichaPorRun } from '../actions.js';
 
 /** One row per person. Aggregated lazily: only rebuilt when the data version moved. */
 
@@ -34,7 +34,21 @@ function render() {
 /** Render on show if something changed while the tab was hidden. */
 export function onShow() { if (dirty) render(); }
 
+/** Búsqueda manual por RUN: abre la ficha de cualquier paciente del nodo. */
+async function buscarPorRun() {
+  const btn = $('btnPacRun'), msg = $('pacRunMsg');
+  btn.disabled = true;
+  msg.className = 'pac-find-msg';
+  msg.textContent = 'Buscando en Eloisa…';
+  const { ok, mensaje } = await abrirFichaPorRun($('pacRun').value);
+  btn.disabled = false;
+  msg.className = `pac-find-msg${ok ? '' : ' err'}`;
+  msg.textContent = mensaje;
+}
+
 export function init() {
+  $('btnPacRun').addEventListener('click', buscarPorRun);
+  $('pacRun').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarPorRun(); } });
   $('pacSearch').addEventListener('input', render);
   $('pacFilt').addEventListener('change', render);
 

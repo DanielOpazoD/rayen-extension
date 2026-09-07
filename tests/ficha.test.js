@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster, textosLibres } from '../src/core/ficha.js';
+import { parseFichaAtencion, describe, parseAntecedentes, parseProgramas, parseMaster, textosLibres, recordDesdeMaster } from '../src/core/ficha.js';
 
 test('parseMaster maps the UsuarioApsRut record (contact, family, prevision, flags)', () => {
   const m = parseMaster({
@@ -132,4 +132,32 @@ test('textosLibres rescata la evolución y el examen físico de una atención de
   const v = parseFichaAtencion(a);
   assert.equal(v.extras.length, 4);
   assert.ok(!v.extras.some(e => /Indicaciones|Motivo|Nombre/.test(e.key)), 'lo que ya tiene sección o es identidad no se repite');
+});
+
+test('recordDesdeMaster arma el registro del panel desde la inscripción, con el RUN canónico y la edad', () => {
+  const master = parseMaster({
+    Id: 2113572, Rut: '17752753K', NombreFormateado: 'Lagos Ejemplo Luis',
+    FechaDeNacimiento: '19900812 000000', Sexo: { Nombre: 'Hombre' }, ConvenioPrevisional: { Nombre: 'Fonasa D' },
+    Telefonos: [{ TelefonoDescripcion: '9 1111 1111', Eliminado: false }],
+    Georeferencias: [{ DireccionFormateada: 'Calle Ejemplo 1' }], EstaActivo: true,
+  });
+  const r = recordDesdeMaster(master);
+  assert.equal(r.run, '17752753K', 'canónico: las interconsultas, las notas y los contactos comparan por él');
+  assert.equal(r.runStr, '17.752.753-K');
+  assert.equal(r.idUsp, 2113572);
+  assert.equal(r.nombre, 'Lagos Ejemplo Luis');
+  assert.equal(r.origen, 'busqueda');
+  assert.equal(r.id, 'run_17752753K');
+  assert.equal(typeof r.edad, 'number');
+  assert.ok(r.edad >= 35, 'nacido en 1990');
+  assert.deepEqual([r.sexo, r.prevision, r.telefono, r.direccion], ['Hombre', 'Fonasa D', '9 1111 1111', 'Calle Ejemplo 1']);
+  // El panel recorre estas listas sin comprobarlas: han de existir vacías, no faltar.
+  for (const k of ['diagnosticos', 'actividades', 'prestadores', 'adjuntos', 'proximoControl', 'notas']) assert.deepEqual(r[k], [], k);
+  assert.deepEqual([r.fecha8, r.fechaAtencion, r.hora, r.estado, r.note], ['', '', '', '', '']);
+  assert.equal(recordDesdeMaster(null), null);
+});
+
+test('recordDesdeMaster tolera una inscripción sin RUN ni fecha de nacimiento', () => {
+  const r = recordDesdeMaster({ idUsp: 7, nombre: 'Paciente Sin Run', run: '', dob: '' });
+  assert.deepEqual([r.run, r.runStr, r.edad, r.id], [null, '', null, 'run_7']);
 });

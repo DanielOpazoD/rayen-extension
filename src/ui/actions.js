@@ -1,6 +1,10 @@
 import { humanError } from '../core/errors.js';
+import { formatRun } from '../core/parser.js';
+import { recordDesdeMaster } from '../core/ficha.js';
+import { getToken } from '../io/auth.js';
+import { buscarPacientePorRun } from '../io/ficha-load.js';
 import { state, setNote, sicsByRun, contacts } from '../io/state.js';
-import { saveNote, restoreNote, patientKey, addNote, updateNote } from '../io/notes.js';
+import { saveNote, restoreNote, patientKey, addNote, updateNote, attachNotes } from '../io/notes.js';
 import { openPanel } from './patient-panel.js';
 import { toast, copyToClipboard, flashOk } from './toast.js';
 import { setStatus } from './ui.js';
@@ -113,4 +117,31 @@ export function jumpToSIC({ id, run }) {
   showTab('interconsultas');
   const q = id ? String(id) : (sicsByRun().get(run)?.[0]?.paciente.runStr ?? run);
   document.dispatchEvent(new CustomEvent('rayen:goto-sic', { detail: { id: id ? Number(id) : null, q } }));
+}
+
+/**
+ * Abre la ficha de cualquier paciente del nodo por su RUN, esté o no entre mis
+ * atenciones. El panel carga después la ficha completa como con cualquier otro.
+ * No lanza: devuelve el mensaje que la pestaña muestra junto al campo.
+ * @param {string} entrada  lo que se escribió, con o sin puntos y guion
+ * @returns {Promise<{ ok: boolean, mensaje: string }>}
+ */
+export async function abrirFichaPorRun(entrada) {
+  const { run, runStr, dvOk } = formatRun(entrada);
+  if (!run) return { ok: false, mensaje: 'Escribe un RUN completo, con su dígito verificador.' };
+  // Sin esta comprobación, un dígito mal tecleado se vería como «no existe».
+  if (!dvOk) return { ok: false, mensaje: `${runStr} no cuadra con su dígito verificador.` };
+  let token = null;
+  try { token = await getToken(); } catch { /* fuera de la extensión */ }
+  if (!token) return { ok: false, mensaje: 'Sin sesión en Eloisa: inicia sesión y vuelve a intentarlo.' };
+  try {
+    const master = await buscarPacientePorRun(token, run);
+    if (!master) return { ok: false, mensaje: `Eloisa no devolvió a nadie con RUN ${runStr} en este nodo.` };
+    // Las notas se traen antes de abrir: un panel con la nota vacía se guardaría encima de la que ya existe.
+    const [record] = await attachNotes([recordDesdeMaster(master)]);
+    openPanel(record, { allData: state.allData, sics: state.sics, contacts: contacts() });
+    return { ok: true, mensaje: '' };
+  } catch (err) {
+    return { ok: false, mensaje: humanError(err, 'Eloisa') };
+  }
 }

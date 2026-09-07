@@ -36,6 +36,17 @@ export function minusMonths8(months, today = new Date()) {
   return toDate8(d);
 }
 
+/**
+ * Años cumplidos entre una fecha8 de nacimiento y `hoy`; null si no es una fecha.
+ * Cumplir años hoy ya cuenta.
+ */
+export function edadAnios(fecha8, hoy = new Date()) {
+  const nac = fromDate8(fecha8);
+  if (!nac) return null;
+  const anios = hoy.getFullYear() - nac.getFullYear();
+  return hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate()) ? anios - 1 : anios;
+}
+
 /** Date → «YYYY-MM-DD» (parámetros de los laboratorios). */
 export const fmtIso = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
