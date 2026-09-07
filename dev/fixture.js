@@ -15,7 +15,7 @@ export const MATRONA = { Id: 439560, NombreCompleto: 'Paula Ejemplo Tepano',   N
 
 export const PATIENTS = [
   ['Gabriela', 'Ejemplo', 'Haoa',     '13754664', '19710305', 'Mujer',  'Fonasa B'],
-  ['Luis',     'Ejemplo', 'Lagos',    '17752753', '19900812', 'Hombre', 'Fonasa D'],
+  ['Luis',     'Ejemplo', 'Lagos',    '56785678', '19900812', 'Hombre', 'Fonasa D'],
   ['María',    'Ejemplo', 'Pakomio',  '9876543',  '19560120', 'Mujer',  'Fonasa A'],
   ['Pedro',    'Ejemplo', 'Araki',    '17616600', '19881102', 'Hombre', 'Fonasa C'],
   ['Rosa',     'Ejemplo', 'Tuki',     '6543210',  '19470630', 'Mujer',  'Fonasa A'],

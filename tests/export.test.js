@@ -16,5 +16,5 @@ test('csvCell neutralises formula-leading characters (CSV injection)', () => {
   assert.equal(csvCell('-5'), '"\'-5"');
   assert.equal(csvCell('@cmd'), '"\'@cmd"');
   assert.equal(csvCell('\tx'), '"\'\tx"');
-  assert.equal(csvCell('17.752.753-K'), '"17.752.753-K"', 'a RUN with an inner dash is untouched');
+  assert.equal(csvCell('56.785.678-K'), '"56.785.678-K"', 'a RUN with an inner dash is untouched');
 });

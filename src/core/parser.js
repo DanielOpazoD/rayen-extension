@@ -74,7 +74,7 @@ export function computeDv(body) {
 /**
  * Normalises a RUN as Rayen returns it: digits with the check digit glued on
  * and no separators ("25106217k", "292421311"). Also accepts already-formatted
- * input ("17.752.753-K"). The last character is ALWAYS the DV.
+ * input ("56.785.678-K"). The last character is ALWAYS the DV.
  *
  * @returns {{ run: string|null, runStr: string, dvOk: boolean }}
  *   run    = "25106217K" (canonical key), runStr = "25.106.217-K"

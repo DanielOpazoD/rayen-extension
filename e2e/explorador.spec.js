@@ -36,6 +36,6 @@ test('el diagnóstico resume la carga en recuentos y no lleva datos de pacientes
   expect(texto).toMatch(/Por día: lun \d+( \(\d+ urg\))? · mar \d+/);
   expect(texto).toMatch(/Cruce agenda–ficha: \d+ mismo día/);
   // Ningún nombre ni RUN del arnés sobrevive.
-  for (const prohibido of ['Ejemplo', 'Tuki', 'Lagos', '25106217', '17.752.753']) expect(texto).not.toContain(prohibido);
+  for (const prohibido of ['Ejemplo', 'Tuki', 'Lagos', '25106217', '56.785.678']) expect(texto).not.toContain(prohibido);
   await expect(page.locator('#explorerAnonMeta')).toContainText('Sólo recuentos');
 });

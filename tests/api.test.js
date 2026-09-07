@@ -13,10 +13,10 @@ import { dateRange, localDateStr } from '../src/core/parser.js';
 let fake, calls;
 const rawCita = (id, d8, estado = 'Completado') => ({
   Id: id, FechaHoraInicio: `${d8} 090000`, Tag: { Nombre: estado }, TipoDeAtencion: { Nombre: 'Consulta' },
-  UsuarioAps: { Id: 1, Rut: '17752753K', NombreFormateado: 'Ana Prueba', FechaDeNacimiento: '19800101 000000', Sexo: { Nombre: 'Mujer' } },
+  UsuarioAps: { Id: 1, Rut: '56785678K', NombreFormateado: 'Ana Prueba', FechaDeNacimiento: '19800101 000000', Sexo: { Nombre: 'Mujer' } },
 });
 const rawAtencion = (id, d8) => ({
-  Id: id, IdCita: 0, Fecha: `${d8} 091500`, RutPaciente: '17752753K', NombreCompleto: 'Ana Prueba',
+  Id: id, IdCita: 0, Fecha: `${d8} 091500`, RutPaciente: '56785678K', NombreCompleto: 'Ana Prueba',
   FechaNacimiento: '19800101 000000', IdSexo: 2, TipoDeAtencion: 'Consulta',
   Diagnosticos: [], Actividades: [],
   FuncionariosPrestadores: [{ Id: 99, NombreCompleto: 'Otro Profesional', NombreInstrumento: 'Médico' }],
@@ -195,7 +195,7 @@ test('an agenda retry that closes a mutable historical appointment also refreshe
   const staleDate = dates[0];
   fake.local.set(CONFIG.cacheKey, {
     fetchedDates: dates,
-    records: [{ id: 7, fecha8: staleDate, run: '17752753K', estado: 'Iniciada', nombre: 'Ana Prueba' }],
+    records: [{ id: 7, fecha8: staleDate, run: '56785678K', estado: 'Iniciada', nombre: 'Ana Prueba' }],
     extra: {}, savedAt: 1,
   });
   fake.local.set(CONFIG.historialKey, {
@@ -277,7 +277,7 @@ test('retryOnly recovers pending agenda and history dates outside the visible pe
   const old8 = localDateStr(old);
   const dates = window1m();
   fake.local.set(CONFIG.cacheKey, {
-    fetchedDates: dates, records: [{ id: 7, fecha8: old8, run: '17752753K', nombre: 'Ana Prueba' }], extra: {}, savedAt: 1,
+    fetchedDates: dates, records: [{ id: 7, fecha8: old8, run: '56785678K', nombre: 'Ana Prueba' }], extra: {}, savedAt: 1,
   });
   fake.local.set(CONFIG.historialKey, { fetchedDates: dates, records: [], extra: { team: {} }, savedAt: 1 });
   for (const source of ['agenda', 'historial']) fake.local.set(CONFIG.syncKeys[source], {

@@ -9,12 +9,12 @@ import { extractAnyRutBody, buildDetail, buildDetails } from '../src/io/lab-repo
 
 test('extractAnyRutBody prefiere el formato SysLab', () => {
   assert.equal(extractAnyRutBody('Nombre: X\nRut/Fic: 16.940.645-6\n'), '16940645');
-  assert.equal(extractAnyRutBody('RUT/FIC : 17.752.753-K'), '17752753');
+  assert.equal(extractAnyRutBody('RUT/FIC : 56.785.678-K'), '56785678');
 });
 
 test('extractAnyRutBody cae a un patrón general cuando el informe no es de SysLab', () => {
   assert.equal(extractAnyRutBody('Paciente\nRUT: 16.940.645-6\nExamenes'), '16940645');
-  assert.equal(extractAnyRutBody('Rut del paciente 17752753-K'), '17752753');
+  assert.equal(extractAnyRutBody('Rut del paciente 56785678-K'), '56785678');
 });
 
 test('extractAnyRutBody devuelve vacío en vez de adivinar', () => {
@@ -37,7 +37,7 @@ const spec = (rut, expected) => ({
 
 test('buildDetail rechaza un informe que declara otro RUN', async () => {
   await assert.rejects(
-    () => buildDetail(spec('17.752.753-K', '16940645')),
+    () => buildDetail(spec('56.785.678-K', '16940645')),
     /corresponde a otro RUN/
   );
 });

@@ -80,9 +80,9 @@ test('el anonimizador responde en tiempo lineal ante textos largos sin arroba ni
 });
 
 test('segunda pasada: RUN pegado con verificador válido, teléfonos en todos los formatos y fechas dentro del texto', () => {
-  const r = anonimizar({ Texto: 'RUN 17752753K y 17752753-K y 6543210-2; llama al 56987654321, (+56) 9-8765-4321, 9 8765 4321 o al fijo 32 2100000; nació el 18/11/1963, control 4-9-2026 y alta 20260901; id 12345678 no es RUN.' }, { desplazamientoDias: 10 });
+  const r = anonimizar({ Texto: 'RUN 56785678K y 56785678-K y 6543210-2; llama al 56987654321, (+56) 9-8765-4321, 9 8765 4321 o al fijo 32 2100000; nació el 18/11/1963, control 4-9-2026 y alta 20260901; id 12345678 no es RUN.' }, { desplazamientoDias: 10 });
   const t = r.data.Texto;
-  assert.ok(!/17752753|6543210/.test(t), 'RUN pegado y con guion fuera');
+  assert.ok(!/56785678|6543210/.test(t), 'RUN pegado y con guion fuera');
   assert.ok(!/8765|2100000/.test(t), 'teléfonos fuera');
   assert.match(t, /nació el 08\/11\/1963/); assert.match(t, /control 25-8-2026|control 25-08-2026/); assert.match(t, /alta 20260822/);
   assert.match(t, /id 12345678 no es RUN/, 'ocho dígitos sin verificador válido se quedan');
@@ -105,7 +105,7 @@ test('segunda pasada: personas tras tratamiento o parentesco y en claves por sub
 
 test('la comprobación final es independiente: detecta lo que el recorrido no tocó', () => {
   assert.deepEqual(detectarRestos({ 'Sra. Rosa Tuki': 1 }), ['persona tras tratamiento o parentesco']);
-  assert.deepEqual(detectarRestos({ x: 'ver 17752753K' }), ['RUT pegado']);
+  assert.deepEqual(detectarRestos({ x: 'ver 56785678K' }), ['RUT pegado']);
   assert.deepEqual(detectarRestos({ x: 'fono 56987654321' }), ['teléfono']);
   assert.deepEqual(detectarRestos({ x: 'nada que ver 12345678' }), []);
   assert.deepEqual(detectarRestos({ x: 'Sra. <nombre> vino' }), [], 'un marcador ya puesto no es un resto');
@@ -126,7 +126,7 @@ test('regresión: una fecha-hora de Rayen cuyo octavo dígito valida como verifi
     assert.ok(!JSON.stringify(r.data).includes('<rut>'));
   }
   // El RUN pegado real sigue detectándose, incluso si lo sigue un espacio y otra cosa.
-  const real = anonimizar({ Texto: 'RUN 17752753K acude solo' }, { desplazamientoDias: 0 });
+  const real = anonimizar({ Texto: 'RUN 56785678K acude solo' }, { desplazamientoDias: 0 });
   assert.match(real.data.Texto, /<rut>/);
   assert.deepEqual(detectarRestos({ x: '20260815 080000' }), [], 'la comprobación final tampoco lo confunde');
 });
@@ -139,7 +139,7 @@ test('regresión: una fecha de ocho dígitos suelta en el texto es una fecha, no
   const r = anonimizar({ Evolucion: 'Control el 04/09/2026 y el 4-9-2026 y 20260904.' }, { desplazamientoDias: D });
   assert.equal(r.data.Evolucion, 'Control el 03/09/2026 y el 03-09-2026 y 20260903.');
   assert.equal(r.informe.ruts, 0);
-  assert.equal(uno('Evolucion', 'RUN 17752753K y fecha 20260904'), 'RUN <rut> y fecha 20260903', 'el RUN pegado real sí se borra');
+  assert.equal(uno('Evolucion', 'RUN 56785678K y fecha 20260904'), 'RUN <rut> y fecha 20260903', 'el RUN pegado real sí se borra');
   assert.equal(uno('Evolucion', '04/09-2026'), '04/09-2026', 'separadores mezclados no son una fecha');
 });
 
@@ -188,7 +188,7 @@ test('nombres por clave fuerte, por hermano de persona y por rol con valor que p
 
 test('RUN con formato y pegado, teléfonos y correos en todas las formas que aparecen en Rayen', () => {
   const t = v => uno('Texto', v);
-  for (const v of ['12.345.678-9', '12.345.6789', '1.234.567-K', '12345678-9', '17752753K', '17752753 K', '17752753k']) assert.equal(t(`RUN ${v} acude`), 'RUN <rut> acude', v);
+  for (const v of ['12.345.678-9', '12.345.6789', '1.234.567-K', '12345678-9', '56785678K', '56785678 K', '56785678k']) assert.equal(t(`RUN ${v} acude`), 'RUN <rut> acude', v);
   assert.equal(t('folio 123456-7'), 'folio 123456-7', 'seis dígitos con guion no son un RUN');
   for (const v of ['+56 9 1234 5678', '+56912345678', '9 1234 5678', '912345678', '56912345678', '32 212 3456', '2 212 3456', '9-1234-5678']) assert.equal(t(`llamar al ${v} hoy`), 'llamar al <fono> hoy', v);
   const parentesis = t('llamar al (+56) 9 1234 5678 hoy');

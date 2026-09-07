@@ -136,18 +136,18 @@ test('textosLibres rescata la evolución y el examen físico de una atención de
 
 test('recordDesdeMaster arma el registro del panel desde la inscripción, con el RUN canónico y la edad', () => {
   const master = parseMaster({
-    Id: 2113572, Rut: '17752753K', NombreFormateado: 'Lagos Ejemplo Luis',
+    Id: 2113572, Rut: '56785678K', NombreFormateado: 'Lagos Ejemplo Luis',
     FechaDeNacimiento: '19900812 000000', Sexo: { Nombre: 'Hombre' }, ConvenioPrevisional: { Nombre: 'Fonasa D' },
     Telefonos: [{ TelefonoDescripcion: '9 1111 1111', Eliminado: false }],
     Georeferencias: [{ DireccionFormateada: 'Calle Ejemplo 1' }], EstaActivo: true,
   });
   const r = recordDesdeMaster(master);
-  assert.equal(r.run, '17752753K', 'canónico: las interconsultas, las notas y los contactos comparan por él');
-  assert.equal(r.runStr, '17.752.753-K');
+  assert.equal(r.run, '56785678K', 'canónico: las interconsultas, las notas y los contactos comparan por él');
+  assert.equal(r.runStr, '56.785.678-K');
   assert.equal(r.idUsp, 2113572);
   assert.equal(r.nombre, 'Lagos Ejemplo Luis');
   assert.equal(r.origen, 'busqueda');
-  assert.equal(r.id, 'run_17752753K');
+  assert.equal(r.id, 'run_56785678K');
   assert.equal(typeof r.edad, 'number');
   assert.ok(r.edad >= 35, 'nacido en 1990');
   assert.deepEqual([r.sexo, r.prevision, r.telefono, r.direccion], ['Hombre', 'Fonasa D', '9 1111 1111', 'Calle Ejemplo 1']);

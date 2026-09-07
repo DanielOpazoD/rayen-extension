@@ -64,10 +64,10 @@ test('buildPatients agrupa por nombre cuando no hay RUN', () => {
 test('filterPatients: búsqueda por nombre, RUN, nota y diagnóstico', () => {
   const list = buildPatients([
     rec({ id: 1, note: 'derivar a cardio', diagnosticos: [{ nombre: 'HTA', clasificacion: 'HTA' }] }),
-    rec({ id: 2, run: '2K', runStr: '17.752.753-K', nombre: 'Luis Soto', ap: 'Soto' }),
+    rec({ id: 2, run: '2K', runStr: '56.785.678-K', nombre: 'Luis Soto', ap: 'Soto' }),
   ]);
   assert.equal(filterPatients(list, { q: 'pérez' }).length, 1);
-  assert.equal(filterPatients(list, { q: '17.752' })[0].nombre, 'Luis Soto');
+  assert.equal(filterPatients(list, { q: '56.785' })[0].nombre, 'Luis Soto');
   assert.equal(filterPatients(list, { q: 'cardio' })[0].run, '1K', 'la nota también se busca');
   assert.equal(filterPatients(list, { q: 'hta' })[0].run, '1K');
   assert.equal(filterPatients(list, {}).length, 2);

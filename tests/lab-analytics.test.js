@@ -97,7 +97,7 @@ test('sanitizeExamList ordena de más reciente a más antiguo y descarta ids no 
 });
 
 test('normalizePatientRutBody quita el dígito verificador sólo si es correcto', () => {
-  assert.equal(normalizePatientRutBody('17752753K'), '17752753');
+  assert.equal(normalizePatientRutBody('56785678K'), '56785678');
   assert.equal(normalizePatientRutBody('16.940.645-6'), '16940645');
   // Con un DV que no cuadra, el valor completo era el cuerpo.
   assert.equal(normalizePatientRutBody('169406459'), '169406459');
@@ -157,7 +157,7 @@ test('el lote de análisis está acotado a 24 informes', () => {
 
 test('examRowsMatchRut protege la identidad del lote', () => {
   assert.equal(examRowsMatchRut(EXAMS, '16940645'), true);
-  assert.equal(examRowsMatchRut([...EXAMS, { rutBody: '17752753' }], '16940645'), false);
+  assert.equal(examRowsMatchRut([...EXAMS, { rutBody: '56785678' }], '16940645'), false);
   assert.equal(normalizeRutBody('16.940.645-6'), '16940645');
 });
 
@@ -189,7 +189,7 @@ test('rutInputAmbiguous exige verificador explícito cuando la entrada puede ser
   assert.equal(rutInputAmbiguous('119570018'), false, '9 dígitos: cuerpo de 8 + verificador, sin duda');
   assert.equal(rutInputAmbiguous('11.957.001-8'), false);
   assert.equal(rutInputAmbiguous('11957001-8'), false);
-  assert.equal(rutInputAmbiguous('17752753K'), false, 'la K sólo puede ser verificador');
+  assert.equal(rutInputAmbiguous('56785678K'), false, 'la K sólo puede ser verificador');
   assert.equal(rutInputAmbiguous('123456'), false, 'menos de 7 dígitos no es un RUT buscable; lo rechaza otra validación');
 });
 

@@ -44,7 +44,7 @@ const pac = (nombre, runStr, extra = {}) => ({ nombre, runStr, edad: 40, fechaAt
 const PACS = [
   pac('Gabriela Keisy Torres Haoa', '13.754.664-7'),
   pac('Gabriel Pakarati Araki',     '17.616.600-2'),
-  pac('Luis Oyaneder Lagos',        '17.752.753-K'),
+  pac('Luis Oyaneder Lagos',        '56.785.678-K'),
   pac('María Tuki Pakomio',         '9.876.543-2'),
 ];
 
@@ -54,9 +54,9 @@ test('searchPatients: sin consulta devuelve el principio de la lista', () => {
 });
 
 test('searchPatients: prefijo de RUN gana sobre coincidencia parcial', () => {
-  const r = searchPatients(PACS, '17.752');
-  assert.equal(r[0].runStr, '17.752.753-K');
-  assert.equal(searchPatients(PACS, '17752753')[0].runStr, '17.752.753-K', 'sin puntos ni guion también');
+  const r = searchPatients(PACS, '56.785');
+  assert.equal(r[0].runStr, '56.785.678-K');
+  assert.equal(searchPatients(PACS, '56785678')[0].runStr, '56.785.678-K', 'sin puntos ni guion también');
 });
 
 test('searchPatients: exige todos los términos y prioriza inicio de palabra', () => {
