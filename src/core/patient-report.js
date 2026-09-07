@@ -1,6 +1,6 @@
+import { identidad } from './identidad.js';
 import { esc } from './text.js';
 import { esMiaAtencion } from './sic-rules.js';
-import { CONFIG } from './config.js';
 import { SECTION_LABELS } from './ficha.js';
 import { whenLabel } from './labels.js';
 
@@ -44,7 +44,7 @@ export function isMedicalVisit(v) {
  * @param {'todos'|'medicos'|'yo'} scope
  * @param {number} officerId
  */
-export function filterVisitsByScope(visits, scope, officerId = CONFIG.officerId) {
+export function filterVisitsByScope(visits, scope, officerId = identidad.officerId) {
   if (scope === 'todos') return visits;
   return visits.filter(v => {
     const pres = v.prestadores ?? [];
@@ -113,7 +113,7 @@ function sicHTML(s) {
  */
 export function buildPatientReport(cur, scope) {
   const { record, ficha } = cur;
-  const officerId = CONFIG.officerId;
+  const officerId = identidad.officerId;
   const m = ficha?.master;
   const hasFicha = !!ficha?.visits?.length;
   const source = hasFicha ? ficha.visits : cur.visits;

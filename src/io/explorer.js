@@ -1,9 +1,9 @@
-import { CONFIG } from '../core/config.js';
+import { identidad } from '../core/identidad.js';
 import { getToken } from './auth.js';
 import { resolveUrl } from './http.js';
 import { CITA_KNOWN_FIELDS } from '../core/parser.js';
 
-const N = CONFIG.nodeId, O = CONFIG.officerId;
+const N = identidad.nodeId, O = identidad.officerId;
 const RYC = '/API/api/rayen/ReferenciaYContrarreferencia';
 
 /** Endpoints verified in the Ficha Clínica HAR (2026-09-02), plus a few to probe. */

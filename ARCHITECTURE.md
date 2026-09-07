@@ -122,6 +122,10 @@ Todo corre en `npm run check` (y en CI) salvo lo marcado como manual:
 
 Todo lo que se guarda pasa por `storageGet`/`storageSet` de `src/io/cache.js`; con clave en memoria (`src/io/crypto-store.js`) se cifra con AES-GCM 256 y una clave derivada del PIN (PBKDF2, 300 000 iteraciones, sal por instalación). Al arrancar, `src/ui/pin-screen.js` crea el PIN la primera vez (y cifra lo que había en claro) o lo pide; el bloqueo por inactividad descarta la clave y «Continuar» vuelve a pedirlo. Sin PIN creado (pruebas y arnés) el almacenamiento queda en claro; la aplicación real no arranca sin PIN. Olvidar el PIN equivale a «Eliminar todo». Decisión y alternativas en `docs/adr/0001-persistencia-cifrada.md`.
 
+## Identidad
+
+Casi todo lo que la aplicación llama «mío» depende de dos números: el identificador del profesional y el del nodo. Estuvieron escritos a mano en `config.js`, de modo que un cambio de funcionario o de nodo habría hecho que la aplicación mostrara el trabajo de otra persona sin decirlo. Desde la v2.60.0, al arrancar se lee el objeto de sesión de Eloisa (`io/auth.js → leerSesionEloisa`, en el mundo aislado y sin los valores secretos) y `core/identidad.js` busca ahí la identidad, por niveles y con claves ancladas: «IdNodoOrigen» o «IdFuncionarioRegistrador» hablan de otro sitio o de otra persona y no se adoptan. Si la sesión no la declara, se conserva la de configuración. Nunca se adopta en silencio: el diagnóstico dice de dónde salió y, si difiere de la configuración, la barra de estado lo avisa al arrancar. Los valores de `config.js` siguen siendo el respaldo y el que usa el arnés.
+
 ## Agenda futura
 
 El calendario de Hoy muestra, además de las atenciones del período cargado, a los pacientes ya citados a nombre del oficial después de hoy (`io/agenda-futura.js`, ventana en Preferencias, 60 días por defecto). Va en una fuente propia y nunca entra en `state.allData`: una cita que aún no ocurrió contaría en la tabla, en las estadísticas y en las visitas por paciente como si ya hubiera pasado. Se consulta después de la carga principal y en su propio `try`, así que un fallo suyo no toca el período cargado; lo que faltó se dice en el pie del calendario. `Citas/ListaPacientesCitados` acepta un rango de fechas pero devuelve sólo el día de inicio (verificado en tres capturas), de modo que cada día es una petición.
@@ -198,6 +202,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/diagnostico.js` — recuentos de una carga para validar contra Eloisa (cómo se cruzó cada atención, días de la semana, agenda futura) sin un solo dato de paciente.
+- `src/core/identidad.js` — quién soy y en qué nodo: la sesión de Eloisa manda, `config.js` es sólo el punto de partida.
 - `src/core/errors.js` — traduce errores técnicos (red, sesión, HTTP) a frases para la persona que usa la aplicación.
 - `src/core/exam-request-catalog.js` — catálogo literal del formulario de solicitud: 10 categorías, 65 exámenes y sus tubos.
 - `src/core/exam-request.js` — selección, previsión y maqueta del formulario impreso de solicitud.

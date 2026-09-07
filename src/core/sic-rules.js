@@ -2,14 +2,14 @@
  * Reglas puras sobre interconsultas: no tocan red ni estado. Viven en core
  * para que state.js (io) y el registro clínico (ai) no dependan del cargador.
  */
-import { CONFIG } from './config.js';
+import { identidad } from './identidad.js';
 
 /**
  * La SIC es mía si la registré o la ejecuto yo.
  * @param {{ registrador?: {id?: number}, ejecutor?: {id?: number} }} sic
  * @param {number} [officerId]
  */
-export function isMine(sic, officerId = CONFIG.officerId) {
+export function isMine(sic, officerId = identidad.officerId) {
   return sic.registrador?.id === officerId || sic.ejecutor?.id === officerId;
 }
 
@@ -18,7 +18,7 @@ export function isMine(sic, officerId = CONFIG.officerId) {
  * @param {{ prestadores?: Array<{id?: number}> }} a
  * @param {number} [officerId]
  */
-export function esMiaAtencion(a, officerId = CONFIG.officerId) {
+export function esMiaAtencion(a, officerId = identidad.officerId) {
   return (a?.prestadores ?? []).some(p => p.id === officerId);
 }
 /** Contact/demographic info per RUN, harvested from SIC patient payloads. */

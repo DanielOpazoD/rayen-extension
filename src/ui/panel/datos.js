@@ -1,6 +1,6 @@
 /** Cabecera (iniciales, nombre, RUN, edad) y el desplegable de datos administrativos. */
+import { identidad } from '../../core/identidad.js';
 import { esc, $ } from '../dom.js';
-import { CONFIG } from '../../core/config.js';
 import { kv, h4, empty } from './helpers.js';
 
 export function renderHeader(cur) {
@@ -28,7 +28,7 @@ function alertChips(ficha) {
     if (!m.activo)   out.push(`<span class="al al-warn">Inscripción pasivada${m.pasivacion ? `: ${esc(m.pasivacion)}` : ''}</span>`);
     if (m.cuidador)  out.push(`<span class="al al-info">Cuidador</span>`);
     if (m.movilidadReducida) out.push(`<span class="al al-info">Movilidad reducida</span>`);
-    if (m.nodoInscripcion && m.nodoInscripcion !== CONFIG.nodeId) out.push(`<span class="al al-info" data-tip="Inscrito en otro establecimiento">Nodo ${m.nodoInscripcion}</span>`);
+    if (m.nodoInscripcion && m.nodoInscripcion !== identidad.nodeId) out.push(`<span class="al al-info" data-tip="Inscrito en otro establecimiento">Nodo ${m.nodoInscripcion}</span>`);
   }
   if (ficha.antecedentes.alergias.length || ficha.ram.length) out.push(`<span class="al al-bad">Alergia / RAM registrada</span>`);
   return out;

@@ -4,8 +4,8 @@
  * máquina es lo que la persona copia con el botón, y antes lo ve tal cual.
  * Proveedor: manual. El de API queda en src/ai/provider.js, apagado.
  */
+import { identidad } from '../core/identidad.js';
 import { $, esc } from './dom.js';
-import { CONFIG } from '../core/config.js';
 import { PLANTILLAS, prepararInforme, cerrarInforme, markdownAHtml } from '../ai/index.js';
 import { openReport } from './export.js';
 import { toast } from './toast.js';
@@ -27,7 +27,7 @@ function preparar() {
     const ventana = Number($('iaVentana').value) || null;
     prep = prepararInforme({
       plantilla: $('iaPlantilla').value,
-      datos: { record: datos.record, ficha: datos.ficha, visits: datos.visits, sics: datos.sics, laboratorio: getLabItems(datos.record.run) ?? [], officerId: CONFIG.officerId },
+      datos: { record: datos.record, ficha: datos.ficha, visits: datos.visits, sics: datos.sics, laboratorio: getLabItems(datos.record.run) ?? [], officerId: identidad.officerId },
       opciones: { ventanaMeses: ventana, fechasReales: $('iaFechasReales').checked },
     });
     const c = prep.contexto;

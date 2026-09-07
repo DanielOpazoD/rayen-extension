@@ -1,3 +1,4 @@
+import { identidad } from '../core/identidad.js';
 import { state } from './state.js';
 import { CONFIG } from '../core/config.js';
 import { apiPost, chunk, session, run } from './http.js';
@@ -34,7 +35,7 @@ const FLAGS = Object.freeze({
 async function fetchHistorialDay(token, date8) {
   try {
     const data = await apiPost(token, PATH, {
-      IdNodo: CONFIG.nodeId,
+      IdNodo: identidad.nodeId,
       FechaInicio:  `${date8} 000000`,
       FechaTermino: `${date8} 235959`,
       ...FLAGS,

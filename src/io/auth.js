@@ -50,3 +50,37 @@ export async function invalidateToken(token = null) {
   try { await new Promise(resolve => chrome.storage.session.remove('rayenToken', () => resolve())); }
   catch { /* sin chrome (pruebas) o sin storage.session: no hay nada que borrar */ }
 }
+
+/**
+ * El objeto de sesión de Eloisa tal como lo guarda su web, sin los valores
+ * secretos: de ahí sale la identidad del profesional y del nodo. Se lee en el
+ * mundo aislado, igual que el token, para que la página no pueda interceptarlo.
+ * @returns {Promise<object|null>} null si no hay pestaña de Eloisa o no se pudo leer
+ */
+export async function leerSesionEloisa() {
+  try {
+    const tabs = await chrome.tabs.query({ url: `${CONFIG.base}/*` });
+    if (!tabs.length) return null;
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => {
+        const SECRETO = /token|password|contrasena|clave|secret|refresh/i;
+        const limpiar = (nodo, nivel = 0) => {
+          if (!nodo || typeof nodo !== 'object' || nivel > 6) return undefined;
+          if (Array.isArray(nodo)) return nodo.slice(0, 20).map(x => (x && typeof x === 'object' ? limpiar(x, nivel + 1) : x));
+          const out = {};
+          for (const [k, v] of Object.entries(nodo)) {
+            if (SECRETO.test(k)) continue;                       // el token no sale de aquí
+            out[k] = v && typeof v === 'object' ? limpiar(v, nivel + 1) : v;
+          }
+          return out;
+        };
+        try { return limpiar(JSON.parse(localStorage.getItem('userSession') || '{}')) ?? null; }
+        catch { return null; }
+      },
+    });
+    return result?.result ?? null;
+  } catch {
+    return null; // sin pestaña de Eloisa, sin permisos o fuera de la extensión
+  }
+}

@@ -1,3 +1,4 @@
+import { identidad } from './identidad.js';
 import { CONFIG, SIC_RECHAZADA_IDS } from './config.js';
 import { diasEntre, date8FromDMY } from './dates.js';
 import { isMine } from './sic-rules.js';
@@ -16,7 +17,7 @@ const daysSince = (fecha8, hoy8) => (String(fecha8 ?? '').length === 8 ? diasEnt
 const toDate8 = date8FromDMY;
 
 const mine = s => isMine(s);
-const rol  = s => s.registrador.id === CONFIG.officerId ? 'emitida por ti' : 'a resolver por ti';
+const rol  = s => s.registrador.id === identidad.officerId ? 'emitida por ti' : 'a resolver por ti';
 
 /**
  * @param {object[]} allData  agenda + ficha records

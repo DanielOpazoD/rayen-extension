@@ -4,7 +4,7 @@
  * Al desplegar una receta se consulta su detalle: vigencia, despacho y
  * suspensiones por prescripción.
  */
-import { CONFIG } from '../../core/config.js';
+import { identidad } from '../../core/identidad.js';
 import { humanError } from '../../core/errors.js';
 import { mapaFarmacosEnUso, estadoPrescripcion, etiquetaEstado } from '../../core/receta.js';
 import { esc, $ } from '../dom.js';
@@ -36,7 +36,7 @@ function clasificar(ficha, hoy = new Date()) {
 const esActiva = it => it.estado === 'activa';
 
 function recetaHTML(it, v) {
-  const prest = v.prestadores[0]?.id ?? CONFIG.officerId;
+  const prest = v.prestadores[0]?.id ?? identidad.officerId;
   const id = it.r.raw?.Id ?? 0;
   const info = [...it.r.details, etiquetaEstado(it)].filter(Boolean).join(' · ');
   return `<div class="pp-rx-r" data-rx="${esc(String(id))}">` +
@@ -66,7 +66,7 @@ export function renderRx(cur, rxFilter) {
   if (visibles.length) {
     html += h4('Recetas por atención');
     for (const { v, items } of visibles) {
-      const who = v.prestadores.map(p => p.id === CONFIG.officerId ? 'Tú' : p.nombre).join(', ');
+      const who = v.prestadores.map(p => p.id === identidad.officerId ? 'Tú' : p.nombre).join(', ');
       html += `<div class="pp-rx"><div class="pp-rx-h"><strong>${esc(v.fechaAtencion)}</strong><span class="muted">${esc(who)}</span></div>`;
       for (const it of items) html += it.kind === 'receta' ? recetaHTML(it, v) : prescHTML(it);
       html += `</div>`;

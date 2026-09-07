@@ -1,18 +1,18 @@
-import { CONFIG } from '../core/config.js';
+import { identidad } from '../core/identidad.js';
 import { getToken } from './auth.js';
 import { apiBlob } from './http.js';
 
 export function certificadoPath(idCita) {
-  return `/API/api/rayen/reporte/reportePDF/Nombre=CertificadoAtencion;IdCita=${idCita};IdNodo=${CONFIG.nodeId}`;
+  return `/API/api/rayen/reporte/reportePDF/Nombre=CertificadoAtencion;IdCita=${idCita};IdNodo=${identidad.nodeId}`;
 }
 
 export function sicPdfPath(idSolicitud) {
-  return `/API/api/rayen/Reporte/ReportePDF/Nombre=SolicitudInterconsulta;IdNodo=${CONFIG.nodeId};IdSolicitud=${idSolicitud};IdNodoQueSolicitaInforme=${CONFIG.nodeId}`;
+  return `/API/api/rayen/Reporte/ReportePDF/Nombre=SolicitudInterconsulta;IdNodo=${identidad.nodeId};IdSolicitud=${idSolicitud};IdNodoQueSolicitaInforme=${identidad.nodeId}`;
 }
 
 /** Mirrors the exact URL Eloisa requests (note the double ";;" before IdFuncionarioPrestador). */
 export function recetaPdfPath(idAtencion, idReceta, idPrestador) {
-  return `/API/api/rayen/reporte/ReportePDF/Nombre=RecetaEmitida;IdNodo=${CONFIG.nodeId};IdAtencion=${idAtencion};IdReceta=${idReceta};;IdFuncionarioPrestador=${idPrestador}`;
+  return `/API/api/rayen/reporte/ReportePDF/Nombre=RecetaEmitida;IdNodo=${identidad.nodeId};IdAtencion=${idAtencion};IdReceta=${idReceta};;IdFuncionarioPrestador=${idPrestador}`;
 }
 
 /**

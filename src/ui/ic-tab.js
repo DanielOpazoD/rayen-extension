@@ -1,5 +1,6 @@
+import { identidad } from '../core/identidad.js';
 import { esc, sicTone, stateDot, fillSelect, $ } from './dom.js';
-import { CONFIG, SIC_GRUPO, prioridadInfo } from '../core/config.js';
+import { SIC_GRUPO, prioridadInfo } from '../core/config.js';
 import { isMine } from '../core/sic-rules.js';
 import { resolveRange, inRange } from '../core/period.js';
 
@@ -50,8 +51,8 @@ export function filterSICs(sics) {
     (!grupo || s.grupo === grupo) &&
     (!esp   || s.especialidad === esp) &&
     (!quien || (quien === 'mias'     ? isMine(s)
-              : quien === 'emitidas' ? s.registrador.id === CONFIG.officerId
-              : quien === 'recibidas' ? s.ejecutor.id === CONFIG.officerId
+              : quien === 'emitidas' ? s.registrador.id === identidad.officerId
+              : quien === 'recibidas' ? s.ejecutor.id === identidad.officerId
               : true)) &&
     (!q || [s.paciente.nombre, s.paciente.runStr, s.especialidad, s.diagnostico, s.cie10, s.fundamentos,
             s.registrador.nombre, s.ejecutor.nombre, String(s.id)]

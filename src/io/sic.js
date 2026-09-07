@@ -1,3 +1,4 @@
+import { identidad } from '../core/identidad.js';
 import { state } from './state.js';
 import { CONFIG, SIC_ESTADOS_ORIGEN, SIC_ESTADOS_DESTINO } from '../core/config.js';
 import { apiGet, rayenParams, chunk, session, run, AuthError } from './http.js';
@@ -20,7 +21,7 @@ async function listIds(token, { origen, from8, to8, estados, nodeKey }) {
     ['FECHATERMINO', `${to8} 235900`],
     ['CAMPOORDEN', 2],
     ['ESTADOSSOLICITUDES', estados.join(',')],
-    [nodeKey, CONFIG.nodeId],
+    [nodeKey, identidad.nodeId],
   ]);
   try {
     const ids = await apiGet(token, `${BASE}/IdsSolicitudesInterconsultasGet?paramsFiltro=${q}`);
