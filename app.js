@@ -9,6 +9,8 @@ import { state, setPrefs, on, setLoadedMonths } from './src/io/state.js';
 import { remeasure, setStatus } from './src/ui/ui.js';
 import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
 import { CONFIG } from './src/core/config.js';
+import { nameOf } from './src/core/text.js';
+import { normalizePatientRutBody } from './src/core/lab-analytics.js';
 import { aplicarIdentidad } from './src/core/identidad.js';
 import { leerSesionEloisa } from './src/io/auth.js';
 import { patientKey } from './src/io/notes.js';
@@ -83,9 +85,14 @@ initPanel({
     if (next) openPatient(next);
   },
   labItems: run => laboratorio.labItemsForRun(run), // el informe con IA ve el laboratorio ya analizado
-  onLabSearch(run, sexo) {                  // Lab button → switch tab and search
+  onLabSearch(run, sexo, record) {          // Lab button → switch tab and search
     showTab('laboratorio');
-    laboratorio.searchFromPatient(run, sexo);
+    // El laboratorio no sabe abrir fichas: recibe cómo volver, no a quién.
+    laboratorio.searchFromPatient(run, sexo, record && {
+      runBody: normalizePatientRutBody(record.run),
+      nombre: nameOf(record.nombre) || 'la ficha',
+      abrir: () => { showTab('atenciones'); openPatient(record); },
+    });
   },
 });
 on('notes', syncNote);                      // undo from a toast must reach the open panel

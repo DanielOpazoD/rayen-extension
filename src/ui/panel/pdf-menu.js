@@ -1,6 +1,6 @@
 /** Menú «PDF ▾» del panel: la historia del paciente por alcance, en report.html. */
 import { $, closestOf } from '../dom.js';
-import { initMenu } from '../ui.js';
+import { initMenu, closeMenus } from '../ui.js';
 import { buildPatientReport } from '../../core/patient-report.js';
 import { openReport } from '../export.js';
 
@@ -10,7 +10,7 @@ export function initPdfMenu({ getCur, onError }) {
     const cur = getCur();
     const b = closestOf(e, 'button[data-scope]');
     if (!b || !cur) return;
-    $('ppPdfMenu').classList.remove('open');
+    closeMenus();
     b.disabled = true;
     try {
       const { fragment, css } = buildPatientReport(cur, /** @type {any} */ (b.dataset.scope));

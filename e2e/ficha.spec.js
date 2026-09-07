@@ -58,3 +58,34 @@ test('con la ficha caída (?ficha=off) el panel lo dice y no afirma ausencia cl�
   await page.locator('.pp-tab[data-pt="rx"]').click();
   await expect(page.locator('#ppPaneRx')).toContainText('Ficha no disponible');
 });
+
+/**
+ * El panel tiene `overflow-y:auto`, así que el navegador calcula también
+ * `overflow-x:auto` y recorta por los lados. El menú «Historia» estaba anclado
+ * al borde derecho de su botón, que está a la izquierda del panel: se abría
+ * hacia fuera y quedaba cortado por la mitad, con las opciones ilegibles.
+ * Se comprueba la geometría y no una captura porque el recorte depende del
+ * ancho del panel, no de la fuente.
+ */
+test('el menú «Historia» del panel se abre entero dentro del panel', async ({ page }) => {
+  await abrirPrimerPaciente(page);
+  await page.locator('#ppPdfBtn').click();
+  await expect(page.locator('#ppPdfMenu')).toHaveClass(/open/);
+  const caja = await page.evaluate(() => {
+    const r = s => { const b = document.querySelector(s).getBoundingClientRect(); return { left: b.left, right: b.right }; };
+    return { panel: r('#patientPanel'), menu: r('#ppPdfMenu') };
+  });
+  expect(caja.menu.left, 'el menú se sale por la izquierda del panel').toBeGreaterThanOrEqual(caja.panel.left);
+  expect(caja.menu.right, 'el menú se sale por la derecha del panel').toBeLessThanOrEqual(caja.panel.right);
+  // Y todas sus opciones se leen enteras, no sólo el contenedor.
+  const cortadas = await page.evaluate(() => {
+    const panel = document.querySelector('#patientPanel').getBoundingClientRect();
+    return [...document.querySelectorAll('#ppPdfMenu button')]
+      .filter(b => { const r = b.getBoundingClientRect(); return r.left < panel.left || r.right > panel.right; })
+      .map(b => b.textContent.trim());
+  });
+  expect(cortadas).toEqual([]);
+  // Elegir una opción cierra el menú y lo declara cerrado a quien no lo ve.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#ppPdfBtn')).toHaveAttribute('aria-expanded', 'false');
+});

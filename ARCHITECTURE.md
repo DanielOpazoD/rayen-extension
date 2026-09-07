@@ -182,13 +182,14 @@ Reglas que no dependen de la plantilla: la identidad del paciente y los nombres 
 | Panel del paciente | `src/ui/patient-panel.js`, `src/ui/panel/*.js`, `src/core/ficha.js`, `src/io/ficha-load.js` | identidad, escape de texto, ficha caída honesta, foco y Escape |
 | Historia imprimible | `src/core/patient-report.js`, `src/ui/export.js` | variantes del reporte y aviso de exportación |
 | Laboratorio / ProactiveLIS (HSR) | `src/io/lab-http.js`, `src/io/lab-api.js`, `src/ui/tabs/laboratorio.js`, `src/ui/lab/*.js` | sesión cookie, parsing de órdenes, guardia de origen |
+| Selección de órdenes | `src/core/lab-selection.js`, `src/ui/tabs/laboratorio.js`, `e2e/laboratorio.spec.js` | «marcar todas» alcanza a los dos hospitales; marcadas ≠ imprimibles; claves que ya no están en pantalla |
 | Laboratorio / SysLab (HHR) | `src/io/syslab-http.js`, `src/io/syslab-api.js`, `e2e/syslab.spec.js` | pestaña con sesión, espera de navegación, identidad del lote; los cinco pasos que se inyectan, contra un SysLab servido en su propia dirección |
 | Interpretación de informes | `src/core/lab-parser.js`, `src/core/lab-analytics.js`, `src/core/lab-catalog.js` | corpus de líneas reales anonimizadas; la marca del laboratorio fuerza la alerta |
 | Informe con IA | `src/ai/*.js`, `src/ui/ia-panel.js` | contexto sin nombre ni RUN (prueba y recorrido), plantilla válida, respuesta reconocida |
 | Anonimizador | `src/core/anonimizar.js`, `src/ui/tabs/explorador.js` | entradas adversariales; `verificado=false` ante un resto |
 | Estructura y semántica visual | `app.html` | destinos ARIA, pestañas, orden de lectura y estados vacíos |
 | Sistema visual y responsive | `styles/app.css`, `src/ui/ui.js`, `src/ui/dom.js` | teclado, foco, modo estrecho, oscuro y movimiento reducido; contraste ≥ 4,5:1 |
-| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos (agenda, SIC y ficha por paciente), `?ficha=off` para la ficha caída, capturas anonimizadas opcionales en `dev/fixtures/`, cero red externa, escritorio y ventana estrecha |
+| Smoke de navegador | `dev/`, `e2e/`, `playwright.config.js` | datos sintéticos (agenda, SIC y ficha por paciente), `?ficha=off` para la ficha caída, `?syslab=1` para el transporte de SysLab, capturas anonimizadas opcionales en `dev/fixtures/`, cero red externa, escritorio y ventana estrecha |
 | Release | `manifest.json`, `package.json`, `package-lock.json`, `CHANGELOG.md` | `npm run check` y `npm run pack` |
 
 ## Mapa completo de módulos
@@ -225,6 +226,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/lab-parser.js` — interpretación clínica del texto de un informe y detección de fuera de rango.
 - `src/core/lab-specimen.js` — clasifica la muestra biológica y decide qué entra en cada vista y en qué orden.
 - `src/core/lab-summary.js` — resumen clínico de una línea con siglas, para pegar en la evolución.
+- `src/core/lab-selection.js` — qué órdenes de los dos hospitales se pueden marcar, cuáles lo están y cuántas traen informe.
 - `src/core/load-summary.js` — resumen honesto y compacto del resultado de carga.
 - `src/core/parser.js` — normalización de fechas, RUN y respuestas de Eloisa.
 - `src/core/patient-report.js` — modelo y HTML de la historia clínica imprimible, sin DOM; la impresión la dispara `ui/panel/pdf-menu.js`.

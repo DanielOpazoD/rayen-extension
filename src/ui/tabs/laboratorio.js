@@ -3,6 +3,7 @@ import { periodoDesde } from '../../core/period.js';
 import { formatRun } from '../../core/parser.js';
 import { humanError } from '../../core/errors.js';
 import { esc, $, targetOf, closestOf, qsa } from '../dom.js';
+import { initMenu, closeMenus } from '../ui.js';
 import { checkLabSession, informeResultado, resetLabSession, LAB_ORIGIN } from '../../io/lab-api.js';
 import { checkSyslabSession, syslabReportBytes, resetSyslabSession, SYSLAB_BASE } from '../../io/syslab-api.js';
 import { createSessionMonitor } from '../../core/lab-session.js';
@@ -10,11 +11,12 @@ import { createLabSearch } from '../../io/lab-search.js';
 import { buildDetails } from '../../io/lab-report.js';
 import { buildAnalysis, comparisonClipboard, MAX_SELECTED_EXAMS } from '../../core/lab-analytics.js';
 import { buildAnalysisSummary } from '../../core/lab-summary.js';
-import { renderHsrResults, renderHhrResults, analysable } from '../lab/results.js';
+import { renderHsrResults, renderHhrResults } from '../lab/results.js';
+import { orderKey, selectableOrders, selectedOrders, selectionCounts, printableCount } from '../../core/lab-selection.js';
 import { fmtDMY, fmtIso as isoDate } from '../../core/dates.js';
 import { renderComparison, renderReports, renderFilteredTrends, renderMicrobiology } from '../lab/analysis-views.js';
 import { initRequest } from '../lab/request.js';
-import { downloadAllPdfs } from '../lab/pdf-all.js';
+import { downloadPdfs } from '../lab/pdf-all.js';
 import { labItemsFromAnalysis } from '../../ai/lab-items.js';
 
 /**
@@ -31,6 +33,12 @@ let patientSexo = '';
 const sexoPaciente = () => normalizeSexo(search.results.hsr[0]?.sexo) || normalizeSexo(patientSexo);
 let analysis = null;
 let analysisView = 'comparacion';
+/**
+ * De dónde se llegó. Cuando el laboratorio se abre desde la ficha, volver a
+ * ella era un camino de tres pasos (cerrar, ir a Atenciones, buscar de nuevo al
+ * paciente): se ofrece la vuelta directa mientras las tablas sigan siendo suyas.
+ */
+let volverA = null;
 
 const showError = (texto, tone = 'error') => { $('labError').textContent = texto; $('labError').className = `lab-msg ${tone}`; };
 const tableDeps = { selected, onSelectionChange: () => updateSelectionUI(), onError: showError };
@@ -47,8 +55,15 @@ export function init() {
   $('labClear').addEventListener('click', clearResults);
   $('labCheckHsr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHsr(); });
   $('labCheckHhr').addEventListener('click', () => { sessions.invalidate(); sessions.refreshHhr(); });
-  $('labDownloadAll').addEventListener('click', () => downloadAllPdfs(search));
-  $('labAnalyze').addEventListener('click', () => analyzeSelected());
+  initMenu('labSelBtn', 'labSelMenu', 'labSelWrap');
+  // «Todos» son los que tienen informe: incluir las órdenes sin resultado sólo
+  // añadiría fallos que ya se anuncian en la propia opción.
+  $('labDownloadAll').addEventListener('click', () => { closeMenus(); pdfDe(selectableOrders(search.results).filter(({ o }) => o.puedeImprimir)); });
+  $('labPdfSelected').addEventListener('click', () => { closeMenus(); pdfDe(selectedOrders(search.results, selected)); });
+  $('labPickAll').addEventListener('click', () => { closeMenus(); pickAll(true); });
+  $('labPickNone').addEventListener('click', () => { closeMenus(); pickAll(false); });
+  $('labAnalyze').addEventListener('click', () => { closeMenus(); analyzeSelected(); });
+  $('labBack').addEventListener('click', () => volverA?.abrir());
   $('labCloseAnalysis').addEventListener('click', closeAnalysis);
   $('labCopyTable').addEventListener('click', copyComparison);
   $('labCopySummary').addEventListener('click', copySummary);
@@ -58,8 +73,8 @@ export function init() {
     nombre: search.results.hsr[0]?.nombrePaciente || search.results.hhr[0]?.nombrePaciente || '',
     run: search.rut.display, fecha: fmtDMY(new Date()), procedencia: '',
   }) });
-  $('labPickAllHsr').addEventListener('change', e => pickAll('hsr', targetOf(e).checked));
-  $('labPickAllHhr').addEventListener('change', e => pickAll('hhr', targetOf(e).checked));
+  $('labPickAllHsr').addEventListener('change', e => pickAll(targetOf(e).checked, 'hsr'));
+  $('labPickAllHhr').addEventListener('change', e => pickAll(targetOf(e).checked, 'hhr'));
   $('labPeriodo').addEventListener('change', applyPeriodo);
   for (const id of ['labTrendRange', 'labTrendSearch', 'labTrendAltered']) {
     $(id).addEventListener('input', () => { if (analysisView === 'tendencias') showView('tendencias'); });
@@ -117,9 +132,10 @@ function markStaleIfRutChanged() {
   const desfasada = hayResultados && search.isStale($('labRut').value);
   $('labResults').classList.toggle('stale', desfasada);
   $('labStale').hidden = !desfasada;
-  // Con la tabla desfasada no se genera el PDF único: llevaría el RUT de una
+  // Con la tabla desfasada no se genera ningún PDF: llevaría el RUT de una
   // persona y los informes de otra.
-  $('labDownloadAll').disabled = desfasada;
+  $('labDownloadAll').dataset.stale = desfasada ? '1' : '';
+  updateSelectionUI();
   if (desfasada) {
     $('labStale').textContent =
       `En pantalla siguen los exámenes de ${search.rut.display}. Pulsa Buscar para el RUT que escribiste.`;
@@ -182,81 +198,132 @@ async function doSearch() {
   }
   if (outcome.rejected) return;
 
+  // Buscar otro RUT deja de ser «lo que abrí desde la ficha»: el botón de
+  // vuelta se retira antes de que la tabla cambie de paciente.
+  if (volverA && search.rut.body !== volverA.runBody) setVolver(null);
+
   $('labError').textContent = '';
   $('labHsrBody').innerHTML = '';
   $('labHhrBody').innerHTML = '';
   $('labHsrCount').textContent = '';
   $('labHhrCount').textContent = '';
-  $('labDownloadAll').hidden = true;
   selected.clear();
+  updateSelectionUI();
   closeAnalysis();
 
   const { superseded } = await outcome.done;
   if (superseded) return; // Otra búsqueda tomó el relevo, o se canceló.
-  const printable = search.results.hsr.filter(o => o.puedeImprimir).length +
-    search.results.hhr.filter(o => o.puedeImprimir).length;
-  $('labDownloadAll').hidden = printable < 2;
   markStaleIfRutChanged();
   updateSelectionUI();
 }
 
 // ── Selección ──
 
-function pickAll(source, checked) {
-  const rows = source === 'hsr' ? search.results.hsr : search.results.hhr;
-  const ids = rows.filter(o => analysable(source, o)).map(o => String(source === 'hsr' ? o.numero : o.id));
-  for (const id of ids) {
-    const key = `${source}:${id}`;
-    if (checked) selected.add(key); else selected.delete(key);
+/**
+ * Marca o desmarca. Sin `source` alcanza a los dos hospitales, que es lo que
+ * «marcar todas» tiene que significar: con una casilla por tabla, marcar todo
+ * dejaba fuera el otro hospital sin decirlo.
+ */
+function pickAll(checked, source = null) {
+  const alcance = selectableOrders(search.results).filter(x => !source || x.source === source);
+  const claves = new Set(alcance.map(({ source: src, o }) => orderKey(src, o)));
+  for (const clave of claves) {
+    if (checked) selected.add(clave); else selected.delete(clave);
   }
-  qsa(document, `.lab-check[data-source="${source}"]`).forEach(box => {
-    if (ids.includes(box.dataset.id)) box.checked = checked;
+  qsa(document, '.lab-check').forEach(box => {
+    if (claves.has(`${box.dataset.source}:${box.dataset.id}`)) box.checked = checked;
   });
   updateSelectionUI();
 }
 
-function updateSelectionUI() {
-  const btn = $('labAnalyze');
-  const n = selected.size;
-  btn.hidden = n === 0;
-  btn.disabled = n > MAX_SELECTED_EXAMS;
-  btn.textContent = n > MAX_SELECTED_EXAMS
-    ? `Máximo ${MAX_SELECTED_EXAMS} informes`
-    : `Analizar ${n}`;
+/** Las casillas de cabecera reflejan si su tabla está entera marcada. */
+function paintHeaderChecks() {
+  for (const [source, id] of [['hsr', 'labPickAllHsr'], ['hhr', 'labPickAllHhr']]) {
+    const filas = selectableOrders(search.results).filter(x => x.source === source);
+    const marcadas = filas.filter(({ source: src, o }) => selected.has(orderKey(src, o))).length;
+    const caja = /** @type {HTMLInputElement} */ ($(id));
+    caja.checked = filas.length > 0 && marcadas === filas.length;
+    caja.indeterminate = marcadas > 0 && marcadas < filas.length;
+  }
 }
+
+function updateSelectionUI() {
+  const c = selectionCounts(search.results, selected);
+  const total = printableCount(search.results);
+  $('labSelWrap').hidden = c.marcables === 0;
+  $('labSelBtn').innerHTML = c.marcadas
+    ? `${c.marcadas} marcada${c.marcadas === 1 ? '' : 's'} <span class="caret">▾</span>`
+    : 'Informes <span class="caret">▾</span>';
+
+  const desfasada = $('labDownloadAll').dataset.stale === '1';
+  const item = (id, disabled, hint) => {
+    /** @type {HTMLButtonElement} */ ($(id)).disabled = disabled;
+    $(`${id}Hint`).textContent = hint;
+  };
+  item('labPickAll', c.todasMarcadas, `${c.marcables} en total · Salvador y Hanga Roa`);
+  item('labPdfSelected', desfasada || c.imprimibles === 0,
+    c.marcadas === 0 ? 'marca al menos una orden'
+      : c.imprimibles === c.marcadas ? `${c.imprimibles} informe${c.imprimibles === 1 ? '' : 's'}`
+        : `${c.imprimibles} de ${c.marcadas} tienen informe`);
+  item('labAnalyze', c.marcadas === 0 || c.marcadas > MAX_SELECTED_EXAMS,
+    c.marcadas === 0 ? 'marca al menos una orden'
+      : c.marcadas > MAX_SELECTED_EXAMS ? `máximo ${MAX_SELECTED_EXAMS}` : `${c.marcadas} informes`);
+  item('labDownloadAll', desfasada || total === 0, `${total} informe${total === 1 ? '' : 's'} disponibles`);
+  /** @type {HTMLButtonElement} */ ($('labPickNone')).disabled = c.marcadas === 0;
+  paintHeaderChecks();
+}
+
+// ── Vuelta a la ficha ──
+
+/**
+ * El botón sólo tiene sentido mientras lo que se ve en pantalla sea del mismo
+ * paciente. Si se busca otro RUT o se limpia, desaparece: un «volver a la
+ * ficha» que abriera a otra persona sería peor que no tenerlo.
+ */
+function setVolver(destino) {
+  volverA = destino;
+  $('labBack').hidden = !destino;
+  if (destino) $('labBackName').textContent = `Volver a ${destino.nombre}`;
+}
+
+/** El PDF único, sea de lo marcado o de todo: la diferencia es qué órdenes llegan. */
+function pdfDe(ordenes) {
+  const btn = $('labSelBtn');
+  const etiqueta = btn.innerHTML;
+  btn.setAttribute('disabled', '');
+  return downloadPdfs(
+    ordenes.map(({ source, o }) => ({ source: source.toUpperCase(), puedeImprimir: o.puedeImprimir, loadBytes: loadBytesDe(source, o) })),
+    { rutDisplay: search.rut.display, progreso: t => { btn.textContent = t; } }
+  ).finally(() => { btn.removeAttribute('disabled'); btn.innerHTML = etiqueta; updateSelectionUI(); });
+}
+
+const loadBytesDe = (source, o) => source === 'hsr'
+  ? async () => new Uint8Array(await (await informeResultado(o.ordenEncryptada)).arrayBuffer())
+  : () => syslabReportBytes(o.link);
 
 // ── Análisis ──
 
 /** Une lo seleccionado de ambos hospitales en una sola lista analizable. Recibe los datos: no lee el estado del módulo. */
 function selectedItems(results, selected) {
-  const items = [];
-  for (const o of results.hsr) {
-    if (selected.has(`hsr:${o.numero}`) && analysable('hsr', o)) {
-      items.push({
-        source: 'HSR',
-        date: o.fecha ? fmtDMY(o.fecha) : '',
-        time: '',
-        patientName: o.nombrePaciente,
-        origin: o.procedencia,
-        exams: o.areas ? [o.areas] : [],
-        loadBytes: async () => new Uint8Array(await (await informeResultado(o.ordenEncryptada)).arrayBuffer()),
-      });
+  return selectedOrders(results, selected).map(({ source, o }) => source === 'hsr'
+    ? {
+      source: 'HSR',
+      date: o.fecha ? fmtDMY(o.fecha) : '',
+      time: '',
+      patientName: o.nombrePaciente,
+      origin: o.procedencia,
+      exams: o.areas ? [o.areas] : [],
+      loadBytes: loadBytesDe('hsr', o),
     }
-  }
-  for (const o of results.hhr) {
-    if (selected.has(`hhr:${o.id}`) && analysable('hhr', o)) {
-      items.push({
-        source: 'HHR',
-        date: o.fecha,
-        time: o.hora,
-        patientName: o.nombrePaciente,
-        origin: o.procedencia,
-        exams: o.examenes,
-        loadBytes: () => syslabReportBytes(o.link),
-      });
-    }
-  }
-  return items;
+    : {
+      source: 'HHR',
+      date: o.fecha,
+      time: o.hora,
+      patientName: o.nombrePaciente,
+      origin: o.procedencia,
+      exams: o.examenes,
+      loadBytes: loadBytesDe('hhr', o),
+    });
 }
 
 async function analyzeSelected() {
@@ -392,12 +459,10 @@ function clearResults() {
   $('labHsrCount').textContent = '';
   $('labHhrCount').textContent = '';
   $('labError').textContent = '';
-  $('labDownloadAll').hidden = true;
-  $('labPickAllHsr').checked = false;
-  $('labPickAllHhr').checked = false;
   search.reset();
   patientSexo = '';
   selected.clear();
+  setVolver(null);
   closeAnalysis();
   updateSelectionUI();
 }
@@ -409,9 +474,10 @@ function clearResults() {
  * una ráfaga de errores de sesión que no dice nada útil. Si ningún laboratorio
  * responde, se explica qué abrir en vez de buscar.
  */
-export async function searchFromPatient(run, sexo = '') {
+export async function searchFromPatient(run, sexo = '', volver = null) {
   if (!run) return;
   patientSexo = sexo;
+  setVolver(volver);
   $('labRut').value = formatRun(run).runStr || run;
   $('labError').textContent = '';
   const { hsr, hhr } = await sessions.check();

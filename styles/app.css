@@ -399,6 +399,10 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .menu button.danger{color:var(--bad)}
 .menu button.danger:hover{background:var(--bad-soft)}
 .menu-note{font-size:var(--t-xs);color:var(--ink-3);padding:7px 10px 2px;border-top:1px solid var(--rule-2);margin-top:4px}
+.menu-sep{height:1px;background:var(--rule-2);margin:4px 6px}
+#labSelMenu{min-width:262px}
+.menu button[disabled]{color:var(--ink-3);cursor:default}
+.menu button[disabled]:hover{background:none}
 
 /* ═══ Charts ═══ */
 .chart-h3{font-size:var(--t-xs);font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-4) var(--gutter) 0}
@@ -475,7 +479,7 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 #ppClose:hover{background:var(--surface-2);color:var(--ink)}
 .pp-hbtn{background:var(--card);border:1px solid var(--rule);color:var(--ink-2);font-size:var(--t-sm);font-weight:500;height:var(--h-ctl-sm);padding:0 10px;display:inline-flex;align-items:center;border-radius:var(--r-sm);cursor:pointer;position:relative;flex-shrink:0}
 .pp-hbtn:hover,.pp-hbtn.on{background:var(--surface-2);color:var(--ink)}
-.pp-header .menu{top:calc(100% + 4px);min-width:290px}
+.pp-header .menu{top:calc(100% + 4px);min-width:290px;left:0;right:auto;max-width:calc(100vw - 2*var(--gutter))}
 .pp-hbtn.dot::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--bad);border:2px solid var(--card)}
 .pp-datos{padding:var(--sp-3) var(--sp-4) var(--sp-2);background:var(--surface-3);border-bottom:1px solid var(--rule)}
 .pp-datos-grp{margin-bottom:var(--sp-3)}
@@ -718,7 +722,9 @@ progress::-webkit-progress-value{background:var(--brand);transition:width .3s}
 .lab input[type=text],.lab input[type=search],.lab input[type=date],.lab select{height:var(--h-ctl);padding:0 10px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);color:var(--ink);font-size:var(--t-sm);outline:none}
 .lab input:focus,.lab select:focus{border-color:var(--brand)}
 .lab-origin{display:inline-flex;align-items:center;gap:2px}
-.lab-header{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)}
+.lab-header{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3);flex-wrap:wrap}
+.lab-back{margin-right:var(--sp-2)}
+.lab-back #labBackName{max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
 .lab-session{font-size:var(--t-xs);height:var(--h-ctl-sm);display:inline-flex;align-items:center;padding:0 var(--sp-2);border-radius:var(--r-sm)}
 .lab-session.ok{color:var(--good);background:var(--good-soft)}
 .lab-session.expired{color:var(--bad);background:var(--bad-soft)}

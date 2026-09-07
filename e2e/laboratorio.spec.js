@@ -63,23 +63,31 @@ test('busca en el Salvador, muestra las órdenes con su detalle y ofrece analiza
   await expect(page.locator('#labPrest0')).toBeVisible();
   await expect(page.locator('#labPrest0')).toContainText('Ferritina'); // el laboratorio grita «FERRITINA»; en pantalla, caja de oración
 
-  // Marcar dos órdenes habilita el análisis con el conteo correcto.
+  // Marcar dos órdenes se refleja en el botón del menú y en sus opciones.
   const boxes = page.locator('#labHsrBody .lab-check');
   await boxes.nth(0).check();
   await boxes.nth(2).check();
-  await expect(page.locator('#labAnalyze')).toHaveText('Analizar 2');
-  await expect(page.locator('#labDownloadAll')).toBeVisible();
+  await expect(page.locator('#labSelBtn')).toHaveText(/2 marcadas/);
+  await page.locator('#labSelBtn').click();
+  await expect(page.locator('#labAnalyzeHint')).toHaveText('2 informes');
+  await expect(page.locator('#labPdfSelected')).toBeEnabled();
+  await page.keyboard.press('Escape');
 
   // Editar el RUT sin volver a buscar avisa de que la tabla es del paciente anterior.
   await page.locator('#labRut').fill('16.940.645-6');
   await expect(page.locator('#labStale')).toBeVisible();
   await expect(page.locator('#labStale')).toContainText(RUT);
-  // Con la tabla desfasada no se puede generar el PDF único (llevaría el RUT de
-  // otra persona); al volver al RUT buscado se reactiva.
+  // Con la tabla desfasada no se genera ningún PDF (llevaría el RUT de otra
+  // persona); al volver al RUT buscado se reactiva.
+  await page.locator('#labSelBtn').click();
   await expect(page.locator('#labDownloadAll')).toBeDisabled();
+  await expect(page.locator('#labPdfSelected')).toBeDisabled();
+  await page.keyboard.press('Escape');
   await page.locator('#labRut').fill(RUT);
   await expect(page.locator('#labStale')).toBeHidden();
+  await page.locator('#labSelBtn').click();
   await expect(page.locator('#labDownloadAll')).toBeEnabled();
+  await page.keyboard.press('Escape');
 
   // La solicitud de exámenes abre con el catálogo completo y sin «enviar».
   await page.locator('#labRequestOpen').click();
@@ -88,4 +96,82 @@ test('busca en el Salvador, muestra las órdenes con su detalle y ofrece analiza
 
   // Todo el tráfico de laboratorio se resolvió en el navegador: nada salió a la red.
   expect(external.filter(u => !/hsalvador\.cl|10\.4\.69\.90/.test(u))).toEqual([]);
+});
+
+/**
+ * Con los dos hospitales en pantalla. El arnés simula el transporte de SysLab
+ * (`?syslab=1`), que no es HTTP sino la conducción de una pestaña ajena; el
+ * lector real de esa página se prueba aparte, en `syslab.spec.js`.
+ *
+ * Antes había una casilla de cabecera por tabla y ninguna forma de marcar las
+ * dos: «seleccionar todo» dejaba fuera un hospital entero sin decirlo, y el PDF
+ * salía con los informes de uno solo.
+ */
+test('«marcar todas» alcanza a los dos hospitales, y el PDF sale de lo marcado', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'no depende del ancho de la ventana');
+  await page.goto('/dev/?syslab=1');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Exámenes complementarios' }).click();
+  await expect(page.locator('#labHhrStatus')).toHaveText(/conectado/i);
+
+  await page.locator('#labRut').fill(RUT);
+  await page.locator('#labPeriodo').selectOption('0'); // «Todo»: las órdenes sintéticas de SysLab son de 2025-2026
+  await page.locator('#labSearchBtn').click();
+  await expect(page.locator('#labHsrCount')).toContainText('4 órdenes');
+  await expect(page.locator('#labHhrCount')).toContainText('3 órdenes');
+
+  await page.locator('#labSelBtn').click();
+  await page.locator('#labPickAll').click();
+  await expect(page.locator('#labHsrBody .lab-check:checked')).toHaveCount(4);
+  await expect(page.locator('#labHhrBody .lab-check:checked')).toHaveCount(3);
+  await expect(page.locator('#labSelBtn')).toHaveText(/7 marcadas/);
+  // Las casillas de cabecera reflejan que su tabla quedó entera marcada.
+  await expect(page.locator('#labPickAllHsr')).toBeChecked();
+  await expect(page.locator('#labPickAllHhr')).toBeChecked();
+
+  // El PDF de lo marcado incluye lo que se pudo y nombra el hospital que quedó
+  // fuera con su motivo: «2 no se pudo incluir» sin decir por qué mandaba a
+  // buscar el problema en el paciente.
+  const bajada = page.waitForEvent('download');
+  await page.locator('#labSelBtn').click();
+  await page.locator('#labPdfSelected').click();
+  expect((await bajada).suggestedFilename()).toBe('laboratorio-11111111-1.pdf');
+  await expect(page.locator('#labError')).toContainText('PDF con 3 informes');
+  await expect(page.locator('#labError')).toContainText('del Salvador');
+  await expect(page.locator('#labError')).toContainText('ProactiveLIS');
+
+  // Quitar la selección deja el menú en su estado inicial.
+  await page.locator('#labSelBtn').click();
+  await page.locator('#labPickNone').click();
+  await expect(page.locator('#labSelBtn')).toHaveText(/Informes/);
+  await expect(page.locator('#labHhrBody .lab-check:checked')).toHaveCount(0);
+});
+
+/** Llegar al laboratorio desde una ficha y poder volver a ella en un clic. */
+test('desde la ficha, el laboratorio ofrece la vuelta al paciente y la retira al cambiar de RUT', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'no depende del ancho de la ventana');
+  await page.goto('/dev/');
+  await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  await page.locator('#btnFetch').click();
+  await expect(page.locator('#statusBar')).toContainText('atenciones');
+  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Atenciones', exact: true }).click();
+  await page.locator('#tbody tr[data-id] .pat-link').first().click();
+  await expect(page.locator('#patientPanel')).toBeVisible();
+  const nombre = (await page.locator('#ppName').innerText()).trim();
+
+  await page.locator('#ppLabBtn').click();
+  await expect(page.locator('#tab-laboratorio')).toBeVisible();
+  await expect(page.locator('#labBack')).toHaveText(`‹ Volver a ${nombre}`);
+
+  await page.locator('#labBack').click();
+  await expect(page.locator('#patientPanel')).toBeVisible();
+  await expect(page.locator('#ppName')).toHaveText(nombre);
+
+  // Buscar a otra persona retira el botón: volver «a la ficha» abriendo otra
+  // sería peor que no ofrecerlo.
+  await page.locator('#ppLabBtn').click();
+  await expect(page.locator('#labBack')).toBeVisible();
+  await page.locator('#labRut').fill('16.940.645-6');
+  await page.locator('#labSearchBtn').click();
+  await expect(page.locator('#labBack')).toBeHidden();
 });
