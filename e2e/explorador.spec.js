@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test';
 
+// El Explorador salió de la barra principal (uso ocasional): se abre desde
+// Preferencias → Avanzado.
+async function abrirExplorador(page) {
+  await page.locator('#btnSettings').click();
+  await page.locator('.set-adv > summary').click();
+  await page.locator('#btnExplorador').click();
+}
+
 // El arnés no tiene red: se pega un JSON con datos de persona y se comprueba que la
 // descarga no lleva ni nombres ni RUT, y que el informe lo dice.
 test('la copia anonimizada del Explorador no contiene nombres, RUT ni correos', async ({ page }) => {
   await page.goto('/dev/');
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
-  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Explorador API' }).click();
+  await abrirExplorador(page);
   const muestra = {
     Id: 500439, Rut: '14407675-3', NombreFormateado: 'Rosa Ejemplo Tuki', FechaAtencion: '20260904 080000', EMail: 'rosa@example.cl',
     Sexo: { Id: 2, Nombre: 'Mujer' },
@@ -28,7 +36,7 @@ test('el diagnóstico resume la carga en recuentos y no lleva datos de pacientes
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
   await page.locator('#btnFetch').click();
   await expect(page.locator('#statusBar')).toContainText('atenciones');
-  await page.getByRole('tablist', { name: 'Secciones' }).getByRole('tab', { name: 'Explorador API' }).click();
+  await abrirExplorador(page);
   await page.locator('#btnDiag').click();
 
   const texto = await page.locator('#explorerOut').inputValue();

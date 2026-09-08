@@ -38,6 +38,7 @@ test('login del HIS en Preferencias: conectar guarda la sesión y lo confirma', 
   await page.goto('/dev/');
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
   await page.locator('#btnSettings').click();
+  await page.locator('.set-adv > summary').click(); // el login del HIS vive en «Avanzado»
   await page.locator('#hisUser').fill('12345678');
   await page.locator('#hisPass').fill('clave-de-prueba');
   await page.locator('#hisConnect').click();

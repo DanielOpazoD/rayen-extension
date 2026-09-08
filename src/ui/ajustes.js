@@ -12,6 +12,7 @@ import { armRefresh, cargarFuturas, handleFetch } from './loader.js';
 import { getToken } from '../io/auth.js';
 import { reconciliarCitas } from '../io/historial.js';
 import { hisConectar, hisOlvidar, hisCreds } from '../io/his-session.js';
+import { showTab } from './actions.js';
 
 /** Preferences and local-data controls. */
 
@@ -100,6 +101,8 @@ export function init({ lock }) {
   });
   initMenu('btnSettings', 'settingsMenu', 'settingsWrap', () => { fillSettings(); buildWatchList(); });
   initHisLogin();
+  // El Explorador API salió de la barra principal (uso ocasional); se abre desde Avanzado.
+  $('btnExplorador')?.addEventListener('click', () => showTab('explorador'));
   // Bajo 1100 px la cabecera pliega período, ficha, exportar y preferencias tras «⋯».
   initMenu('btnMore', 'hdrMore', 'hdrWrap');
 
