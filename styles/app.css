@@ -83,7 +83,8 @@ button,select,input,textarea{font-family:inherit;color:inherit;font-size:var(--t
 header{position:relative;padding:var(--sp-4) var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:var(--sp-5)}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .brand>div{min-width:0}
-.mark{width:32px;height:32px;border-radius:9px;background:var(--brand);flex-shrink:0;position:relative}
+.mark{width:32px;height:32px;border-radius:9px;background:var(--brand);flex-shrink:0;position:relative;transition:transform .15s var(--transition)}
+.brand:hover .mark{transform:scale(1.05)}
 .mark::before,.mark::after{content:'';position:absolute;background:#fff;border-radius:1.5px}
 .mark::before{left:14px;top:7.5px;width:4px;height:17px}
 .mark::after{left:7.5px;top:14px;width:17px;height:4px}
@@ -196,9 +197,9 @@ header p{font-size:var(--t-xs);color:var(--ink-3);letter-spacing:.01em}
 
 /* ═══ Toolbar: una sola fila; el resto se pliega ═══ */
 .toolbar{display:flex;align-items:center;gap:10px;padding:var(--sp-3) var(--gutter);flex-wrap:wrap;position:relative}
-.toolbar input[type=text]{flex:1;min-width:220px;max-width:420px;height:var(--h-ctl);padding:0 16px;border:1px solid var(--rule);border-radius:var(--r-full);outline:none;background:var(--surface-2);transition:all .15s var(--transition)}
+.toolbar input[type=text]{flex:1;min-width:220px;max-width:420px;height:var(--h-ctl);padding:0 16px 0 38px;border:1px solid var(--rule);border-radius:var(--r-full);outline:none;background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23949ca2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 14px center/16px 16px;transition:all .15s var(--transition)}
 .toolbar input::placeholder{color:var(--ink-4)}
-.toolbar input:focus,.toolbar select:focus{border-color:var(--brand);background:var(--card);box-shadow:0 0 0 2px var(--brand-soft)}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--brand);background-color:var(--card);box-shadow:0 0 0 2px var(--brand-soft)}
 .toolbar select{height:var(--h-ctl);padding:0 9px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);outline:none}
 .toolbar .spacer{flex:1}
 .filter-panel{padding:0 var(--gutter) var(--sp-3);animation:fpIn .14s ease}
@@ -234,7 +235,7 @@ header p{font-size:var(--t-xs);color:var(--ink-3);letter-spacing:.01em}
 .chips{display:flex;gap:5px;flex-wrap:wrap}
 .chip{height:var(--h-ctl-sm);padding:0 12px;display:inline-flex;align-items:center;border:1px solid transparent;border-radius:var(--r-full);background:transparent;color:var(--ink-3);font-size:var(--t-xs);font-weight:500;cursor:pointer;line-height:1;transition:all .15s var(--transition)}
 .chip:hover{color:var(--ink);background:var(--surface-2)}
-.chip.on{background:var(--ink);color:var(--card);font-weight:600}
+.chip.on{background:var(--brand);color:var(--on-brand);font-weight:600}
 /* Hoy: navegación por día */
 /* Hoy: calendario a la izquierda, jornada a la derecha; en estrecho, uno sobre otro. */
 .hoy-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--sp-4);align-items:start;padding:var(--sp-4) var(--gutter) 0}
@@ -313,7 +314,7 @@ td[data-c="nombre"],td:has(>.run){white-space:normal;overflow:visible}
    que apilaban hasta seis líneas se veían cinco filas de 289. */
 td.wrap{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
 tbody tr:hover td{background:var(--surface-3)}
-tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--brand-line)}
+tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--brand)}
 /* Una parada de tabulación por fila; las acciones internas siguen con ratón y
    con Enter sobre la fila. */
 tbody tr[tabindex]:focus-visible{outline:none}
@@ -377,7 +378,7 @@ button[data-tip],.pat-link[data-tip],[role=button][data-tip]{cursor:pointer}
 .dx .dx-main{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .dx .bges,.dx .dx-more{flex:none;margin-left:0}
 .dx-more{font-size:var(--t-xs);color:var(--ink-3);margin-left:5px;cursor:help}
-.dx-none{color:var(--ink-3)}
+.dx-none{color:var(--ink-3);font-size:var(--t-xs)}
 
 /* IC cell */
 /* Celda de tabla, no flex: como flex, una celda vacía medía 19 px en una fila de 39
@@ -440,8 +441,8 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .today-h{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-4);flex-wrap:wrap}
 .today-h h2{font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em}
 .today-h span{font-size:var(--t-sm);color:var(--ink-3)}
-.tcard{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--card);margin-bottom:var(--sp-2);overflow:hidden;transition:border-color .15s var(--transition)}
-.tcard:hover{border-color:var(--ink-4)}
+.tcard{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--card);margin-bottom:var(--sp-2);overflow:hidden;transition:border-color .15s var(--transition),box-shadow .15s var(--transition)}
+.tcard:hover{border-color:var(--ink-4);box-shadow:0 2px 8px rgba(16,28,32,.04)}
 .tcard.done{background:var(--surface-2)}
 .tcard.done:hover{border-color:var(--rule)}
 .tcard.done .thora,.tcard.done .tname b{color:var(--ink-3)}
