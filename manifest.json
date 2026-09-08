@@ -9,8 +9,18 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "tabs", "scripting", "unlimitedStorage"],
-  "host_permissions": ["https://clinicohangaroa.eloisa.cl/*", "https://examenesusuarios.hsalvador.cl/*", "http://10.4.69.90/*"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://clinicohangaroa.eloisa.cl/*",
+    "https://examenesusuarios.hsalvador.cl/*",
+    "http://10.4.69.90/*",
+    "https://his.hospitalhangaroa.cl/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Rayen Atenciones",

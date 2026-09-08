@@ -202,6 +202,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/core/calendar.js` — rejilla mensual para Hoy, sin DOM: atenciones por día y, aparte, las citas ya agendadas.
+- `src/core/his-parse.js` — parseo del HIS de Hanga Roa (tercer origen de ficha, PHP clásico): historial por RUT de `consficha000.php`, con regex y sin DOM, portado del proyecto RCE VISOR.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/diagnostico.js` — recuentos de una carga para validar contra Eloisa (cómo se cruzó cada atención, días de la semana, agenda futura) sin un solo dato de paciente.
@@ -241,6 +242,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/agenda.js` — una petición de agenda (las citas del oficial en un día). Eloisa devuelve sólo el día de inicio aunque el endpoint acepte rango.
 - `src/io/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/io/auth.js` — recuperación segura de la sesión activa de Eloisa.
+- `src/io/his-http.js` — transporte del HIS de Hanga Roa: login por usuario/contraseña (cookie de sesión) y consulta del historial por RUT, guardado al origen `his.hospitalhangaroa.cl`.
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
 - `src/io/crypto-store.js` — cifrado en reposo (ADR 0001): AES-GCM con clave derivada del PIN por PBKDF2, creación y cambio de PIN, migración de lo que estaba en claro; la clave sólo en memoria.
 - `src/io/explorer.js` — consultas controladas del Explorador API.

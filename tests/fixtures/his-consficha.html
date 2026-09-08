@@ -1,0 +1,34 @@
+<!-- Sample reducido de consficha000.php: tabla con "Fecha de Atención" en
+     el header. Incluye una fila de urgencia (PURG0005) y una ambulatoria
+     (PAMB0005) para verificar que el parser no descarta las AMB. -->
+<html>
+<body>
+<h3>Paciente: JUAN PÉREZ</h3>
+<table border="1">
+  <tr>
+    <th>Fecha de Atención</th>
+    <th>Tipo</th>
+    <th>Servicio</th>
+    <th>Ver Documento</th>
+  </tr>
+  <tr>
+    <td>22-04-2026</td>
+    <td>AMB TLM Nefrología</td>
+    <td>NEFROLOGIA</td>
+    <td><span onclick="window.open('PAMB0005.php?id=111&amp;noprint=1')">Ver</span></td>
+  </tr>
+  <tr>
+    <td>15-01-2026</td>
+    <td>URGENCIA</td>
+    <td>URGENCIA ADULTOS</td>
+    <td><span onclick="window.open('PURG0005.php?id=222&amp;noprint=1')">Ver</span></td>
+  </tr>
+  <tr>
+    <td>10-12-2025</td>
+    <td>Control sin documento</td>
+    <td>OTRO</td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+</body>
+</html>
