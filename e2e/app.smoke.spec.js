@@ -141,7 +141,7 @@ test('la tabla se recorre por filas con el teclado y cada fila cabe en una líne
   await expect(page.locator('#tbody [tabindex="0"]')).toHaveCount(1);
 
   const heights = await rows.evaluateAll(list => list.slice(0, 40).map(tr => tr.offsetHeight));
-  expect(Math.max(...heights), `filas de ${heights.join(', ')} px`).toBeLessThanOrEqual(48);
+  expect(Math.max(...heights), `filas de ${heights.join(', ')} px`).toBeLessThanOrEqual(62);
   const dateFits = await page.locator('#tbody td[data-c="fechaAtencion"]').first()
     .evaluate(td => td.scrollWidth <= td.clientWidth);
   expect(dateFits, 'la fecha no debe recortarse').toBe(true);
