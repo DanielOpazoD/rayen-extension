@@ -184,6 +184,9 @@ header p{font-size:var(--t-xs);color:var(--ink-3);letter-spacing:.01em}
 .tab-btn{padding:10px 16px;border:none;background:none;cursor:pointer;font-size:var(--t-sm);font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s var(--transition);position:relative}
 .tab-btn.active{color:var(--ink);border-bottom-color:var(--brand);font-weight:600}
 .tab-btn:hover:not(.active){color:var(--ink-2);background:var(--surface-3);border-radius:var(--r-sm) var(--r-sm) 0 0}
+.tab-cnt{font-size:var(--t-xs);font-weight:400;color:var(--ink-3);margin-left:4px;font-variant-numeric:tabular-nums}
+.tab-cnt:empty{display:none}
+.tab-btn.active .tab-cnt{color:var(--ink-2)}
 .tab-pane{display:none}.tab-pane.active{display:block}
 
 /* ═══ Stats ═══ */

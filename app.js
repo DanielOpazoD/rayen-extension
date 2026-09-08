@@ -5,7 +5,7 @@ import { initPanel, syncNote } from './src/ui/patient-panel.js';
 import { initPalette } from './src/ui/palette.js';
 import { initLock } from './src/ui/lock.js';
 import { $, initTooltips, initTablist, activateOnKey } from './src/ui/dom.js';
-import { state, setPrefs, on, setLoadedMonths } from './src/io/state.js';
+import { state, setPrefs, on, setLoadedMonths, pendientes } from './src/io/state.js';
 import { remeasure, setStatus } from './src/ui/ui.js';
 import { registerTabs, writeNote, addNoteEntry, editNoteEntry, openPatient, patientList } from './src/ui/actions.js';
 import { CONFIG } from './src/core/config.js';
@@ -102,6 +102,17 @@ activateOnKey($('mainTable'));    // Enter/Space on sortable headers, patient na
 activateOnKey($('pacBody'));      // Enter/Space on a patient row or its RUN
 activateOnKey($('sicBody'));      // Enter/Space expands a SIC row
 activateOnKey($('todayContent')); // Enter/Space opens a patient from Hoy
+function setTabCnt(tab, n) {
+  const el = document.querySelector(`.tab-btn[data-tab="${tab}"] .tab-cnt`);
+  if (el) el.textContent = n > 0 ? String(n) : '';
+}
+on('data', () => {
+  setTabCnt('hoy', pendientes().length);
+  setTabCnt('atenciones', state.allData.length);
+  setTabCnt('pacientes', new Set(state.allData.map(patientKey)).size);
+  setTabCnt('interconsultas', state.sics.length);
+});
+
 if (prefs.startTab && prefs.startTab !== 'hoy') showTab(prefs.startTab);
 // Al abrir, la agenda se carga sola (caché primero, red después): antes había que pulsar «Actualizar».
 if (prefs.autoLoad !== false) loader.handleFetch();
