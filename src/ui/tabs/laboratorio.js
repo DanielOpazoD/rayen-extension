@@ -251,9 +251,10 @@ function updateSelectionUI() {
   const c = selectionCounts(search.results, selected);
   const total = printableCount(search.results);
   $('labSelWrap').hidden = c.marcables === 0;
+  const _caret = '<svg class="i i-sm caret" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
   $('labSelBtn').innerHTML = c.marcadas
-    ? `${c.marcadas} marcada${c.marcadas === 1 ? '' : 's'} <span class="caret">▾</span>`
-    : 'Informes <span class="caret">▾</span>';
+    ? `${c.marcadas} marcada${c.marcadas === 1 ? '' : 's'} ${_caret}`
+    : `Informes ${_caret}`;
 
   const desfasada = $('labDownloadAll').dataset.stale === '1';
   const item = (id, disabled, hint) => {

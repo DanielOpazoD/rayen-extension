@@ -37,6 +37,8 @@ test('sin HIS configurado no aparece el bloque (no se muestra nada de otro siste
 test('login del HIS en Preferencias: conectar guarda la sesión y lo confirma', async ({ page }) => {
   await page.goto('/dev/');
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
+  const narrow = (await page.evaluate(() => document.documentElement.clientWidth)) <= 1100;
+  if (narrow) await page.locator('#btnMore').click();
   await page.locator('#btnSettings').click();
   await page.locator('.set-adv > summary').click(); // el login del HIS vive en «Avanzado»
   await page.locator('#hisUser').fill('12345678');

@@ -130,7 +130,7 @@ function mainRow(s) {
   const mine = isMine(s) && !allMine ? `<span class="mine" data-tip="Registrada o ejecutada por ti">★</span>` : '';
   const age  = s.antiguedadDias > 60 && ['pendiente', 'enviada'].includes(s.grupo) ? 'age-old' : '';
   return `<tr class="sic-row ${open ? 'open' : ''}" data-id="${s.id}" tabindex="0" aria-expanded="${open}">
-    <td><span class="caret">${open ? '▾' : '▸'}</span> <strong>${esc(s.fecha)}</strong><br><small class="run">#${s.id}</small></td>
+    <td><svg class="i i-sm caret${open ? ' caret-open' : ''}" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg> <strong>${esc(s.fecha)}</strong><br><small class="run">#${s.id}</small></td>
     <td class="num ${age}">${s.antiguedadDias}</td>
     <td>${mine}${esc(s.paciente.nombre)}${s.paciente.runStr ? `<br><small class="run">${s.paciente.runStr}</small>` : ''}</td>
     <td class="wrap">${esc(s.especialidad)}<br><small class="muted">${esc(s.motivo)}</small></td>

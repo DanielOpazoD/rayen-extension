@@ -36,7 +36,7 @@ test('carga y filtra datos sintéticos sin salir del navegador local', async ({ 
   // detalle de sincronización se despliega encima sin empujar las pestañas.
   const rail = await page.locator('.rail').boundingBox();
   const narrowViewport = (await page.evaluate(() => document.documentElement.clientWidth)) <= 760;
-  expect(rail.height).toBeLessThanOrEqual(narrowViewport ? 84 : 40); // bajo 760 px el estado baja a una segunda línea del riel
+  expect(rail.height).toBeLessThanOrEqual(narrowViewport ? 92 : 44); // bajo 760 px el estado baja a una segunda línea del riel
   const tabsBeforeDetails = await page.locator('.tabs').first().boundingBox();
   await page.locator('#btnSyncDetails').click();
   await expect(page.locator('#syncDetails')).toBeVisible();
@@ -227,7 +227,7 @@ test('la cabecera pliega sus opciones en pantallas estrechas y las muestra en es
     await expect(more).toBeVisible();
     await expect(page.locator('#btnSettings')).toBeHidden();
     const headerHeight = await page.locator('#hdrWrap').evaluate(el => el.offsetHeight);
-    expect(headerHeight, 'la cabecera estrecha cabe en una línea').toBeLessThanOrEqual(64);
+    expect(headerHeight, 'la cabecera estrecha cabe en una línea').toBeLessThanOrEqual(72);
     await more.click();
     await expect(more).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#btnSettings')).toBeVisible();

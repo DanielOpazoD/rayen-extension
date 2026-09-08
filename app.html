@@ -33,7 +33,7 @@
     </div>
     <div class="header-actions">
       <div class="menu-wrap" id="exportWrap" style="display:none">
-        <button class="btn" id="btnExport" aria-haspopup="menu" aria-expanded="false">Exportar</button>
+        <button class="btn" id="btnExport" aria-haspopup="menu" aria-expanded="false">Exportar <svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="menu" id="exportMenu" role="menu">
           <button role="menuitem" data-fmt="xls">Excel (.xls)</button>
           <button role="menuitem" data-fmt="csv">CSV (;)</button>
@@ -45,7 +45,7 @@
         </div>
       </div>
       <div class="menu-wrap" id="settingsWrap">
-        <button class="btn" id="btnSettings" aria-haspopup="true" aria-expanded="false" data-tip="Refresco, privacidad y datos locales">Preferencias</button>
+        <button class="btn" id="btnSettings" aria-haspopup="true" aria-expanded="false" data-tip="Refresco, privacidad y datos locales"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Preferencias</button>
         <div class="menu settings" id="settingsMenu">
           <div class="set-grid">
             <label>Refresco automático
@@ -108,9 +108,9 @@
     </div>
   </div>
   <div class="hdr-primary">
-    <button class="btn btn-primary" id="btnFetch">Cargar datos</button>
+    <button class="btn btn-primary" id="btnFetch"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg><span id="btnFetchLabel">Cargar datos</span></button>
     <button class="btn btn-danger" id="btnCancel" style="display:none">Cancelar</button>
-    <button class="btn" id="btnMore" aria-haspopup="true" aria-expanded="false" aria-controls="hdrMore" aria-label="Más opciones" data-tip="Período, ficha clínica, exportar y preferencias">⋯</button>
+    <button class="btn" id="btnMore" aria-haspopup="true" aria-expanded="false" aria-controls="hdrMore" aria-label="Más opciones" data-tip="Período, ficha clínica, exportar y preferencias"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></button>
   </div>
 </header>
 <progress id="progress" value="0" max="100" style="display:none"></progress>
@@ -342,9 +342,9 @@
 <div class="tab-pane" id="tab-laboratorio" role="tabpanel">
   <div class="lab">
     <div class="lab-header">
-      <button class="btn-mini lab-back" id="labBack" hidden data-tip="Volver a la ficha desde la que se abrió el laboratorio">‹ <span id="labBackName">Volver a la ficha</span></button>
-      <span class="lab-origin"><span id="labHsrStatus" class="lab-session checking">HSR…</span><button class="btn-mini ghost" id="labCheckHsr" aria-label="Volver a comprobar la sesión del Hospital Salvador" data-tip="Volver a comprobar la sesión">↻</button></span>
-      <span class="lab-origin"><span id="labHhrStatus" class="lab-session checking">HHR…</span><button class="btn-mini ghost" id="labCheckHhr" aria-label="Volver a comprobar la sesión de SysLab" data-tip="Volver a comprobar la sesión">↻</button></span>
+      <button class="btn-mini lab-back" id="labBack" hidden data-tip="Volver a la ficha desde la que se abrió el laboratorio"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg> <span id="labBackName">Volver a la ficha</span></button>
+      <span class="lab-origin"><span id="labHsrStatus" class="lab-session checking">HSR…</span><button class="btn-mini ghost" id="labCheckHsr" aria-label="Volver a comprobar la sesión del Hospital Salvador" data-tip="Volver a comprobar la sesión"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button></span>
+      <span class="lab-origin"><span id="labHhrStatus" class="lab-session checking">HHR…</span><button class="btn-mini ghost" id="labCheckHhr" aria-label="Volver a comprobar la sesión de SysLab" data-tip="Volver a comprobar la sesión"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button></span>
     </div>
     <div class="lab-search-row">
       <input type="text" id="labRut" placeholder="RUT paciente (ej: 16.940.645-6)" aria-label="RUT del paciente" spellcheck="false">
@@ -361,7 +361,7 @@
       <label class="lab-date-label">Hasta <input type="date" id="labHasta" aria-label="Fecha hasta"></label>
       <button class="btn btn-primary" id="labSearchBtn">Buscar</button>
       <div class="menu-wrap" id="labSelWrap" hidden>
-        <button class="btn-mini" id="labSelBtn" aria-haspopup="menu" aria-expanded="false" data-tip="Qué hacer con las órdenes de los dos hospitales">Informes <span class="caret">▾</span></button>
+        <button class="btn-mini" id="labSelBtn" aria-haspopup="menu" aria-expanded="false" data-tip="Qué hacer con las órdenes de los dos hospitales">Informes <svg class="i i-sm caret" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="menu" id="labSelMenu" role="menu">
           <button role="menuitem" id="labPickAll">Marcar todas <small id="labPickAllHint"></small></button>
           <button role="menuitem" id="labPickNone">Quitar la selección</button>
@@ -507,15 +507,15 @@
         <span id="ppSector"></span>
       </div>
       <span class="pp-nav">
-        <button class="btn-mini" id="ppPrev" data-tip="Paciente anterior (←)" aria-label="Paciente anterior">‹</button>
+        <button class="btn-mini" id="ppPrev" data-tip="Paciente anterior (←)" aria-label="Paciente anterior"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button>
         <span id="ppPos" class="pp-pos"></span>
-        <button class="btn-mini" id="ppNext" data-tip="Paciente siguiente (→)" aria-label="Paciente siguiente">›</button>
+        <button class="btn-mini" id="ppNext" data-tip="Paciente siguiente (→)" aria-label="Paciente siguiente"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
       </span>
-      <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar">✕</button>
+      <button id="ppClose" data-tip="Cerrar (Esc)" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="pp-actions">
       <div class="menu-wrap" id="ppPdfWrap">
-        <button id="ppPdfBtn" class="pp-act" data-tip="Imprimir o guardar en PDF la historia de este paciente" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>Historia <span class="pp-act-caret">▾</span></button>
+        <button id="ppPdfBtn" class="pp-act" data-tip="Imprimir o guardar en PDF la historia de este paciente" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>Historia <svg class="i i-sm pp-act-caret" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="menu" id="ppPdfMenu" role="menu">
         <button role="menuitem" data-scope="todos">Atenciones · todos los profesionales</button>
         <button role="menuitem" data-scope="medicos">Atenciones · solo médicos</button>
@@ -531,7 +531,7 @@
   </div>
   <div class="pp-datos" id="ppDatos" hidden><div class="pp-ficha-status" id="ppFichaStatus" role="status"></div><div id="ppDatosBody"></div></div>
   <section class="ia-sheet" id="iaSheet" role="dialog" aria-modal="true" aria-labelledby="iaTitle" hidden>
-    <div class="ia-head"><h2 id="iaTitle">Informe con IA</h2><button id="iaClose" class="btn-mini" aria-label="Cerrar informe (Esc)">✕</button></div>
+    <div class="ia-head"><h2 id="iaTitle">Informe con IA</h2><button id="iaClose" class="btn-mini" aria-label="Cerrar informe (Esc)"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <p class="ia-nota">Nada sale de este equipo hasta que copias el prompt. Lo que se copia no lleva nombre, RUN ni nombres de profesionales, y las fechas van relativas salvo que marques «fechas reales». Pega la respuesta del modelo autorizado y el informe se arma aquí, con la identidad repuesta.</p>
     <div class="ia-row">
       <label>Plantilla <select id="iaPlantilla"></select></label>

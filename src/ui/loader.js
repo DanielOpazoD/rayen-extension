@@ -54,7 +54,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
 
   btn.disabled = true;
   $('btnRetrySync').disabled = true;
-  btn.textContent = 'Cargando...';
+  $('btnFetchLabel').textContent = 'Cargando...';
   $('btnCancel').style.display = '';
   $('btnCancel').disabled = false;
   prog.style.display = 'block';
@@ -84,7 +84,7 @@ async function performFetch({ retryOnly = false, forceHistorial = false } = {}) 
     $('btnCancel').style.display = 'none';
     btn.disabled = false;
     $('btnRetrySync').disabled = false;
-    btn.textContent = 'Actualizar';
+    $('btnFetchLabel').textContent = 'Actualizar';
     document.title = baseTitle; // el que tenía la página al arrancar (el arnés añade « · dev»)
   }
 

@@ -3,9 +3,15 @@ import { test, expect } from '@playwright/test';
 // El Explorador salió de la barra principal (uso ocasional): se abre desde
 // Preferencias → Avanzado.
 async function abrirExplorador(page) {
+  const narrow = (await page.evaluate(() => document.documentElement.clientWidth)) <= 1100;
+  if (narrow) await page.locator('#btnMore').click();
   await page.locator('#btnSettings').click();
   await page.locator('.set-adv > summary').click();
   await page.locator('#btnExplorador').click();
+  if (narrow) {
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+  }
 }
 
 // El arnés no tiene red: se pega un JSON con datos de persona y se comprueba que la

@@ -161,7 +161,7 @@ test('desde la ficha, el laboratorio ofrece la vuelta al paciente y la retira al
 
   await page.locator('#ppLabBtn').click();
   await expect(page.locator('#tab-laboratorio')).toBeVisible();
-  await expect(page.locator('#labBack')).toHaveText(`‹ Volver a ${nombre}`);
+  await expect(page.locator('#labBack')).toContainText(`Volver a ${nombre}`);
 
   await page.locator('#labBack').click();
   await expect(page.locator('#patientPanel')).toBeVisible();
