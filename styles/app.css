@@ -83,7 +83,7 @@ button,select,input,textarea{font-family:inherit;color:inherit;font-size:var(--t
 header{position:relative;padding:var(--sp-4) var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:var(--sp-5)}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .brand>div{min-width:0}
-.mark{width:32px;height:32px;border-radius:9px;background:var(--brand);flex-shrink:0;position:relative;transition:transform .15s var(--transition);box-shadow:0 1px 3px rgba(14,140,106,.2)}
+.mark{width:32px;height:32px;border-radius:9px;background:var(--brand);flex-shrink:0;position:relative;transition:transform .15s var(--transition);box-shadow:0 1px 3px color-mix(in srgb,var(--brand) 25%,transparent)}
 .brand:hover .mark{transform:scale(1.05)}
 .mark::before,.mark::after{content:'';position:absolute;background:#fff;border-radius:1.5px}
 .mark::before{left:14px;top:7.5px;width:4px;height:17px}
@@ -107,8 +107,8 @@ header p{font-size:var(--t-xs);color:var(--ink-3);letter-spacing:.01em}
 .btn{height:var(--h-ctl);padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--rule);border-radius:var(--r-sm);cursor:pointer;font-size:var(--t-sm);font-weight:500;white-space:nowrap;background:var(--card);color:var(--ink-2);transition:all .15s var(--transition)}
 .btn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--ink-4)}
 .btn:active:not(:disabled){transform:scale(.98)}
-.btn-primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:650;box-shadow:0 1px 3px rgba(14,140,106,.25)}
-.btn-primary:hover{background:var(--brand-2);border-color:var(--brand-2);color:var(--on-brand);box-shadow:0 2px 8px rgba(14,140,106,.3)}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:650;box-shadow:0 1px 3px color-mix(in srgb,var(--brand) 30%,transparent)}
+.btn-primary:hover{background:var(--brand-2);border-color:var(--brand-2);color:var(--on-brand);box-shadow:0 2px 8px color-mix(in srgb,var(--brand) 35%,transparent)}
 .btn:disabled{opacity:.5;cursor:default}
 .btn-danger{color:var(--bad)}
 .btn-danger:hover{background:var(--bad-soft);color:var(--bad)}
