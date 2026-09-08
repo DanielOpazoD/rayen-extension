@@ -240,7 +240,7 @@ header p{font-size:var(--t-xs);color:var(--ink-3);letter-spacing:.01em}
 .hoy-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--sp-4);align-items:start;padding:var(--sp-4) var(--gutter) 0}
 .hoy-layout .today{padding:0 0 var(--sp-6);max-width:none}
 @media(max-width:1000px){.hoy-layout{grid-template-columns:1fr}}
-.cal{position:sticky;top:calc(var(--chrome-h,140px) - 40px);background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-4);box-shadow:var(--shadow)}
+.cal{position:sticky;top:calc(var(--chrome-h,140px) - 40px);background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-4)}
 .cal-h{display:flex;align-items:center;gap:4px;margin-bottom:var(--sp-2)}
 .cal-title{flex:1;text-align:center;font-size:var(--t-sm);font-weight:600;text-transform:capitalize}
 .cal-grid{display:flex;flex-direction:column;gap:2px}
@@ -328,7 +328,7 @@ tbody tr:last-child td{border-bottom:none}
 @media(max-width:700px){.s1{position:static}.s2{left:0}}
 /* Hay más columnas a la derecha: sombra interior en el borde (la barra de
    desplazamiento de macOS es invisible hasta que se toca). */
-.tbl-wrap.more-right{box-shadow:inset -14px 0 12px -12px rgba(0,0,0,.22)}
+.tbl-wrap.more-right{box-shadow:inset -12px 0 10px -10px rgba(0,0,0,.10)}
 .tbl-wrap{scrollbar-width:thin}
 .tbl-wrap.scrolled .s2::after{content:'';position:absolute;right:0;top:0;bottom:0;width:6px;background:linear-gradient(90deg,rgba(0,0,0,.07),transparent);pointer-events:none}
 td.sex{text-align:center;color:var(--ink-2)}
@@ -572,14 +572,14 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .his-head small.his-err{color:var(--bad)}
 .his-visit{display:flex;align-items:center;gap:8px;font-size:var(--t-sm);padding:4px 0;border-top:1px solid var(--rule)}
 .his-visit .pp-date{min-width:86px}
-.his-tipo{color:var(--ink-1)}
+.his-tipo{color:var(--ink)}
 .his-serv{color:var(--ink-3);font-size:var(--t-xs)}
 .his-visit .spacer{flex:1}
 .his-mark{font-size:var(--t-xs);padding:1px 6px;border-radius:999px;white-space:nowrap}
 .his-urg{color:var(--bad);background:var(--bad-soft)}
 .his-amb{color:var(--good);background:var(--good-soft)}
 .his-login{display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
-.his-login input{border:1px solid var(--rule);border-radius:var(--r-sm);padding:6px 8px;font-size:var(--t-sm);background:var(--card);color:var(--ink-1)}
+.his-login input{border:1px solid var(--rule);border-radius:var(--r-sm);padding:6px 8px;font-size:var(--t-sm);background:var(--card);color:var(--ink)}
 .his-login-actions{display:flex;gap:8px}
 .his-status{font-size:var(--t-xs);color:var(--ink-3)}
 .his-status.ok{color:var(--good)}.his-status.bad{color:var(--bad)}.his-status.warn{color:var(--warn)}
