@@ -2,7 +2,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  resolveHisUrl, parseLoginForm, hisLogin, hisStatus, hisAtencionesPorRut, hisFichaUrl,
+  resolveHisUrl, parseLoginForm, hisLogin, hisStatus, hisAtencionesPorRut, hisFichaUrl, hisFicha,
 } from '../src/io/his-http.js';
 
 /**
@@ -96,4 +96,45 @@ test('hisStatus distingue con sesión de sin sesión', async () => {
 test('hisFichaUrl arma la ficha imprimible según el tipo', () => {
   assert.match(hisFichaUrl('111', 'ambulatorio'), /PAMB0005\.php\?id=111&noprint=1$/);
   assert.match(hisFichaUrl('222', 'urgencia'), /PURG0005\.php\?id=222&print=1$/);
+});
+
+/**
+ * La lectura de una ficha distingue cuatro respuestas que el HIS da con el
+ * mismo aspecto. Confundirlas hace que la app afirme cosas falsas sobre una
+ * atención: «sin contenido clínico» cuando en realidad faltan permisos, o
+ * cuando el servidor devolvió un error.
+ */
+const FICHA_OK = `<div><b>NOMBRES:</b> X</div><div><b>RUT:</b> 1-9</div><div><b>EDAD:</b> 40</div>
+  <div><b>ANAMNESIS:</b> Algo</div><div><b>DIAGNÓSTICO PRI:</b> Otra cosa</div><div><b>DESTINO:</b> Casa</div>`;
+
+test('hisFicha: una ficha real se parsea', async () => {
+  instalar([[/PURG0005/, { text: FICHA_OK }]]);
+  const r = await hisFicha('502', 'urgencia');
+  assert.equal(r.ficha.atencion.anamnesis, 'Algo');
+  assert.equal(r.authRequired, undefined);
+});
+
+test('hisFicha: sesión caída, sin permisos, error HTTP y ficha vacía son cuatro cosas distintas', async () => {
+  instalar([[/PURG0005/, { text: '<form><input type="password" name="password"></form>' }]]);
+  assert.equal((await hisFicha('1', 'urgencia')).authRequired, true);
+
+  // Antes esto se leía como «ficha vacía» y la app decía que el HIS no había
+  // registrado contenido clínico. Es falso: la atención existe, falta permiso.
+  instalar([[/PURG0005/, { text: `<html><body>No tiene permisos para ver esta ficha${FICHA_OK}</body></html>` }]]);
+  assert.match((await hisFicha('1', 'urgencia')).error, /permisos/);
+
+  instalar([[/PURG0005/, { text: 'boom', status: 500 }]]);
+  assert.match((await hisFicha('1', 'urgencia')).error, /HTTP 500/);
+
+  instalar([[/PURG0005/, { text: '<html><body>nada</body></html>' }]]);
+  assert.equal((await hisFicha('1', 'urgencia')).vacia, true);
+});
+
+test('hisFicha pide el documento que corresponde al tipo de atención', async () => {
+  const vistos = instalar([[/P(URG|AMB)0005/, { text: FICHA_OK }]]);
+  await hisFicha('77', 'ambulatorio');
+  await hisFicha('88', 'urgencia');
+  assert.match(vistos[0].url, /PAMB0005\.php\?id=77&noprint=1$/);
+  assert.match(vistos[1].url, /PURG0005\.php\?id=88&print=1$/);
+  assert.ok(vistos.every(v => v.credentials === 'include'), 'la ficha va con la cookie de sesión');
 });

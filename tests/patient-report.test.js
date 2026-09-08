@@ -75,3 +75,125 @@ test('isMedicalVisit separa profesional médico de otros profesionales', () => {
   assert.equal(isMedicalVisit(v('', 'Kinesiología')), false);
   assert.equal(isMedicalVisit(v('', 'Taller de autocuidado')), false);
 });
+
+/**
+ * El RCE (HIS de Hanga Roa) en el informe imprimible. Lo que custodian:
+ * el papel lleva las dos historias, cada atención dice de qué sistema viene, y
+ * una ficha que no se pudo leer se declara en vez de desaparecer.
+ */
+const atencionRce = (idCuenta, fecha, tipoFicha = 'ambulatorio') => ({
+  idCuenta, fecha, tipoFicha, tipoAtencion: 'AMB Cardiología', servicio: 'CARDIOLOGIA', rut: '1-9',
+});
+const fichaRce = {
+  paciente: { nombre: 'PACIENTE PRUEBA' },
+  meta: { medico: 'DR. EJEMPLO RCE', motivoConsulta: 'Control de presión' },
+  atencion: { anamnesis: 'Asintomático.', examenFisico: '', hipotesis: '', indicaciones: 'Continuar losartán.', indicacionesAlta: '' },
+  diagnosticos: { principal: 'Hipertensión arterial', secundario: '', complementario: '' },
+  signosVitales: { PAS: '145', PAD: '90', FC: '72' },
+  cierre: { condicion: 'Estable', destino: 'Domicilio', pronostico: '', fechaSalida: '', horaSalida: '' },
+};
+const curConRce = (his) => ({
+  record: { nombre: 'Paciente Prueba', runStr: '1-K', edad: 40, sexo: 'Hombre' },
+  visits: [yo], ficha: null, sics: [], his,
+});
+
+test('el informe lleva las atenciones del RCE junto a las de Eloisa', () => {
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok',
+    atenciones: [atencionRce('501', '2026-05-18')],
+    fichas: new Map([['ambulatorio:501', { estado: 'ok', ficha: fichaRce }]]),
+  }), 'todos');
+  assert.ok(fragment.includes('Atenciones del RCE'), 'el RCE tiene su propia sección');
+  assert.ok(fragment.includes('2026-05-18') && fragment.includes('CARDIOLOGIA'));
+  assert.ok(fragment.includes('DR. EJEMPLO RCE'), 'el médico que atendió en el RCE');
+  assert.ok(fragment.includes('Hipertensión arterial') && fragment.includes('Continuar losartán.'));
+  assert.ok(fragment.includes('145/90'), 'la presión se imprime como sistólica/diastólica');
+  assert.ok(fragment.includes('>RCE<'), 'cada tarjeta declara su origen');
+  assert.ok(fragment.includes(SCOPE_LABEL.todos), 'y las de Eloisa siguen ahí');
+});
+
+test('una ficha del RCE que no se pudo leer se declara, no se omite', () => {
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok',
+    atenciones: [atencionRce('502', '2026-02-02', 'urgencia')],
+    fichas: new Map([['urgencia:502', { estado: 'error', error: 'sesión del HIS caída' }]]),
+  }), 'todos');
+  assert.ok(fragment.includes('Atenciones del RCE · Hospital Hanga Roa · 1'));
+  assert.ok(fragment.includes('Ficha no leída desde el RCE: sesión del HIS caída'));
+  assert.ok(fragment.includes('urgencia'), 'la cabecera sale igual, con lo que sí sabe el listado');
+});
+
+test('sin RCE el informe no cambia; el alcance «ic» no lo incluye', () => {
+  const sinHis = buildPatientReport(curConRce(null), 'todos');
+  assert.ok(!sinHis.fragment.includes('Atenciones del RCE'));
+
+  const soloIc = buildPatientReport(curConRce({
+    estado: 'ok', atenciones: [atencionRce('501', '2026-05-18')], fichas: new Map(),
+  }), 'ic');
+  assert.ok(!soloIc.fragment.includes('Atenciones del RCE'), 'el alcance de interconsultas no lleva atenciones');
+});
+
+test('en los alcances filtrados se advierte que el RCE va completo', () => {
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok', atenciones: [atencionRce('501', '2026-05-18')], fichas: new Map(),
+  }), 'yo');
+  assert.ok(fragment.includes('no se filtra por alcance'),
+    'el listado del HIS no dice quién atendió: filtrarlo sería inventar');
+  assert.ok(fragment.includes('no se trajo el contenido'), 'y dice que esa ficha no se llegó a leer');
+});
+
+test('las atenciones del RCE salen de la más reciente a la más antigua', () => {
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok',
+    atenciones: [atencionRce('1', '2025-01-01'), atencionRce('2', '2026-06-30'), atencionRce('3', '2025-12-31')],
+    fichas: new Map(),
+  }), 'todos');
+  const orden = [...fragment.matchAll(/20\d\d-\d\d-\d\d/g)].map(m => m[0]);
+  const rce = orden.filter(f => ['2025-01-01', '2026-06-30', '2025-12-31'].includes(f));
+  assert.deepEqual(rce, ['2026-06-30', '2025-12-31', '2025-01-01']);
+});
+
+test('dos atenciones con el mismo id pero distinto tipo no se pisan', () => {
+  // PURG0005.php?id=N y PAMB0005.php?id=N son documentos distintos, de tablas
+  // distintas del HIS: con la clave puesta sólo en el id, la ambulatoria salía
+  // con la anamnesis y los signos vitales de la urgencia.
+  const urg = { ...fichaRce, meta: { medico: 'DR. URGENCIA', motivoConsulta: 'Dolor torácico' },
+    atencion: { anamnesis: 'Contenido de la URGENCIA.', examenFisico: '', hipotesis: '', indicaciones: '', indicacionesAlta: '' } };
+  const amb = { ...fichaRce, meta: { medico: 'DRA. AMBULATORIA', motivoConsulta: 'Control' },
+    atencion: { anamnesis: 'Contenido de la AMBULATORIA.', examenFisico: '', hipotesis: '', indicaciones: '', indicacionesAlta: '' } };
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok',
+    atenciones: [{ ...atencionRce('700', '2026-02-02', 'urgencia') }, { ...atencionRce('700', '2026-05-18', 'ambulatorio') }],
+    fichas: new Map([['urgencia:700', { estado: 'ok', ficha: urg }], ['ambulatorio:700', { estado: 'ok', ficha: amb }]]),
+  }), 'todos');
+  assert.ok(fragment.includes('Contenido de la URGENCIA.'));
+  assert.ok(fragment.includes('Contenido de la AMBULATORIA.'));
+  assert.ok(fragment.includes('DR. URGENCIA') && fragment.includes('DRA. AMBULATORIA'),
+    'cada atención con el médico que de verdad la firmó');
+});
+
+test('si el RCE falló o no había llegado, el informe lo dice en vez de callarlo', () => {
+  const caido = buildPatientReport(curConRce({ estado: 'error', error: 'HIS fuera de la red' }), 'todos');
+  assert.ok(caido.fragment.includes('RCE no disponible: HIS fuera de la red'));
+  assert.ok(caido.fragment.includes('incompleta'), 'quien lee el papel tiene que saber que falta media historia');
+
+  const enVuelo = buildPatientReport(curConRce({ estado: 'cargando' }), 'todos');
+  assert.ok(enVuelo.fragment.includes('aún no había llegado'),
+    'imprimir apenas se abre el panel no puede producir un informe que parezca completo');
+
+  const vacio = buildPatientReport(curConRce({ estado: 'ok', atenciones: [], fichas: new Map() }), 'todos');
+  assert.ok(vacio.fragment.includes('Sin atenciones registradas en el RCE'));
+});
+
+test('el papel imprime los mismos signos vitales que la pantalla', () => {
+  const f = { ...fichaRce, signosVitales: { FC: '88', PAS: '145', PAD: '90', PAM: '110',
+    SatO2: '96', TempRectal: '38.9', dolor: '8', altura: '170', hora: '14:20' } };
+  const { fragment } = buildPatientReport(curConRce({
+    estado: 'ok', atenciones: [atencionRce('501', '2026-05-18')],
+    fichas: new Map([['ambulatorio:501', { estado: 'ok', ficha: f }]]),
+  }), 'todos');
+  for (const esperado of ['FC 88', 'PA 145/90', 'PAM 110', 'Sat O₂ 96', 'T° rectal 38.9', 'Dolor 8', 'Talla 170']) {
+    assert.ok(fragment.includes(esperado), `el papel perdía «${esperado}»`);
+  }
+  assert.ok(fragment.includes('Signos vitales · 14:20'), 'y la hora a la que se tomaron');
+});

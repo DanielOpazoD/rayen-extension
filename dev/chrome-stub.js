@@ -139,6 +139,37 @@ const HIS_LOGIN_FORM = '<form action="acceso1.php"><input name="login"><input ty
 const HIS_CONSFICHA = `<table><tr><th>Fecha de Atención</th><th>Tipo</th><th>Servicio</th><th>Ver</th></tr>
   <tr><td>18-05-2026</td><td>AMB Cardiología</td><td>CARDIOLOGIA</td><td><span onclick="window.open('PAMB0005.php?id=501&noprint=1')">Ver</span></td></tr>
   <tr><td>02-02-2026</td><td>URGENCIA</td><td>URGENCIA ADULTOS</td><td><span onclick="window.open('PURG0005.php?id=502&print=1')">Ver</span></td></tr></table>`;
+// El contenido de una ficha (PURG0005 urgencia / PAMB0005 ambulatorio): pares
+// <b>ETIQUETA:</b>VALOR, y la tabla de signos vitales sólo en urgencia. Datos
+// inventados, como todo el arnés.
+const HIS_FICHA_URG = `<html><body>
+  <div><b>NOMBRES:</b> PACIENTE EJEMPLO HIS</div>
+  <div><b>RUT:</b> 11.111.111-1</div>
+  <div><b>EDAD:</b> 58</div>
+  <div><b>MÉDICO:</b> DR. EJEMPLO URGENCIA</div>
+  <div><b>FECHA ATENCIÓN:</b> 02-02-2026</div>
+  <div><b>MOTIVO CONSULTA:</b><br>Dolor torácico opresivo de 2 horas.</div>
+  <div><b>ANAMNESIS:</b><br>Refiere dolor retroesternal irradiado a brazo izquierdo.</div>
+  <div><b>EXAMEN FÍSICO:</b><br>Yugulares planas, ruidos cardíacos rítmicos.</div>
+  <div><b>HIPOTESIS DIAGNÓSTICA:</b><br>Síndrome coronario agudo a descartar.</div>
+  <div><b>INDICACIONES MÉDICAS / PLAN DE TTO:</b><br>Reposo absoluto.<br>ECG seriado cada 6 horas.</div>
+  <div><b>DIAGNÓSTICO PRI:</b> Dolor torácico en estudio</div>
+  <div><b>CONDICIÓN CIERRE ATENCIÓN:</b> Estable</div>
+  <div><b>DESTINO:</b> Observación</div>
+  <table><tr><th>HORA</th><th>F.C.</th><th>P. SISTOLICA</th><th>P. DIASTOLICA</th><th>SAT. O2</th></tr>
+  <tr><td>14:20</td><td>88</td><td>145</td><td>90</td><td>96</td></tr></table>
+</body></html>`;
+const HIS_FICHA_AMB = `<html><body>
+  <div><b>NOMBRES:</b> PACIENTE EJEMPLO HIS</div>
+  <div><b>RUT:</b> 11.111.111-1</div>
+  <div><b>EDAD:</b> 58</div>
+  <div><label><b>MÉDICO:</b></label><input name="medico" value="DRA. EJEMPLO CARDIOLOGA"></div>
+  <div><b>FECHA ATENCIÓN:</b> 18-05-2026</div>
+  <div><b>TIPO ATENCIÓN:</b> AMB Cardiología</div>
+  <div><b>ANAMNESIS:</b><br>Control de hipertensión, asintomático.</div>
+  <div><b>INDICACIONES:</b><br>Continuar losartán. Control en 6 meses.</div>
+  <div><b>DIAGNÓSTICO PRI:</b> Hipertensión arterial esencial</div>
+</body></html>`;
 let hisLogged = false;
 /** Pre-siembra el HIS (para ?his=1): credencial guardada + sesión activa. */
 export function setHis({ user = '12345678' } = {}) {
@@ -156,6 +187,8 @@ function routeHis(url, init) {
   }
   if (path.endsWith('/menu.php')) return htmlResp('menu');
   if (path.endsWith('/ateurg022.php')) return hisLogged ? htmlResp('<table>atenciones del día</table>') : htmlResp(HIS_LOGIN_FORM);
+  if (path.endsWith('/purg0005.php')) return hisLogged ? htmlResp(HIS_FICHA_URG) : htmlResp(HIS_LOGIN_FORM);
+  if (path.endsWith('/pamb0005.php')) return hisLogged ? htmlResp(HIS_FICHA_AMB) : htmlResp(HIS_LOGIN_FORM);
   if (path.endsWith('/consficha000.php')) return method === 'POST' && hisLogged ? htmlResp(HIS_CONSFICHA) : htmlResp(hisLogged ? '<form>rut</form>' : HIS_LOGIN_FORM);
   return htmlResp(HIS_LOGIN_FORM);
 }

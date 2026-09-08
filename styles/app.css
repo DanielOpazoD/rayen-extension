@@ -578,14 +578,16 @@ table.hide-edad col.c-edad,table.hide-sexo col.c-sexo,table.hide-atencion col.c-
 .his-origen svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
 .his-head small{color:var(--ink-3);font-size:var(--t-xs)}
 .his-head small.his-err{color:var(--bad)}
-.his-visit{display:flex;align-items:center;gap:8px;font-size:var(--t-sm);padding:4px 0;border-top:1px solid var(--rule)}
+/* Una atención del HIS es una tarjeta `pp-visit` como las de Eloisa: hereda su
+   borde, su cabecera y sus secciones. Aquí sólo va lo propio del origen. */
+.his-visit{background:var(--card);margin-top:6px}
 .his-visit .pp-date{min-width:86px}
-.his-tipo{color:var(--ink)}
 .his-serv{color:var(--ink-3);font-size:var(--t-xs)}
-.his-visit .spacer{flex:1}
-.his-mark{font-size:var(--t-xs);padding:1px 6px;border-radius:999px;white-space:nowrap}
-.his-urg{color:var(--bad);background:var(--bad-soft)}
-.his-amb{color:var(--good);background:var(--good-soft)}
+/* Signos vitales (sólo urgencia): una fila de pares rótulo-valor, no una tabla. */
+.his-svs{display:flex;flex-wrap:wrap;gap:3px 14px}
+.his-sv{font-size:var(--t-sm);color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.his-sv b{font-weight:500;color:var(--ink-3);font-size:var(--t-xs);margin-right:4px;text-transform:uppercase;letter-spacing:.04em}
+.pp-empty.his-err{color:var(--bad)}
 .his-login{display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
 .his-login input{border:1px solid var(--rule);border-radius:var(--r-sm);padding:6px 8px;font-size:var(--t-sm);background:var(--card);color:var(--ink)}
 .his-login-actions{display:flex;gap:8px}

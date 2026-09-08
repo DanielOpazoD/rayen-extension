@@ -203,6 +203,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/core/calendar.js` — rejilla mensual para Hoy, sin DOM: atenciones por día y, aparte, las citas ya agendadas.
 - `src/core/his-parse.js` — parseo del HIS de Hanga Roa (tercer origen de ficha, PHP clásico): historial por RUT de `consficha000.php`, con regex y sin DOM, portado del proyecto RCE VISOR.
+- `src/core/his-ficha.js` — parseo del contenido clínico de una atención del HIS (`PURG0005` urgencia / `PAMB0005` ambulatorio): pares `<b>ETIQUETA:</b>VALOR` → estructura tipada, con la tabla de signos vitales y las siete formas en que el HIS expone el médico. También portado del RCE VISOR.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
 - `src/core/diagnostico.js` — recuentos de una carga para validar contra Eloisa (cómo se cruzó cada atención, días de la semana, agenda futura) sin un solo dato de paciente.

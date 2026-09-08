@@ -6,7 +6,7 @@
  * Chrome; aquí sólo se guarda con qué reingresar cuando esa cookie caduca.
  */
 import { savePrefs, loadPrefs } from './cache.js';
-import { hisLogin, hisAtencionesPorRut } from './his-http.js';
+import { hisLogin, hisAtencionesPorRut, hisFicha } from './his-http.js';
 
 /** @returns {Promise<{ user: string, pass: string }>} credenciales guardadas (vacías si no hay) */
 export async function hisCreds() {
@@ -58,4 +58,75 @@ export async function hisLoadAtenciones(rut, { signal } = {}) {
   } catch (e) {
     return { atenciones: [], error: e?.message ? String(e.message) : 'error de red con el HIS' };
   }
+}
+
+/**
+ * Reingresa al HIS con las credenciales guardadas. Lo comparten la lista de
+ * atenciones y el contenido de cada ficha: los dos pueden encontrarse con la
+ * cookie caducada a mitad de camino.
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+let reingresoEnCurso = null;
+async function reingresar() {
+  // Compartido: si el lote del informe encuentra la cookie muerta, todas sus
+  // fichas esperan UN reingreso, no uno cada una. Cada hisLogin son cuatro
+  // peticiones, y repetir credenciales rechazadas puede bloquear la cuenta.
+  if (reingresoEnCurso) return reingresoEnCurso;
+  reingresoEnCurso = (async () => {
+    const { user, pass } = await hisCreds();
+    if (!user || !pass) return { ok: false, error: 'sin sesión del HIS' };
+    return hisLogin(user, pass);
+  })().finally(() => { reingresoEnCurso = null; });
+  return reingresoEnCurso;
+}
+
+/**
+ * El contenido clínico de una atención del HIS. Como `hisLoadAtenciones`, nunca
+ * lanza: una ficha que no se puede leer se cuenta y se dice, pero no tumba el
+ * panel ni el resto de las fichas del lote.
+ * @param {string} idCuenta
+ * @param {'urgencia'|'ambulatorio'} tipoFicha
+ * @param {{ signal?: AbortSignal }} [opts]
+ * @returns {Promise<{ ficha?: import('../core/his-ficha.js').FichaHis, error?: string }>}
+ */
+export async function hisLoadFicha(idCuenta, tipoFicha, { signal } = {}) {
+  try {
+    let r = await hisFicha(idCuenta, tipoFicha, { signal });
+    if (r.authRequired) {
+      const login = await reingresar();
+      if (!login.ok) return { error: login.error };
+      r = await hisFicha(idCuenta, tipoFicha, { signal });
+      if (r.authRequired) return { error: 'no se pudo reingresar al HIS' };
+    }
+    if (r.error) return { error: r.error };   // permisos o HTTP: es distinto de «vacía»
+    if (r.vacia) return { error: 'el HIS no devolvió el contenido de esta ficha' };
+    return { ficha: r.ficha };
+  } catch (e) {
+    return { error: e?.message ? String(e.message) : 'error de red con el HIS' };
+  }
+}
+
+/**
+ * Las fichas de varias atenciones, para el informe imprimible. En serie a
+ * propósito: el HIS es un PHP con sesión por cookie y varias peticiones a la
+ * vez le sientan mal. `onProgress` permite decir por dónde va, porque son
+ * tantas peticiones como atenciones tenga el paciente.
+ *
+ * Devuelve una entrada por atención, con `ficha` o con `error`: el informe
+ * imprime lo que sí llegó y declara lo que faltó, en vez de fallar entero.
+ *
+ * @param {import('../core/his-parse.js').AtencionHis[]} atenciones
+ * @param {{ signal?: AbortSignal, onProgress?: (hechas: number, total: number) => void }} [opts]
+ * @returns {Promise<Array<{ atencion: object, ficha?: object, error?: string }>>}
+ */
+export async function hisLoadFichas(atenciones, { signal, onProgress } = {}) {
+  const lista = atenciones ?? [];
+  const out = [];
+  for (const a of lista) {
+    if (signal?.aborted) break;
+    const r = await hisLoadFicha(a.idCuenta, a.tipoFicha, { signal });
+    out.push({ atencion: a, ...r });
+    onProgress?.(out.length, lista.length);
+  }
+  return out;
 }

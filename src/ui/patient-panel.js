@@ -13,7 +13,8 @@ import { copyToClipboard } from './toast.js';
 import { renderHeader, renderDatos } from './panel/datos.js';
 import { renderDx } from './panel/problemas.js';
 import { renderAt } from './panel/atenciones.js';
-import { hisConfigurado, hisLoadAtenciones } from '../io/his-session.js';
+import { hisBlockHTML, claveFicha } from './panel/his.js';
+import { hisConfigurado, hisLoadAtenciones, hisLoadFicha } from '../io/his-session.js';
 import { hisFichaUrl } from '../io/his-http.js';
 import { renderIc } from './panel/interconsultas.js';
 import { renderRx, toggleRecetaDetalle } from './panel/recetas.js';
@@ -180,7 +181,11 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
     }
     const tog = closestOf(e, '.pp-vhead');
     if (tog && tog.closest('.pp-visit.has-body') && !closestOf(e, 'button')) {
-      const open = tog.closest('.pp-visit').classList.toggle('expanded');
+      const visita = /** @type {HTMLElement} */ (tog.closest('.pp-visit'));
+      // Las de Eloisa abren y cierran en el DOM; las del RCE guardan si están
+      // abiertas en su mapa, porque su cuerpo se trae y se repinta desde ahí.
+      if (visita.classList.contains('his-visit')) { alternarFichaHis(visita); return; }
+      const open = visita.classList.toggle('expanded');
       tog.setAttribute('aria-expanded', String(open));
       return;
     }
@@ -310,4 +315,67 @@ async function cargarHis(me) {
   if (cur !== me) return;
   me.his = r.error ? { estado: 'error', error: r.error } : { estado: 'ok', atenciones: r.atenciones };
   renderAt(cur, atFilter);
+}
+
+/**
+ * Repinta SÓLO el bloque del RCE, desde su estado. No se repinta la pestaña
+ * entera a propósito: `renderAt` reemplaza todo `#ppPaneAt` y cerraría las
+ * atenciones de Eloisa que el médico dejó abiertas.
+ */
+function repintarHis() {
+  const bloque = document.querySelector('#ppPaneAt .his-block');
+  if (bloque && cur) bloque.outerHTML = hisBlockHTML(cur.his);
+}
+
+/**
+ * Abre o cierra una atención del RCE. Lo abierto vive en el mapa, no en una
+ * clase del DOM: así un repintado (cambiar de filtro, o que termine de llegar
+ * la ficha de Eloisa) no cierra lo que el médico había desplegado ni pierde lo
+ * ya traído.
+ * @param {HTMLElement} visita
+ */
+function alternarFichaHis(visita) {
+  if (!cur?.his) return;
+  const a = { idCuenta: visita.dataset.hisId, tipoFicha: visita.dataset.hisTipo };
+  if (!a.idCuenta) return;
+  const fichas = (cur.his.fichas ??= new Map());
+  const clave = claveFicha(a);
+  const ya = fichas.get(clave);
+  fichas.set(clave, { ...ya, abierta: !ya?.abierta });
+  repintarHis();
+  // Sin contenido todavía (o con un error anterior), al abrirla se va a buscar.
+  if (!ya?.abierta && (!ya || ya.estado === 'error')) cargarFichaHis(a);
+}
+
+/**
+ * Trae el contenido clínico de UNA atención del RCE y lo guarda en el mapa; el
+ * repintado sale de ahí. Lo guardado sirve además al informe imprimible, que
+ * así no vuelve a pedir lo que ya está.
+ *
+ * El `finally` no es adorno: si el paciente cambia o falla algo a medio camino,
+ * la entrada tiene que dejar de estar «cargando». Si no, la tarjeta se queda
+ * diciendo «trayendo la ficha…» para siempre y no hay forma de reintentar.
+ *
+ * @param {{idCuenta: string, tipoFicha: string}} a
+ */
+async function cargarFichaHis(a) {
+  if (!cur?.his) return;
+  const me = cur;                     // si se cambia de paciente, no se pinta sobre el nuevo
+  const fichas = cur.his.fichas;
+  const clave = claveFicha(a);
+  fichas.set(clave, { ...fichas.get(clave), estado: 'cargando' });
+  repintarHis();
+  let resultado;
+  try {
+    const r = await hisLoadFicha(a.idCuenta, /** @type {any} */ (a.tipoFicha));
+    resultado = r.error ? { estado: 'error', error: r.error } : { estado: 'ok', ficha: r.ficha };
+  } catch (e) {
+    resultado = { estado: 'error', error: e?.message ? String(e.message) : 'error inesperado leyendo el HIS' };
+  } finally {
+    if (me.his?.fichas) {
+      const previo = me.his.fichas.get(clave);
+      me.his.fichas.set(clave, { ...previo, ...resultado });
+      if (cur === me) repintarHis();
+    }
+  }
 }

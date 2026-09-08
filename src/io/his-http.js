@@ -14,8 +14,15 @@
  * fetch desde la extensión (SameSite) hay que comprobarlo en vivo; si no lo
  * hace, el plan B es conducir una pestaña del HIS, como con SysLab. Los pasos
  * (login, referer) están portados del proyecto RCE VISOR, que ya los resolvió.
+ *
+ * SEGUNDA NOTA, sin comprobar en vivo: el RCE VISOR mandaba `Referer` al pedir
+ * PURG0005/PAMB0005. Desde `fetch` esa cabecera es prohibida —el navegador la
+ * controla— así que aquí NO se manda. Si el HIS condiciona esas páginas al
+ * Referer, la lectura de la ficha fallará en la red del hospital y habrá que
+ * conducir una pestaña, como en SysLab. Hay que probarlo allá.
  */
 import { parseConsficha, esLogin } from '../core/his-parse.js';
+import { parseFichaHis, contarPares } from '../core/his-ficha.js';
 
 const HIS_ORIGIN = 'https://his.hospitalhangaroa.cl';
 const HIS_BASE = `${HIS_ORIGIN}/hishhr`;
@@ -153,4 +160,31 @@ export function hisFichaUrl(idCuenta, tipoFicha) {
   const printMode = tipoFicha === 'ambulatorio' ? 'noprint=1' : 'print=1';
   const doc = tipoFicha === 'ambulatorio' ? 'PAMB0005' : 'PURG0005';
   return resolveHisUrl(`/hishhr/${doc}.php?id=${encodeURIComponent(String(idCuenta))}&${printMode}`);
+}
+
+/**
+ * Contenido clínico de una ficha del HIS, ya parseado. Es la misma página que
+ * abre `hisFichaUrl`, pero leída por la extensión para poder mostrarla dentro
+ * de la app en vez de mandar al médico a otra pestaña.
+ *
+ * `contarPares` decide si la respuesta es una ficha de verdad: el HIS contesta
+ * 200 con una página casi vacía cuando la sesión cayó o la ficha no es
+ * accesible, y pintar esa página como si fuera una atención sería mentir.
+ *
+ * @param {string} idCuenta
+ * @param {'urgencia'|'ambulatorio'} tipoFicha
+ * @param {{ signal?: AbortSignal }} [opts]
+ * @returns {Promise<{ authRequired?: boolean, vacia?: boolean, error?: string, ficha?: import('../core/his-ficha.js').FichaHis }>}
+ */
+export async function hisFicha(idCuenta, tipoFicha, { signal } = {}) {
+  const res = await hisFetch(hisFichaUrl(idCuenta, tipoFicha), { signal });
+  // El mismo orden que la referencia: sesión, permisos, estado y sólo entonces
+  // «¿esto parece una ficha?». Sin la rama de permisos, una página de «No tiene
+  // permisos» con cinco pares se leía como ficha vacía y la app afirmaba que el
+  // HIS no había registrado contenido clínico, que es falso y distinto.
+  if (esLogin(res.text)) return { authRequired: true };
+  if (/No tiene permisos/i.test(res.text)) return { error: 'no tienes permisos sobre esta ficha en el HIS' };
+  if (!res.ok) return { error: `el HIS respondió HTTP ${res.status}` };
+  if (contarPares(res.text) < 5) return { vacia: true };
+  return { ficha: parseFichaHis(res.text) };
 }

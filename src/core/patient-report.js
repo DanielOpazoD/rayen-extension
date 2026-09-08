@@ -3,6 +3,7 @@ import { esc } from './text.js';
 import { esMiaAtencion } from './sic-rules.js';
 import { SECTION_LABELS } from './ficha.js';
 import { whenLabel } from './labels.js';
+import { signosVitalesLista } from './his-ficha.js';
 
 /**
  * Printable clinical history for one patient, built from the same data the
@@ -62,6 +63,8 @@ const REPORT_CSS = `
   .meta b{display:block;color:#98a1a6;font-size:9px;text-transform:uppercase;letter-spacing:.06em}
   .visit{border:1px solid #e4e7e7;border-radius:6px;padding:9px 12px;margin-bottom:8px;break-inside:avoid}
   .visit.mine{border-left:3px solid #1a7f5f}
+  .visit.his{border-left:3px solid #98a1a6}
+  .src{font-size:8px;font-weight:700;letter-spacing:.08em;color:#666f74;border:1px solid #d7dcdf;border-radius:3px;padding:0 3px;margin-left:auto}
   .vh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:3px}
   .vh b{font-size:13px}
   .vh .t{color:#4b5358}
@@ -111,6 +114,78 @@ function sicHTML(s) {
  * @param {keyof SCOPE_LABEL} scope
  * @returns {{ fragment: string, css: string }}
  */
+/**
+ * Una atención del RCE (HIS de Hanga Roa) en el informe, con el mismo marcado
+ * que una de Eloisa: en el papel las dos se leen igual, y el rótulo de origen
+ * es lo único que las distingue.
+ *
+ * Una ficha que no se pudo leer se imprime igual, diciendo por qué: el informe
+ * declara lo que falta en vez de callarlo, porque quien lo lee no puede saber
+ * si esa atención no existía o si el HIS no contestó.
+ *
+ */
+const cierreTexto = c => [
+  c?.condicion && `Condición: ${c.condicion}`,
+  c?.destino && `Destino: ${c.destino}`,
+  c?.pronostico && `Pronóstico médico legal: ${c.pronostico}`,
+  c?.fechaSalida && `Salida: ${[c.fechaSalida, c.horaSalida].filter(Boolean).join(' ')}`,
+].filter(Boolean).join(' · ');
+
+/** @param {{atencion: any, ficha?: any, error?: string}} entrada */
+function hisVisitHTML({ atencion: a, ficha: f, error }) {
+  const dx = [f?.diagnosticos?.principal, f?.diagnosticos?.secundario, f?.diagnosticos?.complementario].filter(Boolean);
+  const sv = f?.signosVitales ?? {};
+  // La misma lista que el panel: si divergen, el papel dice de un paciente algo
+  // distinto que la pantalla.
+  const svTxt = signosVitalesLista(sv).map(([l, v]) => `${l} ${v}`).join(' · ');
+  const cierre = cierreTexto(f?.cierre);
+  const sec = (l, t) => t ? `<div class="sec"><span class="sec-l">${esc(l)}</span><p>${esc(t)}</p></div>` : '';
+  return `<div class="visit his">
+    <div class="vh"><b>${esc(a.fecha)}</b>${f?.meta?.horaAtencion ? `<span class="muted">${esc(f.meta.horaAtencion)}</span>` : ''}<span class="t">${esc(a.tipoAtencion)}</span><span class="muted">· ${esc(a.servicio)}</span>${a.tipoFicha === 'urgencia' ? '<span class="muted">· urgencia</span>' : ''}<span class="src">RCE</span></div>
+    ${f?.meta?.medico ? `<div class="who">${esc(f.meta.medico)}</div>` : ''}
+    ${error ? `<div class="sec"><p class="muted">Ficha no leída desde el RCE: ${esc(error)}. Está en el HIS con el botón «Abrir».</p></div>` : ''}
+    ${dx.map(d => `<div class="dx">${esc(d)}</div>`).join('')}
+    ${sec('Motivo de consulta', f?.meta?.motivoConsulta)}
+    ${sec('Anamnesis', f?.atencion?.anamnesis)}
+    ${sec('Examen físico', f?.atencion?.examenFisico)}
+    ${sec('Hipótesis diagnóstica', f?.atencion?.hipotesis)}
+    ${sec(`Signos vitales${sv.hora ? ` · ${sv.hora}` : ''}`, svTxt)}
+    ${sec('Indicaciones / plan', f?.atencion?.indicaciones)}
+    ${sec('Indicaciones al alta', f?.atencion?.indicacionesAlta)}
+    ${sec('Cierre', cierre)}
+  </div>`;
+}
+
+/**
+ * La sección del RCE. Va completa siempre: el listado del HIS no dice quién
+ * atendió (eso sólo aparece al abrir cada ficha), así que filtrarla por
+ * profesional sería inventar. En los alcances filtrados se advierte.
+ * @param {{estado?: string, error?: string, atenciones?: any[], fichas?: Map<string, any>}|null} his
+ * @param {string} scope
+ */
+function hisSectionHTML(his, scope) {
+  const H = 'Atenciones del RCE · Hospital Hanga Roa';
+  // Sin RCE configurado no hay nada que decir; pero si estaba y falló, el papel
+  // lo dice. Un informe que calla una fuente caída se lee como si estuviera
+  // completo, y quien lo lee no tiene cómo saber que falta media historia.
+  if (!his) return '';
+  if (his.estado === 'error') return `<h2>${H}</h2><p class="muted">RCE no disponible: ${esc(his.error ?? '')}. Esta historia está incompleta.</p>`;
+  if (his.estado === 'cargando') return `<h2>${H}</h2><p class="muted">El listado del RCE aún no había llegado al generar este informe. Esta historia está incompleta.</p>`;
+  const rows = his.atenciones ?? [];
+  if (!rows.length) return `<h2>${H}</h2><p class="muted">Sin atenciones registradas en el RCE.</p>`;
+  const fichas = his.fichas ?? new Map();
+  const entradas = [...rows]
+    .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))
+    .map(a => {
+      const d = fichas.get(`${a.tipoFicha}:${a.idCuenta}`);
+      return { atencion: a, ficha: d?.estado === 'ok' ? d.ficha : undefined, error: d?.estado === 'error' ? d.error : (d?.estado === 'ok' ? undefined : 'no se trajo el contenido') };
+    });
+  const aviso = scope === 'yo' || scope === 'medicos'
+    ? `<p class="muted">El RCE va completo: su listado no dice qué profesional atendió, así que no se filtra por alcance.</p>` : '';
+  return `<h2>${H} · ${entradas.length}</h2>${aviso}` +
+    entradas.map(hisVisitHTML).join('');
+}
+
 export function buildPatientReport(cur, scope) {
   const { record, ficha } = cur;
   const officerId = identidad.officerId;
@@ -138,6 +213,9 @@ export function buildPatientReport(cur, scope) {
     const vis = filterVisitsByScope(source, sc, officerId);
     parts.push(`<h2>${esc(SCOPE_LABEL[sc])} · ${vis.length}</h2>` +
       (vis.length ? vis.map(v => visitHTML(v, officerId)).join('') : `<p class="muted">Sin atenciones en este alcance.</p>`));
+    // El RCE es el otro sistema del hospital: va en su propia sección, después
+    // de las de Eloisa, para que el papel tenga la historia completa.
+    parts.push(hisSectionHTML(cur.his, sc));
   }
 
   if (wantIC) {
