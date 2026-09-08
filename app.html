@@ -70,6 +70,16 @@
           </div>
           <div class="set-h">Especialidades vigiladas <small>Novedades en Hoy</small></div>
           <div class="set-list" id="watchList"><span class="muted">Carga las interconsultas para elegir.</span></div>
+          <div class="set-h">Ficha HIS Hanga Roa <small>otro sistema, por usuario y contraseña</small></div>
+          <form class="his-login" id="hisForm" autocomplete="off">
+            <input type="text" id="hisUser" placeholder="RUT sin dígito verificador" autocomplete="off" inputmode="numeric">
+            <input type="password" id="hisPass" placeholder="Contraseña del HIS" autocomplete="off">
+            <div class="his-login-actions">
+              <button type="submit" id="hisConnect" class="btn">Conectar</button>
+              <button type="button" id="hisForget" class="btn" hidden>Olvidar</button>
+            </div>
+            <span class="his-status" id="hisStatus" role="status"></span>
+          </form>
           <div class="menu-note">Los cambios se guardan al instante.</div>
           <div class="settings-data" id="clearWrap" style="display:none">
             <div class="settings-data-copy"><strong>Datos locales</strong><small>Caché, notas y sesión de esta extensión</small></div>

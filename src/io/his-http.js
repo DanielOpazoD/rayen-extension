@@ -137,7 +137,9 @@ export async function hisStatus() {
  * @returns {Promise<{ authRequired?: boolean, atenciones: import('../core/his-parse.js').AtencionHis[] }>}
  */
 export async function hisAtencionesPorRut(rut, { signal } = {}) {
-  const base = String(rut ?? '').replace(/\./g, '').trim().split('-')[0];
+  // El RUT llega canónico (dígitos + DV, p. ej. «56785678k» o «56.785.678-K»):
+  // el HIS pide sólo el cuerpo, sin el dígito verificador (el último carácter).
+  const base = String(rut ?? '').replace(/[.\-\s]/g, '').slice(0, -1).replace(/\D/g, '');
   if (!/^\d{5,9}$/.test(base)) return { atenciones: [] };
   await hisFetch('/hishhr/consficha000.php', { signal }).catch(() => {}); // warm-up
   const data = new URLSearchParams({ url_link2: '/hishhr/', op: '', ficha: '', rut: base, pasaporte: '' });

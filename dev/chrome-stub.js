@@ -130,12 +130,44 @@ function routeEloisa(url, init) {
   return json('dev: sin red', 503);
 }
 
-// Nada sale de la máquina: Eloisa se enruta; los laboratorios (HSR, SysLab) responden 503 en local,
-// salvo que un recorrido de Playwright declare `globalThis.__RAYEN_DEV_NET = 'mock'` porque los simula con sus rutas.
+// ── HIS de Hanga Roa en el arnés ──
+// El HIS sí se enruta (la extensión lo consulta por fetch, no por pestaña). Se
+// simula el login y el historial por RUT (consficha), para recorrer el bloque
+// del HIS en el panel sin tocar la red del hospital.
+const htmlResp = (s, status = 200) => new Response(s, { status, headers: { 'content-type': 'text/html' } });
+const HIS_LOGIN_FORM = '<form action="acceso1.php"><input name="login"><input type="password" name="password"></form>';
+const HIS_CONSFICHA = `<table><tr><th>Fecha de Atención</th><th>Tipo</th><th>Servicio</th><th>Ver</th></tr>
+  <tr><td>18-05-2026</td><td>AMB Cardiología</td><td>CARDIOLOGIA</td><td><span onclick="window.open('PAMB0005.php?id=501&noprint=1')">Ver</span></td></tr>
+  <tr><td>02-02-2026</td><td>URGENCIA</td><td>URGENCIA ADULTOS</td><td><span onclick="window.open('PURG0005.php?id=502&print=1')">Ver</span></td></tr></table>`;
+let hisLogged = false;
+/** Pre-siembra el HIS (para ?his=1): credencial guardada + sesión activa. */
+export function setHis({ user = '12345678' } = {}) {
+  hisLogged = true;
+  const prefs = mem.local.get('rayen_prefs_v1') ?? {};
+  mem.local.set('rayen_prefs_v1', { ...prefs, hisUser: user, hisPass: 'dev' });
+}
+function routeHis(url, init) {
+  const path = new URL(url).pathname.toLowerCase();
+  const method = init?.method ?? 'GET';
+  if (path.endsWith('/acceso1.php') && method === 'POST') {
+    const body = new URLSearchParams(init?.body ?? '');
+    if (body.get('login') && body.get('password')) { hisLogged = true; return htmlResp("<script>window.location='menu.php'</script>"); }
+    return htmlResp("<script>alert('Usuario o clave incorrecta')</script>");
+  }
+  if (path.endsWith('/menu.php')) return htmlResp('menu');
+  if (path.endsWith('/ateurg022.php')) return hisLogged ? htmlResp('<table>atenciones del día</table>') : htmlResp(HIS_LOGIN_FORM);
+  if (path.endsWith('/consficha000.php')) return method === 'POST' && hisLogged ? htmlResp(HIS_CONSFICHA) : htmlResp(hisLogged ? '<form>rut</form>' : HIS_LOGIN_FORM);
+  return htmlResp(HIS_LOGIN_FORM);
+}
+
+// Nada sale de la máquina: Eloisa y el HIS se enrutan; los laboratorios (HSR, SysLab)
+// responden 503 en local, salvo que un recorrido de Playwright declare
+// `globalThis.__RAYEN_DEV_NET = 'mock'` porque los simula con sus rutas.
 const OFFLINE = ['https://examenesusuarios.hsalvador.cl', 'http://10.4.69.90'];
 globalThis.fetch = (url, init) => {
   const u = String(url);
   if (u.startsWith('https://clinicohangaroa.eloisa.cl')) return later(routeEloisa(u, init));
+  if (u.startsWith('https://his.hospitalhangaroa.cl')) return later(routeHis(u, init));
   if (OFFLINE.some(o => u.startsWith(o)) && globalThis.__RAYEN_DEV_NET !== 'mock') return later(json('dev: sin red', 503));
   return realFetch(url, init);
 };

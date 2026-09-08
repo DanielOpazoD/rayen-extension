@@ -11,6 +11,7 @@ import { initMenu, setStatus } from './ui.js';
 import { armRefresh, cargarFuturas, handleFetch } from './loader.js';
 import { getToken } from '../io/auth.js';
 import { reconciliarCitas } from '../io/historial.js';
+import { hisConectar, hisOlvidar, hisCreds } from '../io/his-session.js';
 
 /** Preferences and local-data controls. */
 
@@ -34,6 +35,41 @@ function fillSettings() {
   $('setFuturas').value = String(state.prefs.futurasDias ?? CONFIG.futurasDias);
   $('setNueva').value = String(umbrales.nuevaDias);
   $('setCita').value = String(umbrales.citaDias); $('setControl').value = String(umbrales.controlDias);
+}
+
+/** Login del HIS de Hanga Roa en Preferencias: guarda la credencial cifrada e inicia sesión. */
+async function initHisLogin() {
+  const form = $('hisForm');
+  if (!form) return;
+  const status = $('hisStatus'), user = $('hisUser'), pass = $('hisPass'), connect = $('hisConnect'), forget = $('hisForget');
+  const pintar = (msg, tone = '') => { status.textContent = msg; status.className = `his-status ${tone}`; };
+
+  try {
+    const creds = await hisCreds();
+    if (creds.user) { user.value = creds.user; forget.hidden = false; pintar(`Guardado: ${creds.user}. Se verifica al abrir un paciente en la red del hospital.`, 'ok'); }
+  } catch { /* sin prefs aún */ }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const u = user.value.trim(), p = pass.value;
+    if (!u || !p) { pintar('Escribe el RUT (sin DV) y la contraseña.', 'warn'); return; }
+    connect.disabled = true;
+    pintar('Conectando al HIS…');
+    try {
+      const r = await hisConectar(u, p);
+      pass.value = '';
+      if (r.ok) { pintar('Conectado al HIS.', 'ok'); forget.hidden = false; }
+      else pintar(r.error || 'no se pudo conectar', 'bad');
+    } catch (err) {
+      pintar(`No se pudo conectar: ${humanError(err, 'HIS')}`, 'bad');
+    } finally { connect.disabled = false; }
+  });
+
+  forget.addEventListener('click', async () => {
+    await hisOlvidar();
+    user.value = ''; pass.value = ''; forget.hidden = true;
+    pintar('Credenciales del HIS olvidadas.');
+  });
 }
 
 export function init({ lock }) {
@@ -63,6 +99,7 @@ export function init({ lock }) {
     catch (err) { toast(err?.name === 'PinError' ? 'El PIN actual no es correcto.' : `No se pudo cambiar el PIN: ${err?.message ?? err}`, { tone: 'bad' }); }
   });
   initMenu('btnSettings', 'settingsMenu', 'settingsWrap', () => { fillSettings(); buildWatchList(); });
+  initHisLogin();
   // Bajo 1100 px la cabecera pliega período, ficha, exportar y preferencias tras «⋯».
   initMenu('btnMore', 'hdrMore', 'hdrWrap');
 

@@ -102,3 +102,11 @@ export function esLogin(html) {
   const t = String(html ?? '').slice(0, 8000).toLowerCase();
   return LOGIN_MARKERS.some(m => t.includes(m));
 }
+
+/** Nombre del origen, para el icono que distingue estas atenciones de las de Eloisa. */
+export const HIS_LABEL = 'HIS Hanga Roa';
+
+/** Las atenciones del HIS de la más reciente a la más antigua (fecha ISO comparable como texto). */
+export function ordenarAtenciones(rows) {
+  return [...(rows ?? [])].sort((a, b) => String(b.fecha ?? '').localeCompare(String(a.fecha ?? '')));
+}

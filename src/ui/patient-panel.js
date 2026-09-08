@@ -13,6 +13,8 @@ import { copyToClipboard } from './toast.js';
 import { renderHeader, renderDatos } from './panel/datos.js';
 import { renderDx } from './panel/problemas.js';
 import { renderAt } from './panel/atenciones.js';
+import { hisConfigurado, hisLoadAtenciones } from '../io/his-session.js';
+import { hisFichaUrl } from '../io/his-http.js';
 import { renderIc } from './panel/interconsultas.js';
 import { renderRx, toggleRecetaDetalle } from './panel/recetas.js';
 import { olvidarRecetas } from '../io/receta.js';
@@ -159,6 +161,13 @@ export function initPanel({ saveNote, addNote, editNote, onNavigate, onLabSearch
   });
 
   $('patientPanel').addEventListener('click', async e => {
+    const hisOpen = closestOf(e, '.his-open');
+    if (hisOpen) {
+      const url = hisFichaUrl(hisOpen.dataset.hisId, hisOpen.dataset.hisTipo);
+      if (globalThis.chrome?.tabs?.create) chrome.tabs.create({ url });
+      else globalThis.open(url, '_blank', 'noopener');
+      return;
+    }
     const det = closestOf(e, 'button[data-receta]');
     if (det) { toggleRecetaDetalle(det); return; }
     const pdf = closestOf(e, 'button[data-pdf]');
@@ -255,6 +264,7 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
     sics: record.run ? sics.filter(s => s.paciente.run === record.run) : [],
     contact: record.run ? contacts.get(record.run) ?? {} : {},
     ficha: null,
+    his: null,
   };
   $('ppDatos').setAttribute('hidden', '');
   $('ppAvatar').classList.remove('on');
@@ -278,4 +288,26 @@ export function openPanel(record, { allData, sics = [], contacts = new Map(), po
   }
   panel.scrollTop = 0;
   loadAndRenderFicha();
+  cargarHis(cur);
+}
+
+/**
+ * Trae las atenciones del HIS del paciente y las pinta en la pestaña Atenciones.
+ * Independiente de la ficha de Eloisa: el HIS puede estar fuera de la red sin
+ * que eso afecte al resto del panel. Sólo se muestra si hay HIS configurado.
+ * @param {object} me  el `cur` de este paciente; si se cambia de paciente, no se pinta sobre el nuevo
+ */
+async function cargarHis(me) {
+  const run = me.record?.run;
+  if (!run) { me.his = null; return; }
+  let configurado = false;
+  try { configurado = await hisConfigurado(); } catch { configurado = false; }
+  if (cur !== me) return;
+  if (!configurado) { me.his = null; return; } // sin HIS configurado no se muestra el bloque
+  me.his = { estado: 'cargando' };
+  renderAt(cur, atFilter);
+  const r = await hisLoadAtenciones(run);
+  if (cur !== me) return;
+  me.his = r.error ? { estado: 'error', error: r.error } : { estado: 'ok', atenciones: r.atenciones };
+  renderAt(cur, atFilter);
 }

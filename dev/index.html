@@ -5,7 +5,7 @@
 <script type="module">
   // Dev harness: real app.html + real app.js, fake chrome.* and synthetic data.
   // Open via `npm run dev` (or any static server at the repo root) → /dev/
-  import { seed, setFichaResponses, setFichaMode, setCitasPorDia, loadCaptures, setSyslab } from './chrome-stub.js';
+  import { seed, setFichaResponses, setFichaMode, setCitasPorDia, loadCaptures, setSyslab, setHis } from './chrome-stub.js';
   import { buildFixture } from './fixture.js';
   import { buildFichaResponses } from './ficha-fixture.js';
   const fixture = buildFixture();
@@ -21,6 +21,9 @@
   // ella, el transporte responde y se puede recorrer lo que necesita los dos
   // hospitales a la vez (marcar todo, PDF único, análisis mezclado).
   if (params.get('syslab') === '1') setSyslab({ exams: (await import('./syslab-fixture.js')).EXAMENES });
+  // Con `?his=1` el HIS queda conectado y con historial, para ver el bloque del
+  // HIS en la pestaña Atenciones sin iniciar sesión a mano.
+  if (params.get('his') === '1') setHis();
 
   const html = await (await fetch('../app.html')).text();
   const doc  = new DOMParser().parseFromString(html, 'text/html');

@@ -243,6 +243,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/io/auth.js` — recuperación segura de la sesión activa de Eloisa.
 - `src/io/his-http.js` — transporte del HIS de Hanga Roa: login por usuario/contraseña (cookie de sesión) y consulta del historial por RUT, guardado al origen `his.hospitalhangaroa.cl`.
+- `src/io/his-session.js` — sesión y credenciales del HIS: guarda usuario/contraseña cifrados con el PIN y trae las atenciones del paciente, reingresando si la cookie caducó.
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
 - `src/io/crypto-store.js` — cifrado en reposo (ADR 0001): AES-GCM con clave derivada del PIN por PBKDF2, creación y cambio de PIN, migración de lo que estaba en claro; la clave sólo en memoria.
 - `src/io/explorer.js` — consultas controladas del Explorador API.
@@ -285,6 +286,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/panel/datos.js` — cabecera del panel y datos administrativos.
 - `src/ui/panel/problemas.js` — pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una sola lista, alergias y programas.
 - `src/ui/panel/atenciones.js` — pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o agenda.
+- `src/ui/panel/his.js` — bloque de atenciones del HIS en la pestaña Atenciones del panel, con el icono que marca su origen.
 - `src/ui/panel/interconsultas.js` — pestaña Interconsultas (Mías / De otros) y derivaciones.
 - `src/ui/panel/recetas.js` — pestaña Recetas: activas según Rayen (duración escrita de respaldo) y detalle de despacho al desplegar.
 - `src/ui/panel/notas.js` — diario de notas del paciente y su cableado.

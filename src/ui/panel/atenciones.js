@@ -9,6 +9,7 @@ const PRINTER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v
 import { whenLabel } from '../../core/labels.js';
 import { segGroup, empty, setTabCount } from './helpers.js';
 import { esMiaAtencion } from '../../core/sic-rules.js';
+import { hisBlockHTML } from './his.js';
 
 function sectionHTML(id, items, v) {
   // Cada receta lleva su impresora: el PDF de Eloisa, para imprimirlo desde la atención.
@@ -72,6 +73,8 @@ function agendaVisitHTML(v) {
 
 export function renderAt(cur, atFilter) {
   const { visits, ficha } = cur;
+  // Las atenciones del HIS (otro sistema) van arriba, con su icono de origen.
+  const his = hisBlockHTML(cur.his);
   let html;
   if (ficha?.visits?.length) {
     const agendaByAtencion = new Map(visits.filter(v => v.atencionId && v.origen === 'cita').map(v => [v.atencionId, v]));
@@ -91,5 +94,5 @@ export function renderAt(cur, atFilter) {
         : (visits.length ? visits.map(agendaVisitHTML).join('') : empty('Sin atenciones')));
     setTabCount('at', visits.length);
   }
-  $('ppPaneAt').innerHTML = html;
+  $('ppPaneAt').innerHTML = his + html;
 }
