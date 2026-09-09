@@ -32,8 +32,9 @@ export function initLock({ minutes = 15 } = {}) {
   const locked = () => !el.hidden;
   // Todo lo que no es la pantalla de bloqueo queda inerte mientras dura: sin
   // foco, sin clics, sin lectores de pantalla. Antes sólo se tapaba con un velo.
-  // El panel de paciente y su velo también: están fuera de <main>.
-  const shielded = () => ['topbar', 'mainContent', 'patientPanel', 'panelBackdrop'].map(id => document.getElementById(id)).filter(Boolean);
+  // El panel de paciente, su velo y el centro de contraseñas también: están
+  // fuera de <main>, y el centro es justo lo que no puede quedar tabulable.
+  const shielded = () => ['topbar', 'mainContent', 'patientPanel', 'panelBackdrop', 'credVault'].map(id => document.getElementById(id)).filter(Boolean);
 
   const lock = () => {
     if (locked()) return;

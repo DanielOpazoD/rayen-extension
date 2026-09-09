@@ -101,7 +101,10 @@ const accionLogin = raw => {
  * Inicia sesión en el HIS con RUT (sin DV) y contraseña.
  * @param {string} user  RUT sin dígito verificador
  * @param {string} password
- * @returns {Promise<{ ok: boolean, error?: string }>}  el error es seguro de mostrar (no lleva la clave)
+ * `rechazada` distingue «el HIS dijo que no» de «el HIS no contestó». Sólo lo
+ * primero invalida lo guardado; por un corte de red no se puede obligar a la
+ * persona a reescribir una contraseña que estaba bien.
+ * @returns {Promise<{ ok: boolean, error?: string, rechazada?: boolean }>}  el error es seguro de mostrar (no lleva la clave)
  */
 export async function hisLogin(user, password) {
   if (!user || !password) return { ok: false, error: 'faltan credenciales' };
@@ -116,7 +119,7 @@ export async function hisLogin(user, password) {
 
   if (!/window\.location|usuarioLogeado/i.test(post.text)) {
     const alerta = /alert\(['"]([^'"]{3,200})/i.exec(post.text);
-    return { ok: false, error: alerta ? `HIS dice: ${alerta[1]}` : 'credenciales rechazadas' };
+    return { ok: false, rechazada: true, error: alerta ? `HIS dice: ${alerta[1]}` : 'credenciales rechazadas' };
   }
   await hisFetch('/hishhr/menu.php').catch(() => {}); // warm-up: estabiliza la sesión
   const verify = await hisFetch('/hishhr/ateurg022.php');

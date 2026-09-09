@@ -930,3 +930,32 @@ progress::-webkit-progress-value{background:var(--brand);border-radius:1px;trans
 .pin-change input{width:78px;height:var(--h-ctl-sm);border:1px solid var(--rule);border-radius:var(--r-sm);padding:0 6px;font-size:var(--t-sm);background:var(--card)}
 
 .set-check{display:inline-flex;align-items:center;gap:6px}
+
+/* ═══ Centro de contraseñas ═══ */
+/* Diálogo propio, no un formulario dentro de Preferencias: entrar aquí es un
+   gesto deliberado, y hay sitio para los cinco sistemas y el respaldo. */
+.cred-vault{position:fixed;inset:0;z-index:2600;background:rgba(10,15,15,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:6vh var(--sp-4) var(--sp-4);overflow:auto}
+.cred-vault[hidden]{display:none}
+.cred-box{width:min(620px,100%);background:var(--card);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:var(--sp-4) var(--sp-5) var(--sp-5)}
+.cred-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding-bottom:var(--sp-3);border-bottom:1px solid var(--rule);margin-bottom:var(--sp-3)}
+.cred-head h2{font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em}
+.cred-intro{font-size:var(--t-sm);color:var(--ink-2);line-height:1.5;margin-bottom:var(--sp-3);max-width:62ch}
+.cred-field{display:flex;flex-direction:column;gap:4px;font-size:var(--t-xs);color:var(--ink-3);max-width:280px}
+.cred-field input{height:var(--h-ctl);padding:0 10px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);color:var(--ink);font-size:var(--t-sm);outline:none}
+.cred-field input:focus{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft)}
+.cred-actions{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-3)}
+.cred-lista{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-5)}
+/* Una tarjeta por sistema: su estado arriba, el formulario de reemplazo debajo. */
+.cred-item{border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);background:var(--surface-3)}
+.cred-item-h{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.cred-item-h strong{font-size:var(--t-sm);font-weight:600}
+.cred-usuario{font-size:var(--t-xs);color:var(--ink-2);margin-top:2px;font-family:var(--mono)}
+.cred-detalle{font-size:var(--t-xs);color:var(--ink-3);margin-top:2px;line-height:1.45}
+.cred-form{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp-2)}
+.cred-form input{flex:1 1 150px;min-width:0;height:var(--h-ctl-sm);padding:0 9px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--card);color:var(--ink);font-size:var(--t-sm);outline:none}
+.cred-form input:focus{border-color:var(--brand)}
+.cred-acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp-2)}
+.cred-acciones:empty{display:none}
+.cred-respaldo{margin-bottom:var(--sp-5)}
+.cred-foot{padding-top:var(--sp-3);border-top:1px solid var(--rule)}
+@media(max-width:620px){.cred-vault{padding:0}.cred-box{border-radius:0;min-height:100vh;width:100%}}

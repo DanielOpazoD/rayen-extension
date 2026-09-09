@@ -203,6 +203,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/core/anonimizar.js` — copia anonimizada de una respuesta: personas, RUT, contactos, direcciones, identificadores correlativos, fechas desplazadas; comprobación final de restos.
 - `src/core/calendar.js` — rejilla mensual para Hoy, sin DOM: atenciones por día y, aparte, las citas ya agendadas.
 - `src/core/his-parse.js` — parseo del HIS de Hanga Roa (tercer origen de ficha, PHP clásico): historial por RUT de `consficha000.php`, con regex y sin DOM, portado del proyecto RCE VISOR.
+- `src/core/credenciales-catalogo.js` — los cinco sistemas del centro de contraseñas y, por cada uno, si la extensión puede iniciar sesión sola (silenciosa / por construir / sólo en pestaña / sin integración); estado de una credencial sin exponerla nunca.
 - `src/core/his-ficha.js` — parseo del contenido clínico de una atención del HIS (`PURG0005` urgencia / `PAMB0005` ambulatorio): pares `<b>ETIQUETA:</b>VALOR` → estructura tipada, con la tabla de signos vitales y las siete formas en que el HIS expone el médico. También portado del RCE VISOR.
 - `src/core/config.js` — origen permitido, catálogos y valores de negocio configurables.
 - `src/core/dates.js` — única implementación de las utilidades de fecha: Date ↔ «YYYYMMDD», días entre fechas, edad en años, retención en meses, formatos ISO y DD/MM/YYYY.
@@ -243,6 +244,8 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/io/agenda.js` — una petición de agenda (las citas del oficial en un día). Eloisa devuelve sólo el día de inicio aunque el endpoint acepte rango.
 - `src/io/api.js` — agenda por fecha, caché incremental y actualización de estados mutables.
 - `src/io/auth.js` — recuperación segura de la sesión activa de Eloisa.
+- `src/io/credenciales.js` — el centro de contraseñas: guarda los accesos cifrados con el PIN en su propia llave, los entrega sólo a los transportes y marca caducada la que el sistema rechazó para no reintentarla.
+- `src/io/credenciales-respaldo.js` — respaldo cifrado exportable del centro, con frase propia (PBKDF2 600 000, AES-GCM): el fichero sale de la máquina, así que no se protege con el PIN de seis dígitos.
 - `src/io/his-http.js` — transporte del HIS de Hanga Roa: login por usuario/contraseña (cookie de sesión) y consulta del historial por RUT, guardado al origen `his.hospitalhangaroa.cl`.
 - `src/io/his-session.js` — sesión y credenciales del HIS: guarda usuario/contraseña cifrados con el PIN y trae las atenciones del paciente, reingresando si la cookie caducó.
 - `src/io/cache.js` — almacenamiento Chrome, cachés por fecha y preferencias.
@@ -287,6 +290,7 @@ El bloque siguiente se verifica automáticamente con `npm run docs:check`: cada 
 - `src/ui/panel/datos.js` — cabecera del panel y datos administrativos.
 - `src/ui/panel/problemas.js` — pestaña Antecedentes: diagnósticos con peso y antecedentes mórbidos en una sola lista, alergias y programas.
 - `src/ui/panel/atenciones.js` — pestaña Atenciones: tarjetas de la ficha (Medicina / Otros) o agenda.
+- `src/ui/credenciales-panel.js` — el diálogo del centro de contraseñas: pide el PIN otra vez, lista los sistemas con su estado, guarda y reemplaza sin mostrar nunca una clave, e importa/exporta el respaldo cifrado.
 - `src/ui/panel/his.js` — bloque de atenciones del HIS en la pestaña Atenciones del panel, con el icono que marca su origen.
 - `src/ui/panel/interconsultas.js` — pestaña Interconsultas (Mías / De otros) y derivaciones.
 - `src/ui/panel/recetas.js` — pestaña Recetas: activas según Rayen (duración escrita de respaldo) y detalle de despacho al desplegar.

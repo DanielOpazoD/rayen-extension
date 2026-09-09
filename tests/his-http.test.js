@@ -138,3 +138,36 @@ test('hisFicha pide el documento que corresponde al tipo de atención', async ()
   assert.match(vistos[1].url, /PURG0005\.php\?id=88&print=1$/);
   assert.ok(vistos.every(v => v.credentials === 'include'), 'la ficha va con la cookie de sesión');
 });
+
+/**
+ * La regresión que importa: con una credencial que el HIS ya rechazó, abrir
+ * pacientes NO puede seguir intentando entrar. Cinco pacientes eran cinco
+ * intentos de login, y varios portales del hospital bloquean la cuenta a los
+ * pocos fallos: el médico se quedaba sin RCE en mitad del turno.
+ */
+test('una credencial rechazada deja de intentarse: N pacientes, un solo login', async () => {
+  const { installFakeChrome } = await import('./helpers/fake-chrome.js');
+  const cs = await import('../src/io/crypto-store.js');
+  installFakeChrome({ token: null });
+  cs.clearKey();
+  cs.setIteracionesParaPruebas(50);
+  await cs.createPin('123456');
+
+  const cred = await import('../src/io/credenciales.js');
+  await cred.olvidarTodo();
+  await cred.guardar('rce', '12345678', 'clave-que-el-his-rechaza');
+
+  const vistos = instalar([
+    [/consficha000/, { text: '<form><input type="password" name="password"></form>' }],   // sesión caída
+    [/acceso1\.php POST/, { text: "<script>alert('Usuario o clave incorrecta')</script>" }],
+    [/hishhr/, { text: '<form><input type="password" name="password"></form>' }],
+  ]);
+
+  const { hisLoadAtenciones } = await import('../src/io/his-session.js');
+  for (let i = 0; i < 5; i++) await hisLoadAtenciones('11.111.111-1');
+
+  const logins = vistos.filter(v => /acceso1\.php/.test(v.url) && v.method === 'POST').length;
+  assert.equal(logins, 1, 'el primer rechazo tiene que detener los demás intentos');
+  assert.equal((await cred.listar()).rce.estado, 'caducada', 'y quedar dicho, para que se pueda reescribir');
+  assert.equal(await cred.credencialPara('rce'), null);
+});

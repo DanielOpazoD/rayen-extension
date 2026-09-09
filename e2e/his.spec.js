@@ -103,18 +103,65 @@ test('sin HIS configurado no aparece el bloque (no se muestra nada de otro siste
   await expect(page.locator('#ppPaneAt .his-block')).toHaveCount(0);
 });
 
-test('login del HIS en Preferencias: conectar guarda la sesión y lo confirma', async ({ page }) => {
-  await page.goto('/dev/');
+/** Con ?pin=1 el arnés cifra de verdad: hay que crear el PIN antes de nada. */
+async function abrirCentro(page, query = '?pin=1') {
+  await page.goto(`/dev/${query}`);
+  await expect(page.locator('#pinScreen')).toBeVisible();
+  await page.locator('#pinInput').fill('123456');
+  await page.locator('#pinConfirm').fill('123456');
+  await page.locator('#pinBtn').click();
+  await expect(page.locator('#pinScreen')).toBeHidden({ timeout: 15000 });
   await expect(page.locator('html')).toHaveAttribute('data-dev-ready', 'true');
-  const narrow = (await page.evaluate(() => document.documentElement.clientWidth)) <= 1100;
-  if (narrow) await page.locator('#btnMore').click();
+  if ((await page.evaluate(() => document.documentElement.clientWidth)) <= 1100) await page.locator('#btnMore').click();
   await page.locator('#btnSettings').click();
-  await page.locator('.set-adv > summary').click(); // el login del HIS vive en «Avanzado»
-  await page.locator('#hisUser').fill('12345678');
-  await page.locator('#hisPass').fill('clave-de-prueba');
-  await page.locator('#hisConnect').click();
-  await expect(page.locator('#hisStatus')).toContainText('Conectado al HIS', { timeout: 5000 });
-  await expect(page.locator('#hisForget')).toBeVisible();
-  // La contraseña no queda en pantalla tras conectar.
-  await expect(page.locator('#hisPass')).toHaveValue('');
+  await page.locator('.set-adv > summary').click();
+  await page.locator('#btnCredenciales').click();
+}
+
+test('el centro de contraseñas pide el PIN otra vez y guarda el acceso al RCE', async ({ page }) => {
+  await abrirCentro(page);
+
+  // No se ve nada guardado hasta volver a escribir el PIN.
+  await expect(page.locator('#credBody')).toBeHidden();
+  await page.locator('#credPin').fill('000000');
+  await page.locator('#credAbrir').click();
+  await expect(page.locator('#credPinMsg')).toContainText('PIN incorrecto');
+  await expect(page.locator('#credBody')).toBeHidden();
+
+  await page.locator('#credPin').fill('123456');
+  await page.locator('#credAbrir').click();
+  await expect(page.locator('#credBody')).toBeVisible();
+  await expect(page.locator('.cred-item')).toHaveCount(5);
+
+  // Guardar el acceso al RCE (credenciales de prueba, no reales).
+  const rce = page.locator('.cred-item[data-cred-sistema="rce"]');
+  await rce.locator('input[name="usuario"]').fill('12345678');
+  await rce.locator('input[name="clave"]').fill('clave-de-prueba');
+  await rce.locator('button[type="submit"]').click();
+  await expect(rce.locator('.his-status')).toContainText('guardada');
+  await expect(rce.locator('.cred-usuario')).toContainText('12345678');
+  // La contraseña nunca vuelve a la pantalla. `innerText` no vale para
+  // comprobarlo —nunca incluye el value de un input—: hay que mirar el marcado
+  // y el propio campo.
+  await expect(rce.locator('input[name="clave"]')).toHaveValue('');
+  expect(await rce.evaluate(el => el.outerHTML)).not.toContain('clave-de-prueba');
+  expect(await page.evaluate(() => document.body.outerHTML)).not.toContain('clave-de-prueba');
+});
+
+test('sólo ofrece «Iniciar sesión» donde la extensión puede entrar sola', async ({ page }) => {
+  await abrirCentro(page, '?pin=1&his=1');
+  await page.locator('#credPin').fill('123456');
+  await page.locator('#credAbrir').click();
+  await expect(page.locator('#credBody')).toBeVisible();
+
+  // El RCE llega ya guardado (?his=1) y sí puede entrar solo.
+  await expect(page.locator('.cred-item[data-cred-sistema="rce"] [data-cred-entrar]')).toHaveCount(1);
+  // SysLab no puede en silencio: no se ofrece el botón, y se dice por qué.
+  const hhr = page.locator('.cred-item[data-cred-sistema="lab-hhr"]');
+  await expect(hhr.locator('[data-cred-entrar]')).toHaveCount(0);
+  await expect(hhr).toContainText('sus cookies no viajan a la extensión');
+  await expect(hhr.locator('[data-cred-abrir]')).toHaveCount(1);
+  // Las integraciones pendientes lo dicen en vez de fingir un botón.
+  await expect(page.locator('.cred-item[data-cred-sistema="mmrad"]')).toContainText('Integración pendiente');
+  await expect(page.locator('.cred-item[data-cred-sistema="biopsias"] [data-cred-entrar]')).toHaveCount(0);
 });

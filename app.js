@@ -16,6 +16,8 @@ import { leerSesionEloisa } from './src/io/auth.js';
 import { patientKey } from './src/io/notes.js';
 import * as loader from './src/ui/loader.js';
 import * as ajustes from './src/ui/ajustes.js';
+import { initCredenciales } from './src/ui/credenciales-panel.js';
+import { migrarDesdePrefs } from './src/io/credenciales.js';
 import * as hoy from './src/ui/tabs/hoy.js';
 import * as atenciones from './src/ui/tabs/atenciones.js';
 import * as pacientes from './src/ui/tabs/pacientes.js';
@@ -74,6 +76,10 @@ const lockMin = Number.isFinite(+prefs.lockMin) ? +prefs.lockMin : 15;
 const lock = initLock({ minutes: lockMin }); // patient data on screen; blur it when idle
 lock.minutes = lockMin;
 ajustes.init({ lock });
+// Las credenciales del RCE vivían en las preferencias; se mudan solas al centro
+// la primera vez, para que nadie tenga que volver a escribirlas.
+await migrarDesdePrefs().catch(() => {});
+initCredenciales();
 
 initPanel({
   saveNote: writeNote,                      // the panel has no path of its own

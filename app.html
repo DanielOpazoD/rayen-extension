@@ -73,16 +73,11 @@
           </div>
           <div class="set-h">Especialidades vigiladas <small>Novedades en Hoy</small></div>
           <div class="set-list" id="watchList"><span class="muted">Carga las interconsultas para elegir.</span></div>
-          <div class="set-h">Ficha HIS Hanga Roa <small>otro sistema, por usuario y contraseña</small></div>
-          <form class="his-login" id="hisForm" autocomplete="off">
-            <input type="text" id="hisUser" placeholder="RUT sin dígito verificador" autocomplete="off" inputmode="numeric">
-            <input type="password" id="hisPass" placeholder="Contraseña del HIS" autocomplete="off">
-            <div class="his-login-actions">
-              <button type="submit" id="hisConnect" class="btn">Conectar</button>
-              <button type="button" id="hisForget" class="btn" hidden>Olvidar</button>
-            </div>
-            <span class="his-status" id="hisStatus" role="status"></span>
-          </form>
+          <div class="set-h">Accesos a los sistemas <small>RCE, laboratorios y los que vengan</small></div>
+          <div class="settings-data-actions">
+            <button type="button" id="btnCredenciales" data-tip="Usuarios y contraseñas de los sistemas del hospital, cifrados con tu PIN. Se guardan y se reemplazan; no se muestran.">Centro de contraseñas</button>
+          </div>
+          <span class="his-status" id="credResumen" role="status"></span>
           <div class="set-h">Herramientas</div>
           <div class="settings-data-actions"><button type="button" id="btnExplorador" data-tip="Explorador de la API de Eloisa. Uso ocasional (desarrollo/diagnóstico).">Explorador API</button></div>
           <div class="settings-data" id="clearWrap" style="display:none">
@@ -565,6 +560,46 @@
     <button id="ppSaveNote">Añadir nota</button>
   </div>
 </aside>
+<div id="credVault" class="cred-vault" hidden>
+  <div class="cred-box" role="dialog" aria-modal="true" aria-labelledby="credTitle">
+    <div class="cred-head">
+      <h2 id="credTitle">Centro de contraseñas</h2>
+      <button type="button" id="credClose" class="btn-mini ghost" aria-label="Cerrar el centro de contraseñas">Cerrar</button>
+    </div>
+
+    <form id="credPinForm" class="cred-pin" autocomplete="off">
+      <p class="cred-intro">Los accesos están cifrados con tu PIN. Escríbelo otra vez para abrirlos.</p>
+      <label class="cred-field"><span>PIN</span>
+        <input type="password" id="credPin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" aria-describedby="credPinMsg"></label>
+      <div class="cred-actions">
+        <button type="submit" class="btn btn-primary" id="credAbrir">Abrir</button>
+      </div>
+      <span class="his-status" id="credPinMsg" role="status"></span>
+    </form>
+
+    <div id="credBody" hidden>
+      <p class="cred-intro">Se guardan y se reemplazan, pero no se muestran: ni aqu&iacute; ni en ning&uacute;n otro sitio de la extensi&oacute;n.</p>
+      <div id="credLista" class="cred-lista"></div>
+
+      <div class="set-h">Respaldo cifrado <small>para cambiar de equipo</small></div>
+      <p class="cred-intro">El fichero sale de esta m&aacute;quina, as&iacute; que va cifrado con una frase propia &mdash;no con el PIN&mdash; y se pide larga. Si lo pierdes no pierdes nada: los accesos siguen aqu&iacute;.</p>
+      <form id="credRespaldoForm" class="cred-respaldo" autocomplete="off">
+        <label class="cred-field"><span>Frase del respaldo</span>
+          <input type="password" id="credFrase" minlength="12" autocomplete="off" placeholder="al menos 12 caracteres"></label>
+        <div class="cred-actions">
+          <button type="button" class="btn" id="credExportar">Exportar respaldo</button>
+          <button type="button" class="btn" id="credImportar">Cargar respaldo&hellip;</button>
+          <input type="file" id="credFichero" accept="application/json,.json" hidden>
+        </div>
+        <span class="his-status" id="credRespaldoMsg" role="status"></span>
+      </form>
+
+      <div class="cred-foot">
+        <button type="button" class="btn btn-danger" id="credOlvidarTodo">Olvidar todos los accesos</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

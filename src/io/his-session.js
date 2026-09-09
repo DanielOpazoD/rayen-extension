@@ -5,18 +5,25 @@
  * (ADR 0001) — no viven en un lugar aparte. La cookie de sesión la maneja
  * Chrome; aquí sólo se guarda con qué reingresar cuando esa cookie caduca.
  */
-import { savePrefs, loadPrefs } from './cache.js';
 import { hisLogin, hisAtencionesPorRut, hisFicha } from './his-http.js';
+import { credencialPara, guardar, listar, marcarCaducada } from './credenciales.js';
 
-/** @returns {Promise<{ user: string, pass: string }>} credenciales guardadas (vacías si no hay) */
+/**
+ * Las credenciales del HIS viven en el centro de contraseñas, no aquí: un solo
+ * sitio cifrado para los cinco sistemas. Devuelve vacías si no hay, o si el HIS
+ * las rechazó y siguen marcadas caducadas —en ese caso no se vuelven a probar
+ * solas, que es lo que evita que el hospital bloquee la cuenta.
+ * @returns {Promise<{ user: string, pass: string }>}
+ */
 export async function hisCreds() {
-  const p = /** @type {any} */ (await loadPrefs());
-  return { user: p.hisUser ?? '', pass: p.hisPass ?? '' };
+  const c = await credencialPara('rce');
+  return { user: c?.usuario ?? '', pass: c?.clave ?? '' };
 }
 
-/** ¿Hay un usuario del HIS guardado? */
+/** ¿Hay un acceso al HIS guardado y vigente? */
 export async function hisConfigurado() {
-  return Boolean((await hisCreds()).user);
+  const e = (await listar()).rce;
+  return e?.estado === 'guardada';
 }
 
 /**
@@ -26,13 +33,9 @@ export async function hisConfigurado() {
  */
 export async function hisConectar(user, pass) {
   const r = await hisLogin(user, pass);
-  if (r.ok) await savePrefs({ hisUser: user, hisPass: pass });
+  if (r.ok) await guardar('rce', user, pass);
+  else if (r.rechazada) await marcarCaducada('rce', r.error ?? '');
   return r;
-}
-
-/** Olvida las credenciales guardadas (la cookie del navegador la cierra el HIS aparte). */
-export async function hisOlvidar() {
-  await savePrefs({ hisUser: '', hisPass: '' });
 }
 
 /**
@@ -47,9 +50,11 @@ export async function hisLoadAtenciones(rut, { signal } = {}) {
   try {
     let r = await hisAtencionesPorRut(rut, { signal });
     if (r.authRequired) {
-      const { user, pass } = await hisCreds();
-      if (!user || !pass) return { atenciones: [], error: 'sin sesión del HIS' };
-      const login = await hisLogin(user, pass);
+      // Por `reingresar`, no por `hisLogin` a pelo: es lo que comparte el intento
+      // entre pacientes y marca caducada la credencial rechazada. Llamando a
+      // hisLogin directamente, abrir cinco pacientes eran cinco intentos con una
+      // clave que el HIS ya había rechazado — la vía rápida al bloqueo de cuenta.
+      const login = await reingresar();
       if (!login.ok) return { atenciones: [], error: login.error };
       r = await hisAtencionesPorRut(rut, { signal });
       if (r.authRequired) return { atenciones: [], error: 'no se pudo reingresar al HIS' };
@@ -75,7 +80,10 @@ async function reingresar() {
   reingresoEnCurso = (async () => {
     const { user, pass } = await hisCreds();
     if (!user || !pass) return { ok: false, error: 'sin sesión del HIS' };
-    return hisLogin(user, pass);
+    const r = await hisLogin(user, pass);
+    // Sólo si el HIS DIJO que no. Un corte de red no invalida una clave buena.
+    if (r.rechazada) await marcarCaducada('rce', r.error ?? '');
+    return r;
   })().finally(() => { reingresoEnCurso = null; });
   return reingresoEnCurso;
 }
